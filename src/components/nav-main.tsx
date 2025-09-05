@@ -1,8 +1,9 @@
 "use client"
 
-import { IconCirclePlusFilled, IconMail, type Icon } from "@tabler/icons-react"
+// import { type Icon } from "@tabler/icons-react"
 
-import { Button } from "@/components/ui/button"
+// import { Button } from "@/components/ui/button"
+import { usePathname } from "next/navigation"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -17,37 +18,24 @@ export function NavMain({
   items: {
     title: string
     url: string
-    icon?: Icon
   }[]
 }) {
+  const pathname = usePathname();
   return (
     <SidebarGroup>
-      <SidebarGroupContent className="flex flex-col gap-2">
-        <SidebarMenu>
-          <SidebarMenuItem className="flex items-center gap-2">
-            <SidebarMenuButton
-              tooltip="Quick Create"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
-            >
-              <IconCirclePlusFilled />
-              <span>Quick Create</span>
-            </SidebarMenuButton>
-            <Button
-              size="icon"
-              className="size-8 group-data-[collapsible=icon]:opacity-0"
-              variant="outline"
-            >
-              <IconMail />
-              <span className="sr-only">Inbox</span>
-            </Button>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <SidebarMenu>
+      <SidebarGroupContent className="flex flex-col gap-2.5">
+        <SidebarMenu className="gap-2.5">
           {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton tooltip={item.title}>
-                {item.icon && <item.icon />}
-                <span>{item.title}</span>
+            <SidebarMenuItem key={item.title} className="">
+              <SidebarMenuButton tooltip={item.title}
+              asChild
+              isActive={pathname === item.url}
+              className="flex !flex-row items-center h-[43px] gap-[10px] data-[active=true]:bg-[#CFE1EE] hover:bg-[#E4EDF5] data-[active=true]:text-[#2F4052] data-[active=true]:border-l-[#31465B] data-[active=true]:border-l-[4px] text-[#4D4D51] text-sm rounded-[8px]">
+                {/* {item.icon && <item.icon />} */}
+                <a href={item.url} className="flex flex-row items-center h-full w-full px-[16px] gap-[2px]">
+                
+                <span className="">{item.title}</span>
+                </a>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
