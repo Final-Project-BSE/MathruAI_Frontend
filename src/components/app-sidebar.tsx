@@ -58,10 +58,10 @@ const data = {
       title: "Notifications",
       url: "/notifications",
     },
-    // {
-    //   title: "Announcements",
-    //   url: "/announcements",
-    // },
+    {
+      title: "Announcements",
+      url: "/announcement",
+    },
     // {
     //   title: "Settings",
     //   url: "/settings",
