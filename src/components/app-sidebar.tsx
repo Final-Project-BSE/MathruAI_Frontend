@@ -52,7 +52,7 @@ const data = {
     },
     {
       title: "AI Assistant",
-      url: "/ai-assistant",
+      url: "/chatbot",
     },
     {
       title: "Notifications",
