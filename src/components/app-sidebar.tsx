@@ -52,16 +52,16 @@ const data = {
     },
     {
       title: "AI Assistant",
-      url: "/ai-assistant",
+      url: "/chatbot",
     },
     {
       title: "Notifications",
       url: "/notifications",
     },
-    // {
-    //   title: "Announcements",
-    //   url: "/announcements",
-    // },
+    {
+      title: "Announcements",
+      url: "/announcement",
+    },
     // {
     //   title: "Settings",
     //   url: "/settings",

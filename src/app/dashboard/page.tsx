@@ -1,4 +1,4 @@
-import Container from "@/components/shared/container";
+import { ChatInterface } from '@/components/ChatInterface'
 
 
 export default function Page() {
