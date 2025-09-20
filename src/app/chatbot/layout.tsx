@@ -4,6 +4,7 @@ import { SidebarInset } from "@/components/ui/sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ChatSidebar } from "@/components/chat-sidebar";
 import { useState, createContext, useContext } from "react";
+import { AppSidebar } from "@/components/app-sidebar";
 
 // Create a context for chat session management
 interface ChatContextType {
@@ -61,6 +62,7 @@ export default function ChatLayout({
           key={refreshTrigger} // This will force re-render when needed
         />
         <SidebarInset>
+           <AppSidebar/>
           {children}
         </SidebarInset>
       </SidebarProvider>

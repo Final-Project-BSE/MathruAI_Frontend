@@ -1,28 +1,10 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import {
-  IconCamera,
-  IconChartBar,
-  IconDashboard,
-  IconDatabase,
-  IconFileAi,
-  IconFileDescription,
-  IconFileWord,
-  IconFolder,
-  IconHelp,
-  IconInnerShadowTop,
-  IconListDetails,
-  IconReport,
-  IconSearch,
-  IconSettings,
-  IconUsers,
-} from "@tabler/icons-react"
+import * as React from "react";
 
-import { NavDocuments } from "@/components/nav-documents"
-import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
+import Image from "next/image";
+
+import { NavMain } from "@/components/nav-main";
 import {
   Sidebar,
   SidebarContent,
@@ -31,7 +13,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
 const data = {
   user: {
@@ -41,141 +23,96 @@ const data = {
   },
   navMain: [
     {
-      title: "Dashboard",
-      url: "#",
-      icon: IconDashboard,
+      title: "Reproductive Dashboard",
+      url: "/dashboard/reproductive",
+    },
+        {
+      title: "Pregnancy Dashboard",
+      url: "/dashboard/pregnancy",
+    },
+        {
+      title: "Postpartum Dashboard",
+      url: "/dashboard/postpartum",
     },
     {
-      title: "Lifecycle",
-      url: "#",
-      icon: IconListDetails,
+      title: "Cycle Tracker",
+      url: "/cycle-tracker",
     },
     {
-      title: "Analytics",
-      url: "#",
-      icon: IconChartBar,
+      title: "Health Monitoring",
+      url: "/health-monitoring",
     },
     {
-      title: "Projects",
-      url: "#",
-      icon: IconFolder,
+      title: "Daily Recommendations",
+      url: "/daily-recommendations",
     },
     {
-      title: "Team",
-      url: "#",
-      icon: IconUsers,
+      title: "Midwife Connection",
+      url: "/midwife-connection",
     },
+    {
+      title: "AI Assistant",
+      url: "/chatbot",
+    },
+    {
+      title: "Notifications",
+      url: "/notifications",
+    },
+    {
+      title: "Announcements",
+      url: "/announcement",
+    },
+    // {
+    //   title: "Settings",
+    //   url: "/settings",
+    // },
+    // {
+    //   title: "Upgrade Stage",
+    //   url: "/upgrade-stage",
+    // },
   ],
-  navClouds: [
-    {
-      title: "Capture",
-      icon: IconCamera,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Proposal",
-      icon: IconFileDescription,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: IconFileAi,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: IconSettings,
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-    },
-  ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: IconDatabase,
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: IconReport,
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: IconFileWord,
-    },
-  ],
-}
+};
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
+    <Sidebar
+      collapsible="offcanvas"
+      {...props}
+      className="border-r border-[#CFE1EE]"
+    >
+      <SidebarHeader className="!bg-white">
+        <SidebarMenu className="!bg-white">
+          <SidebarMenuItem className="!bg-white">
             <SidebarMenuButton
               asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
+              className="!bg-white w-full h-full flex justify-center items-center"
             >
-              <a href="#">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Acme Inc.</span>
+              <a
+                href="#"
+                className="!bg-white flex justify-center items-center"
+              >
+                <Image
+                  src="/images/logo.jpeg"
+                  alt="Logo"
+                  width={88}
+                  height={88}
+                  className="overflow-hidden rounded-full"
+                />
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="!bg-white">
         <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
+      <SidebarFooter className="!bg-white">
+        {/* <NavUser user={data.user} /> */}
+        <div className="h-[48px] w-full flex flex-row items-center gap-[10px] px-[16px]">
+          <i className="logout-icon size-[20px] text-[#757575]" />
+          <p className="text-base text-[#424242]">Log Out</p>
+        </div>
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

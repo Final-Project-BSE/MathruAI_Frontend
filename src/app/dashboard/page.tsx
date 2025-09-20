@@ -1,9 +1,10 @@
 import { ChatInterface } from '@/components/ChatInterface'
 
-export default function Home() {
+
+export default function Page() {
   return (
-    <div className="h-screen w-full">
-      <ChatInterface />
-    </div>
-  )
+    <Container title="Dashboard">
+      
+    </Container>
+  );
 }
