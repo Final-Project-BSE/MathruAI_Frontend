@@ -53,7 +53,7 @@ export default function ChatBotPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // API Base URL - adjust this to match your Flask backend
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/rag';
 
   // Auto-scroll to bottom of messages
   const scrollToBottom = () => {
