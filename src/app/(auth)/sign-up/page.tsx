@@ -1,20 +1,21 @@
 import CardWrapper from "@/components/auth/CardWrapper";
-import LoginForm from "@/components/auth/LoginForm";
+import RegisterForm from "@/components/auth/RegisterForm";
+
 
 const LoginPage = () => {
   return (
     <CardWrapper
       logo={true}
       label=""
-      title="Login"
+      title="Register"
       backButtonTitle=""
       backButtonHref=""
       backButtonLabel=""
-      titleClass=" text-4xl text-center font-medium"
+      titleClass=" text-4xl font-medium text-center"
       headerTexts=""
       className=""
     >
-      <LoginForm />
+      <RegisterForm />
     </CardWrapper>
   );
 };
