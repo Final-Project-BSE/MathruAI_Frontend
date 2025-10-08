@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-
-import Logo from "@/components/common/Logo";
 import { cn } from "@/lib/utils";
 
 interface CardWrapperProps {
@@ -37,9 +35,7 @@ const CardWrapper = ({
         className
       )}
     >
-      <Logo
-        className={`w-[135px] 3xl:w-[180px] h-auto ${logo ? "" : "hidden"}`}
-      />
+  
       <div
         className={cn(
           `w-full flex gap-[7.5px] 3xl:gap-5 flex-col ${

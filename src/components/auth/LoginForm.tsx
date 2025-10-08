@@ -1,22 +1,25 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
+import { useState } from "react";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { Loader2Icon } from "lucide-react"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Button } from "@/components/ui/button"
-
-import { cn } from "@/lib/utils"
-import { useRouter } from "next/navigation"
-import { successToast, errorToast } from "../common/toast"
-import { login } from "@/lib/authentication"
+import { useRouter } from "next/navigation";
+import { successToast, errorToast } from "../common/toast";
+import { login } from "@/lib/authentication";
 
 const formSchema = z.object({
   email: z
@@ -33,11 +36,21 @@ const formSchema = z.object({
     })
     .min(1, "Password is required."),
   rememberMe: z.boolean().default(false),
-})
+});
 
-const LoginForm = () => {
-  const [showPassword, setShowPassword] = useState(false)
-  const [loginError, setLoginError] = useState<string | null>(null)
+interface SignInProps {
+  onSwitchToSignUp: () => void;
+  onForgotPassword: () => void;
+  onClose: () => void;
+}
+
+const SignIn = ({
+  onSwitchToSignUp,
+  onForgotPassword,
+  onClose,
+}: SignInProps) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -46,19 +59,21 @@ const LoginForm = () => {
       password: "",
       rememberMe: false,
     },
-  })
+  });
 
-  const router = useRouter()
+  const router = useRouter();
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    // Clear any previous login errors
-    setLoginError(null)
+    setLoginError(null);
 
-    // Check if fields are empty (additional client-side validation)
     if (!values.email.trim() || !values.password.trim()) {
-      setLoginError("The email or password you entered is incorrect. Please try again.")
-      errorToast("The email or password you entered is incorrect. Please try again.")
-      return
+      setLoginError(
+        "The email or password you entered is incorrect. Please try again."
+      );
+      errorToast(
+        "The email or password you entered is incorrect. Please try again."
+      );
+      return;
     }
 
     try {
@@ -66,165 +81,140 @@ const LoginForm = () => {
         email: values.email,
         password: values.password,
         rememberMe: values.rememberMe,
-      })
+      });
 
       if (res.status === "FAIL") {
-        // Set the specific error message for incorrect credentials
-        setLoginError("The email or password you entered is incorrect. Please try again.")
-        errorToast("The email or password you entered is incorrect. Please try again.")
-        return
+        setLoginError(
+          "The email or password you entered is incorrect. Please try again."
+        );
+        errorToast(
+          "The email or password you entered is incorrect. Please try again."
+        );
+        return;
       }
 
-      // Success case
-      successToast("Login successful.")
-
-      // Redirect to Analytics Dashboard
-      router.prefetch("/dashboard")
-      router.push("/dashboard")
+      successToast("Login successful.");
+      router.prefetch("/dashboard");
+      router.push("/dashboard");
     } catch (error) {
-      // Handle any unexpected errors
-      setLoginError("The email or password you entered is incorrect. Please try again.")
-      errorToast("The email or password you entered is incorrect. Please try again.")
+      setLoginError(
+        "The email or password you entered is incorrect. Please try again."
+      );
+      errorToast(
+        "The email or password you entered is incorrect. Please try again."
+      );
     }
-  }
+  };
 
   return (
+    
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col justify-between h-full gap-[68px] 3xl:gap-[90px]"
-      >
-        <div className="flex flex-col gap-[15px] 3xl:gap-5">
-          {/* Display login error message */}
-          {(loginError || form.formState.errors.email?.message || form.formState.errors.password?.message) && (
-            <div className="text-[10.5px] 3xl:text-sm h-max border-2 border-[#FF5252] bg-[#FF52521A] p-[15px] 3xl:p-5 rounded-[11.25px] 3xl:rounded-[15px] mb-[18.75px] 3xl:mb-[25px] text-[#FF5252] flex items-center">
-              <i className="danger-icon size-[18px] 3xl:size-6 mr-[7.5px] 3xl:mr-[10px] shrink-0" />
-              {loginError || form.formState.errors.email?.message || form.formState.errors.password?.message}
-            </div>
-          )}
-
-          {/* Email Field */}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2 ">
+        <div className="space-y-4">
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
               <FormItem>
-                <div className="flex h-[44px] 3xl:h-[55.5px] w-full rounded-[10px] 3xl:rounded-[13.33px] px-[15px] 3xl:px-[20px] shadow-[0px_0px_7.5px_0px_#0000001A] focus-within:border group focus-within:border-[#2D3B64]">
-                  <span className="flex flex-col gap-0 h-max my-auto w-full">
-                    <FormLabel className="text-[9px] 3xl:text-[12px] text-[#9E9E9E] font-normal">Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter Your Registered Email"
-                        {...field}
-                        className="text-[10.5px] 3xl:text-sm p-0 placeholder:text-[10.5px] m-0 py-0 border-none h-max text-[#616161] w-full rounded-none shadow-none"
-                        type="email"
-                        autoComplete="email"
-                        onChange={(e) => {
-                          field.onChange(e)
-                          // Clear login error when user starts typing
-                          if (loginError) setLoginError(null)
-                        }}
-                      />
-                    </FormControl>
-                  </span>
-                </div>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="Email"
+                    className="h-12 bg-gray-50 border-0 rounded-[8.77px] placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
 
-          {/* Password Field */}
           <FormField
             control={form.control}
             name="password"
             render={({ field }) => (
               <FormItem>
-                <div className="focus:outline-transparent flex h-[54px] w-full rounded-[10px] 3xl:rounded-[13.33px] px-[15px] 3xl:px-[20px] shadow-[0px_0px_7.5px_0px_#0000001A] focus-within:border group focus-within:border-[#2D3B64]">
-                  <div className="flex flex-row items-center justify-between w-full">
-                    <span className="flex flex-col gap-0 h-max my-auto w-full">
-                      <FormLabel className="text-[9px] 3xl:text-[12px] text-[#9E9E9E] font-normal">Password</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="***********"
-                          {...field}
-                          className="text-[10.5px] 3xl:text-sm p-0 m-0 py-0 border-none h-max text-[#616161] w-full rounded-none shadow-none"
-                          type={showPassword ? "text" : "password"}
-                          autoComplete="current-password"
-                          onChange={(e) => {
-                            field.onChange(e)
-                            // Clear login error when user starts typing
-                            if (loginError) setLoginError(null)
-                          }}
-                        />
-                      </FormControl>
-                    </span>
-                    {/* Password visibility toggle */}
-                    <i
-                      onClick={() => setShowPassword(!showPassword)}
-                      className={cn(
-                        "size-[15px] 3xl:size-5 text-[#B1B1B1] cursor-pointer",
-                        showPassword ? "password-show" : "password-closed-icon",
-                      )}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault()
-                          setShowPassword(!showPassword)
-                        }
-                      }}
+                <FormControl>
+                  <div className="relative">
+                    <Input
+                      {...field}
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Password"
+                      className="h-12 bg-gray-50 border-0 rounded-[8.77px] placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 pr-10"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    >
+                      {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                    </button>
                   </div>
-                </div>
+                </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
 
-          {/* Remember Password and Forgot Password */}
-          <div className="w-full flex items-center justify-between gap-5 3xl:gap-[26.67px]">
-            {/* Remember Password Checkbox */}
+          <div className="flex items-center justify-between">
             <FormField
               control={form.control}
               name="rememberMe"
               render={({ field }) => (
-                <div className="flex flex-row items-center justify-center gap-[8.75px] 3xl:gap-[11.25px]">
+                <div className="flex items-center space-x-2">
                   <Checkbox
-                    id="rememberMe"
-                    className="size-[12.5px] 3xl:size-[16.5px] data-[state=checked]:border-none data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-[#0545CB] data-[state=checked]:to-[#3165DB]"
+                    id="remember"
                     checked={field.value}
                     onCheckedChange={field.onChange}
+                    className="size-4"
                   />
                   <label
-                    htmlFor="rememberMe"
-                    className="text-[10.5px] 3xl:text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-black cursor-pointer"
+                    htmlFor="remember"
+                    className="text-[12.6px] text-[#424242]"
                   >
-                    Remember Password
+                    Remember me
                   </label>
                 </div>
               )}
             />
-
-            {/* Forgot Password Link */}
-            <Link
-              href="/reset-password"
-              className="text-[10.5px] 3xl:text-sm text-[#3165DB] hover:underline focus:underline"
+            <button
+              type="button"
+              onClick={() => router.push("/forgot-password")}
+              className="text-[#26262B] cursor-pointer text-[14px] font-[700] hover:underline"
             >
               Forgot Password?
-            </Link>
+            </button>
           </div>
         </div>
 
-        {/* Login Button */}
         <Button
           type="submit"
           disabled={form.formState.isSubmitting}
-          className="w-full rounded-[7.5px] 3xl:rounded-[10px] font-semibold text-[13.5px] 3xl:text-[18.67px] h-[31px] 3xl:h-[41.33px] bg-gradient-to-r from-[#0545CB] to-[#3165DB] text-white hover:bg-[#E0E0E0] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full mt-3.5 h-12 bg-[#EB136B] hover:bg-pink-700 text-white text-[16px] font-semibold rounded-[8.77px] cursor-pointer"
         >
-          {form.formState.isSubmitting ? <Loader2Icon className="size-6 3xl:size-8 animate-spin" /> : "Login"}
+          {form.formState.isSubmitting ? (
+            <Loader2 className="size-5 animate-spin" />
+          ) : (
+            "Sign In"
+          )}
         </Button>
+
+        <div className="text-center text-[#000000] p-0 mt-0 text-[14px]">
+          or
+        </div>
+
+        <div className="text-center text-[14px] text-[#424242] font-[400]">
+          Don&rsquo;t have an Account?{" "}
+          <button
+            type="button"
+            onClick={() => router.push("/sign-up")}
+            className="text-[#26262B] cursor-pointer text-[14px] font-[700] hover:underline"
+          >
+            Sign Up
+          </button>
+        </div>
       </form>
     </Form>
-  )
-}
+  );
+};
 
-export default LoginForm
+export default SignIn;

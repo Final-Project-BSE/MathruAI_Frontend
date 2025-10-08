@@ -7,14 +7,14 @@ const LoginPage = () => {
     <>
       <CardWrapper
         logo={false}
-        label="Add new Password to proceed."
-        title="Set New Password"
-        backButtonTitle=""
-        backButtonHref=""
-        backButtonLabel=""
-        titleClass="text-[24px]/[29px]"
-        headerTexts=""
-        className=""
+        label=""
+        title="Forgot Password"
+      backButtonTitle=""
+      backButtonHref=""
+      backButtonLabel=""
+      titleClass=" text-4xl text-center font-medium"
+      headerTexts=""
+      className=""
       >
         <NewPasswordForm />
       </CardWrapper>
