@@ -6,39 +6,56 @@ import axios, { AxiosError } from "axios";
 const axiosService = () => {
   const defaultOptions = {
     baseURL: process.env.BASE_URL,
+    headers: {
+      "Content-Type": "application/json",
+    },
   };
 
   const instance = axios.create(defaultOptions);
 
-  instance.interceptors.request.use(async (request) => {
-    const session = await getSession();
+  instance.interceptors.request.use(
+    async (request) => {
+      const session = await getSession();
 
-    if (session) {
-      request.headers.Authorization = `Bearer ${session.user.token}`;
+      if (session?.user?.token) {
+        request.headers.Authorization = `Bearer ${session.user.token}`;
+      }
+
+      if (process.env.ENABLE_AXIOS_LOGS === "true") {
+        console.log(
+          "Request:",
+          request.method?.toUpperCase(),
+          request.url,
+          request.data
+        );
+      }
+
+      return request;
+    },
+    (error) => {
+      return Promise.reject(error);
     }
-
-    // request.headers.Authorization = `Bearer ${process.env.TOKEN}`;
-
-    if (process.env.ENABLE_AXIOS_LOGS === "true") {
-      console.log(
-        "Request:",
-        request.method?.toUpperCase(),
-        request.url,
-        request.data
-      );
-    }
-
-    return request;
-  });
+  );
 
   instance.interceptors.response.use(
     (response) => {
+      if (process.env.ENABLE_AXIOS_LOGS === "true") {
+        console.log("Response:", response.status, response.data);
+      }
       return response;
     },
-    (error) => {
-      console.log((error as AxiosError).response?.data);
+    (error: AxiosError) => {
+      if (process.env.ENABLE_AXIOS_LOGS === "true") {
+        console.error("Error Response:", error.response?.data);
+      }
 
-      return Promise.reject(error.response?.data);
+      // Handle specific error cases
+      if (error.response?.status === 401) {
+        // Unauthorized - could trigger logout or token refresh
+        console.error("Unauthorized access - token may be invalid");
+      }
+
+      return Promise.reject(error.response?.data || error);
     }
   );
 
@@ -46,3 +63,4 @@ const axiosService = () => {
 };
 
 export default axiosService();
+
