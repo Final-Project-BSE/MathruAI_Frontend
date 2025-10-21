@@ -5,6 +5,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Loader2, Eye, EyeOff } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import {
   Form,
@@ -17,24 +18,16 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 
-import { useRouter } from "next/navigation";
 import { successToast, errorToast } from "../common/toast";
 import { login } from "@/lib/authentication";
+import { getDashboardForRole } from "@/lib/roleConfig";
 
 const formSchema = z.object({
   email: z
-    .string({
-      required_error: "Email is required.",
-    })
+    .string()
     .min(1, "Email is required.")
-    .email({
-      message: "Please enter a valid email address.",
-    }),
-  password: z
-    .string({
-      required_error: "Password is required.",
-    })
-    .min(1, "Password is required."),
+    .email("Please enter a valid email address."),
+  password: z.string().min(1, "Password is required."),
   rememberMe: z.boolean().default(false),
 });
 
@@ -51,6 +44,7 @@ const SignIn = ({
 }: SignInProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -61,48 +55,55 @@ const SignIn = ({
     },
   });
 
-  const router = useRouter();
-
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setLoginError(null);
 
-    if (!values.email.trim() || !values.password.trim()) {
-      const errorMsg =
-        "The email or password you entered is incorrect. Please try again.";
-      setLoginError(errorMsg);
-      errorToast(errorMsg);
-      return;
-    }
-
     try {
+      console.log("Attempting login for:", values.email);
+
       const res = await login({
         email: values.email,
         password: values.password,
         rememberMe: values.rememberMe,
       });
 
+      console.log("Login response:", res);
+
       if (res.status === "FAIL") {
-        const errorMsg =
-          res.message ||
-          "The email or password you entered is incorrect. Please try again.";
+        const errorMsg = res.message || "Login failed. Please try again.";
         setLoginError(errorMsg);
         errorToast(errorMsg);
         return;
       }
 
-      successToast("Login successful.");
-      
-      // Close modal if callback provided
+      // Success
+      successToast("Login successful!");
+
+      // Close modal if provided
       if (onClose) {
         onClose();
       }
+
+      // Get user's primary role and redirect
+      const userRole = res.data?.roles?.[0];
+      console.log("User role:", userRole);
       
-      // Redirect to dashboard
-      router.push("/dashboard");
+      if (!userRole) {
+        const errorMsg = "Invalid user role. Please contact support.";
+        console.error("No role found in response:", res.data);
+        setLoginError(errorMsg);
+        errorToast(errorMsg);
+        return;
+      }
+
+      const redirectPath = getDashboardForRole(userRole);
+      console.log("Redirecting to:", redirectPath);
+      
+      router.push(redirectPath);
       router.refresh();
+
     } catch (error) {
-      const errorMsg =
-        "The email or password you entered is incorrect. Please try again.";
+      const errorMsg = "An unexpected error occurred. Please try again.";
       setLoginError(errorMsg);
       errorToast(errorMsg);
       console.error("Login error:", error);
@@ -128,7 +129,7 @@ const SignIn = ({
                   <Input
                     {...field}
                     placeholder="Email"
-                    className="h-12 bg-gray-50 border-0 rounded-[8.77px] placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    className="h-12 bg-gray-50 border-0 rounded-[8.77px] placeholder:text-gray-500"
                     disabled={form.formState.isSubmitting}
                   />
                 </FormControl>
@@ -148,7 +149,7 @@ const SignIn = ({
                       {...field}
                       type={showPassword ? "text" : "password"}
                       placeholder="Password"
-                      className="h-12 bg-gray-50 border-0 rounded-[8.77px] placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 pr-10"
+                      className="h-12 bg-gray-50 border-0 rounded-[8.77px] placeholder:text-gray-500 pr-10"
                       disabled={form.formState.isSubmitting}
                     />
                     <button
@@ -208,7 +209,7 @@ const SignIn = ({
         <Button
           type="submit"
           disabled={form.formState.isSubmitting}
-          className="w-full mt-3.5 h-12 bg-[#EB136B] hover:bg-pink-700 text-white text-[16px] font-semibold rounded-[8.77px] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full mt-3.5 h-12 bg-[#EB136B] hover:bg-pink-700 text-white text-[16px] font-semibold rounded-[8.77px]"
         >
           {form.formState.isSubmitting ? (
             <Loader2 className="size-5 animate-spin" />

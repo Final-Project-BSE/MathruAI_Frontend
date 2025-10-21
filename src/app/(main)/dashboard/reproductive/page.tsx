@@ -8,6 +8,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import Link from "next/link"
 import { useState } from "react"
+import { RoleGuard } from "@/components/auth/RoleGuard"
+import { ROLES } from "@/lib/roleConfig"
 
 export default function ReproductivePage() {
   const [checkedItems, setCheckedItems] = useState<string[]>([])

@@ -14,7 +14,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import router from "next/router";
+import { useRouter } from "next/navigation";
+import { logout } from "@/lib/authentication";
+
 
 const data = {
   user: {
@@ -75,6 +77,14 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+
+  const router = useRouter();
+
+const handleLogout = async () => {
+  await logout();
+  router.push("/login");
+}; 
+
   return (
     <Sidebar
       collapsible="offcanvas"
@@ -113,7 +123,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <i className="logout-icon size-[28px] text-[#757575]" />
               <button
             type="button"
-            onClick={() => router.push("/sign-up")}
+            onClick={handleLogout}
             className="text-[#26262B] cursor-pointer text-[18px] font-[700]"
           >
            Log Out

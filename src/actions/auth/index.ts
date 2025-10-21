@@ -11,15 +11,9 @@ type SignInResponseDataType = {
   status: "SUCCESS" | "FAIL";
   message: string;
   data: {
-    _id: string;
-    createdAt: string;
-    firstName: string;
-    lastName: string;
     email: string;
-    privileges: string[];
-    isActive: boolean;
-    idToken: string;
-    refreshToken: string;
+    roles: string[];
+    token: string;
   } | null;
 };
 
@@ -29,7 +23,72 @@ export const signIn = async (
   try {
     const response = await axios.post("/api/auth/signin", data);
 
-    return response.data;
+    console.log("Raw axios response:", JSON.stringify(response.data, null, 2));
+
+    // Your axios is returning: { headers, body: { status, message, data }, statusCode, statusCodeValue }
+    // We need to extract from body
+    let backendResponse = response.data;
+    
+    // Check if response has a body property (your custom axios wrapper)
+    if (backendResponse.body && typeof backendResponse.body === 'object') {
+      backendResponse = backendResponse.body;
+      console.log("Extracted from body:", backendResponse);
+    }
+
+    // Check if the response has the expected structure
+    if (!backendResponse || typeof backendResponse !== 'object') {
+      console.error("Invalid response structure");
+      return {
+        status: "FAIL",
+        message: "Invalid response from server",
+        data: null,
+      };
+    }
+
+    // Extract the nested data
+    const { status, message, data: responseData } = backendResponse;
+
+    console.log("Parsed response:", { status, message, data: responseData });
+
+    // Check if login was successful
+    if (status !== "SUCCESS" || !responseData) {
+      return {
+        status: "FAIL",
+        message: message || "Login failed",
+        data: null,
+      };
+    }
+
+    // Validate the data structure
+    if (!responseData.email || !responseData.token || !responseData.roles) {
+      console.error("Missing required fields in response data:", responseData);
+      return {
+        status: "FAIL",
+        message: "Invalid response data from server",
+        data: null,
+      };
+    }
+
+    // Ensure roles is an array
+    const roles = Array.isArray(responseData.roles) 
+      ? responseData.roles 
+      : [responseData.roles];
+
+    console.log("Final extracted data:", {
+      email: responseData.email,
+      token: responseData.token,
+      roles,
+    });
+
+    return {
+      status: "SUCCESS",
+      message: message || "Login successful",
+      data: {
+        email: responseData.email,
+        token: responseData.token,
+        roles,
+      },
+    };
   } catch (error) {
     console.error("Sign in error:", error);
 

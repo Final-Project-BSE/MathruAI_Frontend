@@ -42,6 +42,9 @@ const axiosService = () => {
       if (process.env.ENABLE_AXIOS_LOGS === "true") {
         console.log("Response:", response.status, response.data);
       }
+      
+      // IMPORTANT: Return the response as-is, don't wrap it
+      // The response.data already contains your backend's response
       return response;
     },
     (error: AxiosError) => {
@@ -63,4 +66,3 @@ const axiosService = () => {
 };
 
 export default axiosService();
-
