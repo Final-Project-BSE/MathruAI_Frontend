@@ -10,9 +10,16 @@ import Link from "next/link"
 import { useState } from "react"
 import { RoleGuard } from "@/components/auth/RoleGuard"
 import { ROLES } from "@/lib/roleConfig"
+import { useNavigation } from "react-day-picker"
+import { useRouter } from "next/navigation"
+import { UpdateDataPopup } from "@/components/update-data-popup"
 
 export default function ReproductivePage() {
   const [checkedItems, setCheckedItems] = useState<string[]>([])
+  const [isPopupOpen, setIsPopupOpen] = useState(false)
+
+
+  const router = useRouter();
 
   const handleCheckboxChange = (id: string, checked: boolean) => {
     if (checked) {
@@ -44,6 +51,9 @@ export default function ReproductivePage() {
               <Avatar className="w-10 h-10 mt-2">
                 <AvatarFallback className="bg-pink-500 text-white">SJ</AvatarFallback>
               </Avatar>
+              <div>
+                <Button onClick={() => setIsPopupOpen(true)}>Update Data</Button>
+              </div>
             </div>
           </div>
         </div>
@@ -277,6 +287,10 @@ export default function ReproductivePage() {
           </Card>
         </div>
       </div>
+      <UpdateDataPopup 
+        isOpen={isPopupOpen} 
+        onClose={() => setIsPopupOpen(false)} 
+      />
     </Container>
   )
 }
