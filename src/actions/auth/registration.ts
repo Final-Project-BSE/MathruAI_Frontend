@@ -6,8 +6,9 @@ type RegisterDataType = {
   name: string;
   email: string;
   phone: string;
+  dateofbirth: string;
   password: string;
-  userType: "midwife" | "pregnant_lady";
+  userType: "midwife" | "reproductive_lady" | "pregnant_lady" | "postpartum_lady";
 };
 
 type RegisterResponseDataType = {
@@ -28,7 +29,9 @@ export const register = async (
     // Map frontend userType to backend roles
     const roleMapping = {
       midwife: "MIDWIFE",
+      reproductive_lady: "HOPE_TO_PREGNANT_MOTHER",
       pregnant_lady: "PREGNANT_MOTHER",
+      postpartum_lady: "POST_PREGNANT_MOTHER"
     };
 
     const requestData = {
@@ -36,9 +39,9 @@ export const register = async (
       lastName,
       email: data.email,
       phoneNumber: data.phone,
+      dateOfBirth: data.dateofbirth,
       password: data.password,
       roles: [roleMapping[data.userType]],
-      dateOfBirth: null, // Optional field
     };
 
     console.log("Sending registration request:", requestData);

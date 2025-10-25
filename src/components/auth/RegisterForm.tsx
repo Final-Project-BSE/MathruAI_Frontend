@@ -43,6 +43,11 @@ const formSchema = z
       })
       .min(1, "Phone number is required.")
       .regex(/^[0-9+\-\s()]+$/, "Please enter a valid phone number."),
+    dateofbirth: z
+      .string({
+        required_error: "Date of birth is required.",
+      })
+      .min(1, "Date of birth is required."),
     password: z
       .string({
         required_error: "Password is required.",
@@ -53,7 +58,7 @@ const formSchema = z
         required_error: "Please confirm your password.",
       })
       .min(1, "Please confirm your password."),
-    userType: z.enum(["midwife", "pregnant_lady"], {
+    userType: z.enum(["midwife", "reproductive_lady", "pregnant_lady", "postpartum_lady"], {
       required_error: "Please select your role.",
     }),
   })
@@ -78,6 +83,7 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
       name: "",
       email: "",
       phone: "",
+      dateofbirth: "",
       password: "",
       confirmPassword: "",
       userType: undefined,
@@ -96,6 +102,7 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
         name: values.name,
         email: values.email,
         phone: values.phone,
+        dateofbirth: values.dateofbirth,
         password: values.password,
         userType: values.userType,
       });
@@ -111,7 +118,7 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
 
       // Success
       successToast("Registration successful! Please sign in.");
-      
+
       // Switch to sign in or redirect
       if (onSwitchToSignIn) {
         onSwitchToSignIn();
@@ -192,6 +199,32 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="dateofbirth"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <Input
+                    {...field}
+                    type={field.value ? "date" : "text"} // keep text type if empty, show date picker when filled
+                    placeholder="Date Of Birth"
+                    onFocus={(e) => (e.target.type = "date")}
+                    onBlur={(e) => {
+                      if (!e.target.value) e.target.type = "text"; // revert to text if empty
+                      field.onBlur();
+                    }}
+                    className="h-12 bg-gray-50 border-0 rounded-[8.77px] placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    disabled={form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+
 
           <FormField
             control={form.control}
@@ -284,6 +317,19 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
                     </div>
                     <div className="flex items-center space-x-2 flex-1">
                       <RadioGroupItem
+                        value="reproductive_lady"
+                        id="reproductive_lady"
+                        className="border-gray-300"
+                      />
+                      <label
+                        htmlFor="reproductive_lady"
+                        className="text-[14px] text-[#424242] cursor-pointer"
+                      >
+                        Hope To Pregnant
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2 flex-1">
+                      <RadioGroupItem
                         value="pregnant_lady"
                         id="pregnant_lady"
                         className="border-gray-300"
@@ -292,7 +338,20 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
                         htmlFor="pregnant_lady"
                         className="text-[14px] text-[#424242] cursor-pointer"
                       >
-                        Pregnant Lady
+                        Pregnant
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2 flex-1">
+                      <RadioGroupItem
+                        value="postpartum_lady"
+                        id="postpartum_lady"
+                        className="border-gray-300"
+                      />
+                      <label
+                        htmlFor="postpartum_lady"
+                        className="text-[14px] text-[#424242] cursor-pointer"
+                      >
+                        Post Pregnant
                       </label>
                     </div>
                   </RadioGroup>

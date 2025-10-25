@@ -82,7 +82,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 const handleLogout = async () => {
   await logout();
-  router.push("/login");
+  router.push("/sign-in");
 }; 
 
   return (
