@@ -1,5 +1,3 @@
-// lib/roleConfig.ts
-
 export const ROLES = {
   HOPE_TO_PREGNANT_MOTHER: 'HOPE_TO_PREGNANT_MOTHER',
   PREGNANT_MOTHER: 'PREGNANT_MOTHER',

@@ -44,7 +44,7 @@ export async function login(data: {
   rememberMe?: boolean;
 }) {
   try {
-    // Call backend API (this now returns the correct structure)
+    // Call backend API
     const res = await signInAction({
       email: data.email,
       password: data.password,
@@ -71,7 +71,7 @@ export async function login(data: {
       };
     }
 
-    // Create user object (data is already in correct format from signInAction)
+    // Create user object
     const user: User = {
       email: res.data.email,
       token: res.data.token,

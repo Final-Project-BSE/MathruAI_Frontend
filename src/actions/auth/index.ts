@@ -25,11 +25,10 @@ export const signIn = async (
 
     console.log("Raw axios response:", JSON.stringify(response.data, null, 2));
 
-    // Your axios is returning: { headers, body: { status, message, data }, statusCode, statusCodeValue }
-    // We need to extract from body
+    // extract from body
     let backendResponse = response.data;
     
-    // Check if response has a body property (your custom axios wrapper)
+    // Check if response has a body property
     if (backendResponse.body && typeof backendResponse.body === 'object') {
       backendResponse = backendResponse.body;
       console.log("Extracted from body:", backendResponse);

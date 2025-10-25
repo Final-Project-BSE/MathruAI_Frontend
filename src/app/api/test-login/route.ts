@@ -1,5 +1,3 @@
-// app/api/test-login/route.ts
-// This is a temporary endpoint to test what your backend returns
 import { NextRequest, NextResponse } from 'next/server';
 import { signIn } from "@/actions/auth";
 
@@ -14,7 +12,6 @@ export async function POST(request: NextRequest) {
 
     console.log("Raw backend response:", JSON.stringify(response, null, 2));
 
-    // Check the structure
     const analysis = {
       hasStatus: !!response.status,
       status: response.status,

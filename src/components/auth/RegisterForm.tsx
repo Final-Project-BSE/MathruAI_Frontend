@@ -19,7 +19,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 import { useRouter } from "next/navigation";
 import { successToast, errorToast } from "../common/toast";
-import { register } from "@/lib/authentication";
+import { register } from "../../actions/auth/registration";
 
 const formSchema = z
   .object({
@@ -63,13 +63,14 @@ const formSchema = z
   });
 
 interface SignUpProps {
-  onSwitchToSignIn: () => void;
-  onClose: () => void;
+  onSwitchToSignIn?: () => void;
+  onClose?: () => void;
 }
 
 const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [registerError, setRegisterError] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -86,7 +87,11 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
   const router = useRouter();
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setRegisterError(null);
+
     try {
+      console.log("Attempting registration for:", values.email);
+
       const res = await register({
         name: values.name,
         email: values.email,
@@ -95,15 +100,30 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
         userType: values.userType,
       });
 
+      console.log("Registration response:", res);
+
       if (res.status === "FAIL") {
-        errorToast(res.message || "Registration failed. Please try again.");
+        const errorMsg = res.message || "Registration failed. Please try again.";
+        setRegisterError(errorMsg);
+        errorToast(errorMsg);
         return;
       }
 
+      // Success
       successToast("Registration successful! Please sign in.");
-      onSwitchToSignIn();
+      
+      // Switch to sign in or redirect
+      if (onSwitchToSignIn) {
+        onSwitchToSignIn();
+      } else {
+        router.push("/sign-in");
+      }
+
     } catch (error) {
-      errorToast("An error occurred during registration. Please try again.");
+      const errorMsg = "An unexpected error occurred. Please try again.";
+      setRegisterError(errorMsg);
+      errorToast(errorMsg);
+      console.error("Registration error:", error);
     }
   };
 
@@ -111,6 +131,12 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
         <div className="space-y-4">
+          {registerError && (
+            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+              {registerError}
+            </div>
+          )}
+
           <FormField
             control={form.control}
             name="name"
@@ -121,6 +147,7 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
                     {...field}
                     placeholder="Full Name"
                     className="h-12 bg-gray-50 border-0 rounded-[8.77px] placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    disabled={form.formState.isSubmitting}
                   />
                 </FormControl>
                 <FormMessage />
@@ -139,6 +166,7 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
                     placeholder="Email"
                     type="email"
                     className="h-12 bg-gray-50 border-0 rounded-[8.77px] placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    disabled={form.formState.isSubmitting}
                   />
                 </FormControl>
                 <FormMessage />
@@ -157,6 +185,7 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
                     placeholder="Phone Number"
                     type="tel"
                     className="h-12 bg-gray-50 border-0 rounded-[8.77px] placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    disabled={form.formState.isSubmitting}
                   />
                 </FormControl>
                 <FormMessage />
@@ -176,11 +205,13 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
                       type={showPassword ? "text" : "password"}
                       placeholder="Password"
                       className="h-12 bg-gray-50 border-0 rounded-[8.77px] placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 pr-10"
+                      disabled={form.formState.isSubmitting}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                      disabled={form.formState.isSubmitting}
                     >
                       {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                     </button>
@@ -203,6 +234,7 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Confirm Password"
                       className="h-12 bg-gray-50 border-0 rounded-[8.77px] placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 pr-10"
+                      disabled={form.formState.isSubmitting}
                     />
                     <button
                       type="button"
@@ -210,6 +242,7 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
                         setShowConfirmPassword(!showConfirmPassword)
                       }
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                      disabled={form.formState.isSubmitting}
                     >
                       {showConfirmPassword ? (
                         <Eye size={18} />
@@ -234,6 +267,7 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                     className="flex gap-4"
+                    disabled={form.formState.isSubmitting}
                   >
                     <div className="flex items-center space-x-2 flex-1">
                       <RadioGroupItem
@@ -289,8 +323,15 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
           Already have an Account?{" "}
           <button
             type="button"
-            onClick={() => router.push("/sign-in")}
+            onClick={() => {
+              if (onSwitchToSignIn) {
+                onSwitchToSignIn();
+              } else {
+                router.push("/sign-in");
+              }
+            }}
             className="text-[#26262B] cursor-pointer text-[14px] font-[700] hover:underline"
+            disabled={form.formState.isSubmitting}
           >
             Sign In
           </button>

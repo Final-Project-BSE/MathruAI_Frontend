@@ -1,4 +1,3 @@
-// app/api/auth/check-role/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/authentication';
 
@@ -25,5 +24,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ hasAccess: false }, { status: 500 });
   }
 }
-
-// app/api/auth/get-role/route.ts

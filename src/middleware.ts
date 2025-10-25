@@ -38,12 +38,12 @@ export async function middleware(request: NextRequest) {
   // Check if accessing dashboard
   const isDashboard = pathname.startsWith('/dashboard');
   
-  // CASE 1: Trying to access dashboard without session -> redirect to sign-in
+  // Trying to access dashboard without session -> redirect to sign-in
   if (isDashboard && !sessionCookie) {
     return NextResponse.redirect(new URL('/sign-in', request.url));
   }
   
-  // CASE 2: Trying to access sign-in with valid session -> redirect to appropriate dashboard
+  // Trying to access sign-in with valid session -> redirect to appropriate dashboard
   if (pathname === '/sign-in' && sessionCookie) {
     const session = await getSessionFromCookie(sessionCookie);
     
@@ -54,7 +54,7 @@ export async function middleware(request: NextRequest) {
     }
   }
   
-  // CASE 3: Accessing dashboard with session -> check role-based access
+  // Accessing dashboard with session -> check role-based access
   if (isDashboard && sessionCookie) {
     const session = await getSessionFromCookie(sessionCookie);
     

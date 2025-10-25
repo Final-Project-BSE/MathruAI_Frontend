@@ -43,8 +43,6 @@ const axiosService = () => {
         console.log("Response:", response.status, response.data);
       }
       
-      // IMPORTANT: Return the response as-is, don't wrap it
-      // The response.data already contains your backend's response
       return response;
     },
     (error: AxiosError) => {
@@ -52,9 +50,7 @@ const axiosService = () => {
         console.error("Error Response:", error.response?.data);
       }
 
-      // Handle specific error cases
       if (error.response?.status === 401) {
-        // Unauthorized - could trigger logout or token refresh
         console.error("Unauthorized access - token may be invalid");
       }
 
