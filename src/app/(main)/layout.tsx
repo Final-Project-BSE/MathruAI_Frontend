@@ -19,8 +19,11 @@ type Props = {
 
 export default async function RootLayout({ children }: Props) {
   return (
-    <html className="h-full">
-      <body className={`${geistSans.variable} ${geistMono.variable} `}>
+    <html lang="en" className="h-full" suppressHydrationWarning>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
+      >
         <SidebarProvider>
           <AppSidebar/>
             {children}

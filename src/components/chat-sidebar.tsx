@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/sidebar"
 
 // API Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/rag'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
 
 // Types
 interface ChatSession {

@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Heart, Baby, MessageCircle, Loader2, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import Container from "@/components/shared/container";
+import { Button } from '@/components/ui/button';
+import { getSession } from "@/lib/authentication";
 
 // Types
 interface Message {
@@ -49,11 +51,12 @@ export default function ChatBotPage() {
   const [isConnected, setIsConnected] = useState(false);
   const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // API Base URL - adjust this to match your Flask backend
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/rag';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
   // Auto-scroll to bottom of messages
   const scrollToBottom = () => {
@@ -64,15 +67,43 @@ export default function ChatBotPage() {
     scrollToBottom();
   }, [messages]);
 
-  // Check system health on component mount
   useEffect(() => {
-    checkSystemHealth();
-    fetchSystemStats();
+    const initialize = async () => {
+      try {
+        const session = await getSession();
+        if (session?.user?.token) {
+          setToken(session.user.token);
+          console.log("✅ JWT token loaded for ChatBot:", session.user.token);
+          checkSystemHealth(session.user.token);
+          fetchSystemStats(session.user.token);
+        } else {
+          console.warn("⚠️ No session found — please log in first.");
+          setConnectionError("Please log in to access the chatbot.");
+        }
+      } catch (error) {
+        console.error("Failed to get session:", error);
+        setConnectionError("Authentication error. Please log in again.");
+      }
+    };
+
+    initialize();
   }, []);
 
-  const checkSystemHealth = async () => {
+  // Check system health on component mount
+  // useEffect(() => {
+  //   checkSystemHealth();
+  //   fetchSystemStats();
+  // }, []);
+
+
+
+  const checkSystemHealth = async (jwtToken: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/health`);
+      const response = await fetch(`${API_BASE_URL}/health`, {
+        headers: {
+          Authorization: `Bearer ${jwtToken}`,
+        },
+      });
       const data = await response.json();
       setIsConnected(response.ok && data.status === 'healthy');
       setConnectionError(response.ok ? null : data.error || 'System not healthy');
@@ -82,9 +113,13 @@ export default function ChatBotPage() {
     }
   };
 
-  const fetchSystemStats = async () => {
+  const fetchSystemStats = async (jwtToken: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/stats`);
+      const response = await fetch(`${API_BASE_URL}/stats`, {
+        headers: {
+          Authorization: `Bearer ${jwtToken}`,
+        },
+      });
       if (response.ok) {
         const data = await response.json();
         setSystemStats(data);
@@ -122,6 +157,7 @@ export default function ChatBotPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           message: messageContent,
@@ -133,8 +169,8 @@ export default function ChatBotPage() {
       const data: ChatResponse = await response.json();
 
       if (response.ok && data.status === 'success') {
-        setMessages(prev => prev.map(msg => 
-          msg.id === botMessage.id 
+        setMessages(prev => prev.map(msg =>
+          msg.id === botMessage.id
             ? { ...msg, content: data.response, status: 'sent' }
             : msg
         ));
@@ -142,13 +178,13 @@ export default function ChatBotPage() {
         throw new Error(data.response || 'Failed to get response');
       }
     } catch (error) {
-      setMessages(prev => prev.map(msg => 
-        msg.id === botMessage.id 
-          ? { 
-              ...msg, 
-              content: 'Sorry, I encountered an error while processing your message. Please try again.', 
-              status: 'error' 
-            }
+      setMessages(prev => prev.map(msg =>
+        msg.id === botMessage.id
+          ? {
+            ...msg,
+            content: 'Sorry, I encountered an error while processing your message. Please try again.',
+            status: 'error'
+          }
           : msg
       ));
       console.error('Chat error:', error);
@@ -201,25 +237,29 @@ export default function ChatBotPage() {
                   </span>
                   {systemStats && (
                     <span className="text-gray-600">
-                      📚 {systemStats.knowledge_base_stats.total_chunks} knowledge chunks
+                      📚 {systemStats?.knowledge_base_stats?.total_chunks
+                        ? `${systemStats.knowledge_base_stats.total_chunks} knowledge chunks`
+                        : "Loading knowledge stats..."}
+                      knowledge chunks
                     </span>
                   )}
                 </div>
               </div>
             </div>
           </div>
-          
+
           {/* Connection Error */}
           {connectionError && (
             <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
               <AlertCircle className="h-4 w-4" />
               <span className="text-sm">{connectionError}</span>
-              <button 
-                onClick={checkSystemHealth}
+              <button
+                onClick={() => token && checkSystemHealth(token)}
                 className="ml-auto text-xs bg-red-100 hover:bg-red-200 px-2 py-1 rounded"
               >
                 Retry
               </button>
+
             </div>
           )}
         </div>
@@ -232,21 +272,18 @@ export default function ChatBotPage() {
               className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} animate-fadeIn`}
             >
               <div
-                className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${
-                  message.isUser
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-br-sm'
-                    : 'bg-white text-gray-800 rounded-bl-sm border border-pink-100'
-                }`}
+                className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${message.isUser
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-br-sm'
+                  : 'bg-white text-gray-800 rounded-bl-sm border border-pink-100'
+                  }`}
               >
                 <div className="whitespace-pre-wrap leading-relaxed">
                   {message.content || (message.status === 'sending' && 'Thinking...')}
                 </div>
-                <div className={`flex items-center justify-between mt-2 pt-2 border-t ${
-                  message.isUser ? 'border-white/20' : 'border-gray-100'
-                }`}>
-                  <span className={`text-xs ${
-                    message.isUser ? 'text-white/70' : 'text-gray-500'
+                <div className={`flex items-center justify-between mt-2 pt-2 border-t ${message.isUser ? 'border-white/20' : 'border-gray-100'
                   }`}>
+                  <span className={`text-xs ${message.isUser ? 'text-white/70' : 'text-gray-500'
+                    }`}>
                     {formatTime(message.timestamp)}
                   </span>
                   {getStatusIcon(message.status)}
@@ -284,7 +321,7 @@ export default function ChatBotPage() {
               <span className="hidden sm:inline">Send</span>
             </button>
           </form>
-          
+
           {/* Quick Tips */}
           <div className="mt-3 flex flex-wrap gap-2">
             {[

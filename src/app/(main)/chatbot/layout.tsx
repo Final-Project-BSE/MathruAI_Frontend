@@ -62,7 +62,7 @@ export default function ChatLayout({
           key={refreshTrigger} // This will force re-render when needed
         />
         <SidebarInset>
-           <AppSidebar/>
+           {/* <AppSidebar/> */}
           {children}
         </SidebarInset>
       </SidebarProvider>
