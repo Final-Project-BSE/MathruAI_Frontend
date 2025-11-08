@@ -142,9 +142,8 @@ function ChatHistoryItem({
     <SidebarMenuItem>
       <div
         onClick={() => onSelect(session.id)}
-        className={`group relative rounded-lg p-3 cursor-pointer transition-all duration-200 hover:bg-pink-50 ${
-          isActive ? "bg-pink-100 border-l-4 border-pink-500" : ""
-        }`}
+        className={`group relative rounded-lg p-3 cursor-pointer transition-all duration-200 hover:bg-pink-50 ${isActive ? "bg-pink-100 border-l-4 border-pink-500" : ""
+          }`}
       >
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
@@ -306,7 +305,7 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
         });
         const data = await response.json();
         if (data.status === "success") {
-          setChatSessions((prev) => prev.filter((s) => s.session_id !== sessionId));
+          setChatSessions((prev) => prev.filter((s) => s.id !== sessionId));
           if (activeSessionId === sessionId) onSessionSelect?.(null);
         } else {
           setError(data.message || "Failed to delete chat");
@@ -390,10 +389,10 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
                         {label === "today"
                           ? "Today"
                           : label === "yesterday"
-                          ? "Yesterday"
-                          : label === "thisWeek"
-                          ? "This Week"
-                          : "Older"}
+                            ? "Yesterday"
+                            : label === "thisWeek"
+                              ? "This Week"
+                              : "Older"}
                       </div>
                       {sessions.map((session) => (
                         <ChatHistoryItem

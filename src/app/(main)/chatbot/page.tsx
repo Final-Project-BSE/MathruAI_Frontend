@@ -52,7 +52,7 @@ export default function ChatBotPage() {
   const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  
+
   // Store current session ID in component state
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
 
@@ -94,13 +94,29 @@ export default function ChatBotPage() {
     initialize();
   }, []);
 
-  // Sync with sidebar's active session
+  const resetToNewChat = () => {
+    setCurrentSessionId(null);
+    setMessages([
+      {
+        id: '1',
+        content: "Hello! I'm your pregnancy advisor assistant. I'm here to help answer your questions about pregnancy, provide guidance, and support you through this wonderful journey. How can I assist you today?",
+        isUser: false,
+        timestamp: new Date(),
+        status: 'sent'
+      }
+    ]);
+  };
+
   useEffect(() => {
     if (activeSessionId && activeSessionId !== currentSessionId) {
       setCurrentSessionId(activeSessionId);
       loadSessionMessages(activeSessionId);
+    } else if (activeSessionId === null) {
+      // New chat scenario
+      resetToNewChat();
     }
-  }, [activeSessionId]);
+  }, [activeSessionId, currentSessionId]);
+
 
   // Load messages for a specific session
   const loadSessionMessages = async (sessionId: number) => {
@@ -113,10 +129,10 @@ export default function ChatBotPage() {
         },
       });
       const data = await response.json();
-      
+
       if (response.ok && data.status === "success") {
         const formattedMessages: Message[] = [];
-        
+
         // Add welcome message if no messages exist
         if (data.messages.length === 0) {
           formattedMessages.push({
@@ -151,7 +167,7 @@ export default function ChatBotPage() {
             }
           });
         }
-        
+
         setMessages(formattedMessages);
       }
     } catch (error) {
@@ -344,21 +360,18 @@ export default function ChatBotPage() {
               className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} animate-fadeIn`}
             >
               <div
-                className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${
-                  message.isUser
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-br-sm'
-                    : 'bg-white text-gray-800 rounded-bl-sm border border-pink-100'
-                }`}
+                className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${message.isUser
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-br-sm'
+                  : 'bg-white text-gray-800 rounded-bl-sm border border-pink-100'
+                  }`}
               >
                 <div className="whitespace-pre-wrap leading-relaxed">
                   {message.content || (message.status === 'sending' && 'Thinking...')}
                 </div>
-                <div className={`flex items-center justify-between mt-2 pt-2 border-t ${
-                  message.isUser ? 'border-white/20' : 'border-gray-100'
-                }`}>
-                  <span className={`text-xs ${
-                    message.isUser ? 'text-white/70' : 'text-gray-500'
+                <div className={`flex items-center justify-between mt-2 pt-2 border-t ${message.isUser ? 'border-white/20' : 'border-gray-100'
                   }`}>
+                  <span className={`text-xs ${message.isUser ? 'text-white/70' : 'text-gray-500'
+                    }`}>
                     {formatTime(message.timestamp)}
                   </span>
                   {getStatusIcon(message.status)}
