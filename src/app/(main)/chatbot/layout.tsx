@@ -1,70 +1,60 @@
-'use client';
+"use client";
 
-import { SidebarInset } from "@/components/ui/sidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { ChatSidebar } from "@/components/chat-sidebar";
-import { useState, createContext, useContext } from "react";
-import { AppSidebar } from "@/components/app-sidebar";
+import { createContext, useContext, useState, useRef } from "react";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { ChatSidebar, ChatSidebarRef } from "@/components/chat-sidebar";
 
-// Create a context for chat session management
 interface ChatContextType {
   activeSessionId: number | null;
   setActiveSessionId: (id: number | null) => void;
-  refreshChatHistory: () => void;
+  refreshChatHistory: () => Promise<void>;
 }
 
-const ChatContext = createContext<ChatContextType | null>(null);
+const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-export const useChatContext = () => {
+export function useChatContext() {
   const context = useContext(ChatContext);
   if (!context) {
-    throw new Error('useChatContext must be used within ChatLayout');
+    throw new Error("useChatContext must be used within ChatProvider");
   }
   return context;
-};
+}
 
-export default function ChatLayout({
+export default function ChatbotLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const sidebarRef = useRef<ChatSidebarRef>(null);
 
-  const handleSessionSelect = (sessionId: number | null) => {
-    setActiveSessionId(sessionId);
-    // This will trigger the chat interface to load messages for this session
+  const refreshChatHistory = async () => {
+    await sidebarRef.current?.refreshChatHistory();
   };
 
   const handleNewChat = () => {
-    // Reset to no active session initially - the sidebar will set the new session ID
-    // after creating it successfully
-  };
-
-  const refreshChatHistory = () => {
-    // Trigger a refresh of the chat history in sidebar
-    setRefreshTrigger(prev => prev + 1);
-  };
-
-  const contextValue: ChatContextType = {
-    activeSessionId,
-    setActiveSessionId,
-    refreshChatHistory,
+    setActiveSessionId(null);
   };
 
   return (
-    <ChatContext.Provider value={contextValue}>
+    <ChatContext.Provider
+      value={{
+        activeSessionId,
+        setActiveSessionId,
+        refreshChatHistory,
+      }}
+    >
       <SidebarProvider>
         <ChatSidebar
+          ref={sidebarRef}
           activeSessionId={activeSessionId}
-          onSessionSelect={handleSessionSelect}
+          onSessionSelect={setActiveSessionId}
           onNewChat={handleNewChat}
-          key={refreshTrigger} // This will force re-render when needed
         />
-        <SidebarInset>
-           {/* <AppSidebar/> */}
+        <main className="w-full">
+          <SidebarTrigger />
           {children}
-        </SidebarInset>
+        </main>
       </SidebarProvider>
     </ChatContext.Provider>
   );
