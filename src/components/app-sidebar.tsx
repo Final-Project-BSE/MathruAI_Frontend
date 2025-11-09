@@ -62,13 +62,17 @@ const data = {
       title: "Announcements",
       url: "/announcement",
     },
-    // {
-    //   title: "Settings",
-    //   url: "/settings",
-    // },
-    // {
-    //   title: "Upgrade Stage",
-    //   url: "/upgrade-stage",
+    {
+      title: "Settings",
+      url: "/settings",
+    },
+    {
+      title: "Upgrade Stage",
+      url: "/upgrade-stage",
+    },
+    //  {
+    //   title: "Logout",
+    //   url: "/logout",
     // },
   ],
 };
