@@ -14,6 +14,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useRouter } from "next/navigation";
+import { logout } from "@/lib/authentication";
+
 
 const data = {
   user: {
@@ -78,6 +81,14 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+
+  const router = useRouter();
+
+const handleLogout = async () => {
+  await logout();
+  router.push("/sign-in");
+}; 
+
   return (
     <Sidebar
       collapsible="offcanvas"
@@ -113,8 +124,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarFooter className="!bg-white">
         {/* <NavUser user={data.user} /> */}
         <div className="h-[48px] w-full flex flex-row items-center gap-[10px] px-[16px]">
-          <i className="logout-icon size-[20px] text-[#757575]" />
-          <p className="text-base text-[#424242]">Log Out</p>
+          <i className="logout-icon size-[28px] text-[#757575]" />
+              <button
+            type="button"
+            onClick={handleLogout}
+            className="text-[#26262B] cursor-pointer text-[18px] font-[700]"
+          >
+           Log Out
+          </button>
+       
         </div>
       </SidebarFooter>
     </Sidebar>
