@@ -1,192 +1,157 @@
-// "use server"
-// import { cookies } from "next/headers"
-// import { NextResponse } from "next/server"
-// import type { NextRequest } from "next/server"
-// // import { SignJWT, jwtVerify } from "jose"
-// // import { signIn } from "@/actions/auth"
+"use server";
 
-// const secretKey = process.env.JWT_SECRET || "secret123"
-// const key = new TextEncoder().encode(secretKey)
+import { cookies } from "next/headers";
+import { SignJWT, jwtVerify } from "jose";
+import { signIn as signInAction } from "@/actions/auth";
 
-// export async function encrypt(payload: any) {
-//   return await new SignJWT(payload)
-//     .setProtectedHeader({ alg: "HS256" })
-//     .setIssuedAt()
-//     .setExpirationTime("8 hours")
-//     .sign(key)
-// }
+const secretKey = process.env.JWT_SECRET || "secret123";
+const key = new TextEncoder().encode(secretKey);
 
-// export async function decrypt(input: string): Promise<any> {
-//   try {
-//     const { payload } = await jwtVerify(input, key, {
-//       algorithms: ["HS256"],
-//       requiredClaims: ["iat", "exp"],
-//     })
-//     return payload
-//   } catch {
-//     return null
-//   }
-// }
+type User = {
+  email: string;
+  token: string;
+  roles: string[];
+};
 
-// export async function login(data: {
-//   email: string
-//   password: string
-//   rememberMe?: boolean
-//   deviceToken?: string
-//   deviceType?: string
-// }) {
-//   const res = await signIn({
-//     identifier: data.email,
-//     password: data.password,
-//     rememberMe: data.rememberMe || false,
-//     deviceToken: data.deviceToken || undefined, // changed from null to undefined
-//   deviceType: data.deviceType || undefined, 
-//   })
+type Session = {
+  user: User;
+  expires: Date;
+  createdAt: Date;
+};
 
-//   if (res.status === "FAIL") {
-//     return res
-//   }
+async function encrypt(payload: Session): Promise<string> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return await new SignJWT(payload as any)
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("8 hours")
+    .sign(key);
+}
 
-//   // Map the response structure from your API
-//   const user = {
-//     id: res.data?.user?.id,
-//     name: `${res.data?.user?.firstName || ""} ${res.data?.user?.lastName || ""}`.trim(),
-//     email: res.data?.user?.email,
-//     token: res.data?.tokens?.accessToken,
-//     refreshToken: res.data?.tokens?.refreshToken ?? null,
-//     privileges: res.data?.user?.role ? [res.data.user.role] : [],
-//     isSuperAdmin: res.data?.user?.role === "SUPER_ADMIN",
-//     firstName: res.data?.user?.firstName,
-//     lastName: res.data?.user?.lastName,
-//     role: res.data?.user?.role,
-//     avatar: res.data?.user?.avatar,
-//     phoneNumber: res.data?.user?.phoneNumber,
-//   }
+async function decrypt(input: string): Promise<Session | null> {
+  try {
+    const { payload } = await jwtVerify(input, key, {
+      algorithms: ["HS256"],
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return payload as any;
+  } catch {
+    return null;
+  }
+}
 
-//   const expires = res.data?.tokens?.refreshToken
-//     ? new Date(Date.now() + 1000 * 60 * 60 * 24 * 7)
-//     : new Date(Date.now() + 1000 * 60 * 60 * 8)
-//   const createdAt = new Date(Date.now())
-//   const session = await encrypt({ user, expires, createdAt })
+export async function login(data: {
+  email: string;
+  password: string;
+  rememberMe?: boolean;
+}) {
+  try {
+    // Call backend API
+    const res = await signInAction({
+      email: data.email,
+      password: data.password,
+    });
 
-//   const cookiesStore = await cookies()
-//   cookiesStore.set("session-admin-getJob", session, { expires })
+    console.log("Auth library received:", JSON.stringify(res, null, 2));
 
-//   return {
-//     status: "SUCCESS",
-//     message: "Login successful",
-//     data: user,
-//   }
-// }
+    // Check if login failed
+    if (res.status === "FAIL" || !res.data) {
+      return {
+        status: "FAIL" as const,
+        message: res.message || "Login failed",
+        data: null,
+      };
+    }
 
-// export async function logout() {
-//   const cookiesStore = await cookies()
-//   cookiesStore.set("session-admin-getJob", "", { expires: new Date(0) })
-// }
+    // Validate required fields
+    if (!res.data.email || !res.data.token || !res.data.roles || res.data.roles.length === 0) {
+      console.error("Invalid data structure:", res.data);
+      return {
+        status: "FAIL" as const,
+        message: "Invalid user data. Please contact support.",
+        data: null,
+      };
+    }
 
-// export type Session = {
-//   user: {
-//     id: string
-//     name: string
-//     email: string
-//     token: string
-//     refreshToken: string | null
-//     adminType?: "superAdmin" | "admin"
-//     profilePicture?: string
-//     privileges: string[]
-//     isSuperAdmin: boolean
-//     firstName?: string
-//     lastName?: string
-//     role?: string
-//     avatar?: string
-//     phoneNumber?: string
-//   }
-//   expires: Date
-//   createdAt: Date
-// }
+    // Create user object
+    const user: User = {
+      email: res.data.email,
+      token: res.data.token,
+      roles: res.data.roles,
+    };
 
-// export async function getSession(): Promise<Session | null> {
-//   const cookiesStore = await cookies()
-//   const sessionCookie = cookiesStore.get("session-admin-getJob")?.value
-//   if (!sessionCookie) return null
-//   const decrypted = await decrypt(sessionCookie)
-//   return decrypted
-// }
+    console.log("Creating session for user:", user);
 
-// export async function getSessionData(): Promise<Session | null> {
-//   const cookiesStore = await cookies()
-//   const session = cookiesStore.get("session-admin-getJob")?.value
-//   if (!session) return null
-//   const decrypted = await decrypt(session)
-//   return decrypted
-// }
+    // Set expiration
+    const expires = data.rememberMe
+      ? new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) // 7 days
+      : new Date(Date.now() + 1000 * 60 * 60 * 8); // 8 hours
 
-// export async function updateSession(request: NextRequest) {
-//   const session = request.cookies.get("session-admin-getJob")?.value
-//   if (!session) {
-//     return NextResponse.redirect(new URL("/sign-in", request.url))
-//   }
+    const createdAt = new Date();
+    
+    // Create session
+    const session: Session = { user, expires, createdAt };
+    const sessionToken = await encrypt(session);
 
-//   const decrypted = await decrypt(session)
-//   if (!decrypted) {
-//     return NextResponse.redirect(new URL("/sign-in", request.url))
-//   }
+    // Set cookie
+    const cookiesStore = await cookies();
+    cookiesStore.set("session-admin-getJob", sessionToken, {
+      expires,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
 
-//   const response = NextResponse.next()
-//   return response
-// }
+    console.log("Session created successfully");
 
-// export async function updateProfilePictureInSession(profilePicture: string) {
-//   const session = await getSession()
-//   if (!session) {
-//     return null
-//   }
+    return {
+      status: "SUCCESS" as const,
+      message: "Login successful",
+      data: user,
+    };
+  } catch (error) {
+    console.error("Login error:", error);
+    return {
+      status: "FAIL" as const,
+      message: "An unexpected error occurred during login",
+      data: null,
+    };
+  }
+}
 
-//   session.user.profilePicture = profilePicture
-//   const expires = new Date(session.expires)
-//   const newSession = await encrypt(session)
-//   const cookiesStore = await cookies()
-//   cookiesStore.set("session-admin-getJob", newSession, { expires })
-//   return session
-// }
+export async function logout() {
+  const cookiesStore = await cookies();
+  cookiesStore.delete("session-admin-getJob");
+}
 
-// export const updateAccessTokenInSession = async (accessToken: string, p0: string) => {
-//   const session = await getSession()
-//   if (!session || !accessToken) {
-//     return null
-//   }
+export async function getSession(): Promise<Session | null> {
+  const cookiesStore = await cookies();
+  const sessionCookie = cookiesStore.get("session-admin-getJob")?.value;
+  
+  if (!sessionCookie) return null;
+  
+  return await decrypt(sessionCookie);
+}
 
-//   session.user.token = accessToken
-//   const expires = new Date(session.expires)
-//   const newSession = await encrypt(session)
-//   const cookiesStore = await cookies()
-//   cookiesStore.set("session-admin-getJob", newSession, { expires })
-//   console.log("Access token updated")
-//   return session
-// }
+// Get primary user role
+export async function getUserRole(): Promise<string | null> {
+  const session = await getSession();
+  if (!session?.user?.roles || session.user.roles.length === 0) {
+    return null;
+  }
+  return session.user.roles[0];
+}
 
-// // New function to update admin data in session after admin update
-// export const updateAdminDataInSession = async (updatedAdminData: any) => {
-//   const session = await getSession()
-//   if (!session) {
-//     return null
-//   }
+// Check if user has specific role
+export async function hasRole(role: string): Promise<boolean> {
+  const session = await getSession();
+  if (!session?.user?.roles) return false;
+  return session.user.roles.includes(role);
+}
 
-//   // Update user data in session with new admin data
-//   if (updatedAdminData.firstName) session.user.firstName = updatedAdminData.firstName
-//   if (updatedAdminData.lastName) session.user.lastName = updatedAdminData.lastName
-//   if (updatedAdminData.email) session.user.email = updatedAdminData.email
-//   if (updatedAdminData.role) session.user.role = updatedAdminData.role
-//   if (updatedAdminData.roles) session.user.privileges = updatedAdminData.roles
-
-//   // Update name field
-//   session.user.name = `${session.user.firstName || ""} ${session.user.lastName || ""}`.trim()
-
-//   const expires = new Date(session.expires)
-//   const newSession = await encrypt(session)
-//   const cookiesStore = await cookies()
-//   cookiesStore.set("session-admin-getJob", newSession, { expires })
-
-//   console.log("Admin session data updated successfully")
-//   return session
-// }
+// Get all user roles
+export async function getUserRoles(): Promise<string[]> {
+  const session = await getSession();
+  return session?.user?.roles || [];
+}

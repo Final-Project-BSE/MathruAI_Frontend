@@ -3,6 +3,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Heart, Baby, MessageCircle, Loader2, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import Container from "@/components/shared/container";
+import { Button } from '@/components/ui/button';
+import { getSession } from "@/lib/authentication";
+import { useChatContext } from "@/app/(main)/chatbot/layout";
 
 // Types
 interface Message {
@@ -17,13 +20,12 @@ interface ChatResponse {
   status: string;
   response: string;
   processing_time_seconds: number;
+  session_id?: number;  // Added to capture session_id from response
   parameters_used?: {
     top_k: number;
     similarity_threshold: number;
   };
 }
-
-
 
 interface SystemStats {
   knowledge_base_stats: {
@@ -49,11 +51,17 @@ export default function ChatBotPage() {
   const [isConnected, setIsConnected] = useState(false);
   const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+
+  // Store current session ID in component state
+  const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
+
+  const { activeSessionId, setActiveSessionId, refreshChatHistory } = useChatContext();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // API Base URL - adjust this to match your Flask backend
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  // API Base URL
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
   // Auto-scroll to bottom of messages
   const scrollToBottom = () => {
@@ -64,15 +72,116 @@ export default function ChatBotPage() {
     scrollToBottom();
   }, [messages]);
 
-  // Check system health on component mount
   useEffect(() => {
-    checkSystemHealth();
-    fetchSystemStats();
+    const initialize = async () => {
+      try {
+        const session = await getSession();
+        if (session?.user?.token) {
+          setToken(session.user.token);
+          console.log("✅ JWT token loaded for ChatBot");
+          checkSystemHealth(session.user.token);
+          fetchSystemStats(session.user.token);
+        } else {
+          console.warn("⚠️ No session found — please log in first.");
+          setConnectionError("Please log in to access the chatbot.");
+        }
+      } catch (error) {
+        console.error("Failed to get session:", error);
+        setConnectionError("Authentication error. Please log in again.");
+      }
+    };
+
+    initialize();
   }, []);
 
-  const checkSystemHealth = async () => {
+  const resetToNewChat = () => {
+    setCurrentSessionId(null);
+    setMessages([
+      {
+        id: '1',
+        content: "Hello! I'm your pregnancy advisor assistant. I'm here to help answer your questions about pregnancy, provide guidance, and support you through this wonderful journey. How can I assist you today?",
+        isUser: false,
+        timestamp: new Date(),
+        status: 'sent'
+      }
+    ]);
+  };
+
+  useEffect(() => {
+    if (activeSessionId && activeSessionId !== currentSessionId) {
+      setCurrentSessionId(activeSessionId);
+      loadSessionMessages(activeSessionId);
+    } else if (activeSessionId === null) {
+      // New chat scenario
+      resetToNewChat();
+    }
+  }, [activeSessionId, currentSessionId]);
+
+
+  // Load messages for a specific session
+  const loadSessionMessages = async (sessionId: number) => {
+    if (!token) return;
+
     try {
-      const response = await fetch(`${API_BASE_URL}/health`);
+      const response = await fetch(`${API_BASE_URL}/chats/${sessionId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+
+      if (response.ok && data.status === "success") {
+        const formattedMessages: Message[] = [];
+
+        // Add welcome message if no messages exist
+        if (data.messages.length === 0) {
+          formattedMessages.push({
+            id: '1',
+            content: "Hello! I'm your pregnancy advisor assistant. I'm here to help answer your questions about pregnancy, provide guidance, and support you through this wonderful journey. How can I assist you today?",
+            isUser: false,
+            timestamp: new Date(),
+            status: 'sent'
+          });
+        } else {
+          // Format existing messages
+          data.messages.forEach((m: any) => {
+            // Add user message
+            if (m.message) {
+              formattedMessages.push({
+                id: `${m.id}_user`,
+                content: m.message,
+                isUser: true,
+                timestamp: new Date(m.created_at),
+                status: 'sent',
+              });
+            }
+            // Add assistant response
+            if (m.response) {
+              formattedMessages.push({
+                id: `${m.id}_bot`,
+                content: m.response,
+                isUser: false,
+                timestamp: new Date(m.created_at),
+                status: 'sent',
+              });
+            }
+          });
+        }
+
+        setMessages(formattedMessages);
+      }
+    } catch (error) {
+      console.error("Failed to fetch chat messages:", error);
+    }
+  };
+
+  const checkSystemHealth = async (jwtToken: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/health`, {
+        headers: {
+          Authorization: `Bearer ${jwtToken}`,
+        },
+      });
       const data = await response.json();
       setIsConnected(response.ok && data.status === 'healthy');
       setConnectionError(response.ok ? null : data.error || 'System not healthy');
@@ -82,9 +191,13 @@ export default function ChatBotPage() {
     }
   };
 
-  const fetchSystemStats = async () => {
+  const fetchSystemStats = async (jwtToken: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/stats`);
+      const response = await fetch(`${API_BASE_URL}/stats`, {
+        headers: {
+          Authorization: `Bearer ${jwtToken}`,
+        },
+      });
       if (response.ok) {
         const data = await response.json();
         setSystemStats(data);
@@ -95,7 +208,7 @@ export default function ChatBotPage() {
   };
 
   const sendMessage = async (messageContent: string) => {
-    if (!messageContent.trim() || isLoading) return;
+    if (!messageContent.trim() || isLoading || !token) return;
 
     const userMessage: Message = {
       id: Date.now().toString() + '_user',
@@ -119,22 +232,32 @@ export default function ChatBotPage() {
 
     try {
       const response = await fetch(`${API_BASE_URL}/chat`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           message: messageContent,
+          session_id: currentSessionId, // Send current session ID
           top_k: 3,
-          similarity_threshold: 0.1
+          similarity_threshold: 0.1,
         }),
       });
 
       const data: ChatResponse = await response.json();
 
       if (response.ok && data.status === 'success') {
-        setMessages(prev => prev.map(msg => 
-          msg.id === botMessage.id 
+        // Update or set the session ID
+        if (data.session_id && !currentSessionId) {
+          setCurrentSessionId(data.session_id);
+          setActiveSessionId?.(data.session_id);
+          // Refresh sidebar to show the new session
+          await refreshChatHistory?.();
+        }
+
+        setMessages(prev => prev.map(msg =>
+          msg.id === botMessage.id
             ? { ...msg, content: data.response, status: 'sent' }
             : msg
         ));
@@ -142,13 +265,13 @@ export default function ChatBotPage() {
         throw new Error(data.response || 'Failed to get response');
       }
     } catch (error) {
-      setMessages(prev => prev.map(msg => 
-        msg.id === botMessage.id 
-          ? { 
-              ...msg, 
-              content: 'Sorry, I encountered an error while processing your message. Please try again.', 
-              status: 'error' 
-            }
+      setMessages(prev => prev.map(msg =>
+        msg.id === botMessage.id
+          ? {
+            ...msg,
+            content: 'Sorry, I encountered an error while processing your message. Please try again.',
+            status: 'error'
+          }
           : msg
       ));
       console.error('Chat error:', error);
@@ -201,21 +324,26 @@ export default function ChatBotPage() {
                   </span>
                   {systemStats && (
                     <span className="text-gray-600">
-                      📚 {systemStats.knowledge_base_stats.total_chunks} knowledge chunks
+                      📚 {systemStats?.knowledge_base_stats?.total_chunks || 0} knowledge chunks
+                    </span>
+                  )}
+                  {currentSessionId && (
+                    <span className="text-gray-500 text-xs">
+                      Session #{currentSessionId}
                     </span>
                   )}
                 </div>
               </div>
             </div>
           </div>
-          
+
           {/* Connection Error */}
           {connectionError && (
             <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
               <AlertCircle className="h-4 w-4" />
               <span className="text-sm">{connectionError}</span>
-              <button 
-                onClick={checkSystemHealth}
+              <button
+                onClick={() => token && checkSystemHealth(token)}
                 className="ml-auto text-xs bg-red-100 hover:bg-red-200 px-2 py-1 rounded"
               >
                 Retry
@@ -232,21 +360,18 @@ export default function ChatBotPage() {
               className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} animate-fadeIn`}
             >
               <div
-                className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${
-                  message.isUser
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-br-sm'
-                    : 'bg-white text-gray-800 rounded-bl-sm border border-pink-100'
-                }`}
+                className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${message.isUser
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-br-sm'
+                  : 'bg-white text-gray-800 rounded-bl-sm border border-pink-100'
+                  }`}
               >
                 <div className="whitespace-pre-wrap leading-relaxed">
                   {message.content || (message.status === 'sending' && 'Thinking...')}
                 </div>
-                <div className={`flex items-center justify-between mt-2 pt-2 border-t ${
-                  message.isUser ? 'border-white/20' : 'border-gray-100'
-                }`}>
-                  <span className={`text-xs ${
-                    message.isUser ? 'text-white/70' : 'text-gray-500'
+                <div className={`flex items-center justify-between mt-2 pt-2 border-t ${message.isUser ? 'border-white/20' : 'border-gray-100'
                   }`}>
+                  <span className={`text-xs ${message.isUser ? 'text-white/70' : 'text-gray-500'
+                    }`}>
                     {formatTime(message.timestamp)}
                   </span>
                   {getStatusIcon(message.status)}
@@ -284,7 +409,7 @@ export default function ChatBotPage() {
               <span className="hidden sm:inline">Send</span>
             </button>
           </form>
-          
+
           {/* Quick Tips */}
           <div className="mt-3 flex flex-wrap gap-2">
             {[

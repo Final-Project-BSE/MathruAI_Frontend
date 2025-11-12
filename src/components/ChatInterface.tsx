@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { ChatArea } from './ChatArea'
 import { ChatSession, Message } from '../components/types/chat'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api'
 
 export function ChatInterface() {
   const [sessions, setSessions] = useState<ChatSession[]>([])

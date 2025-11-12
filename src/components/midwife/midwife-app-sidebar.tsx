@@ -17,7 +17,6 @@ import {
 import { useRouter } from "next/navigation";
 import { logout } from "@/lib/authentication";
 
-
 const data = {
   user: {
     name: "shadcn",
@@ -26,45 +25,27 @@ const data = {
   },
   navMain: [
     {
-      title: "Reproductive Dashboard",
-      url: "/dashboard/reproductive",
-    },
-        {
-      title: "Pregnancy Dashboard",
-      url: "/dashboard/pregnancy",
-    },
-        {
-      title: "Postpartum Dashboard",
-      url: "/dashboard/postpartum",
+      title: "Midwife Dashboard",
+      url: "/midwife-dashboard",
     },
     {
-      title: "Cycle Tracker",
-      url: "/cycle-tracker",
+      title: "Patient Management",
+      url: "/patient-management",
     },
     {
-      title: "Health Monitoring",
-      url: "/health-monitoring",
+      title: "Reports & Analysis",
+      url: "/reports-analysis",
+    },
+
+    {
+      title: "Communications",
+      url: "/communications",
     },
     {
-      title: "Daily Recommendations",
-      url: "/daily-recommendations",
+      title: "Settings",
+      url: "/settings",
     },
-    {
-      title: "Midwife Connection",
-      url: "/midwife-connection",
-    },
-    {
-      title: "AI Assistant",
-      url: "/chatbot",
-    },
-    {
-      title: "Notifications",
-      url: "/notifications",
-    },
-    {
-      title: "Announcements",
-      url: "/announcement",
-    },
+
     // {
     //   title: "Settings",
     //   url: "/settings",
@@ -76,14 +57,15 @@ const data = {
   ],
 };
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-
+export function MidwifeAppSidebar({
+  ...props
+}: React.ComponentProps<typeof Sidebar>) {
   const router = useRouter();
 
-const handleLogout = async () => {
-  await logout();
-  router.push("/sign-in");
-}; 
+  const handleLogout = async () => {
+    await logout();
+    router.push("/sign-in");
+  };
 
   return (
     <Sidebar
@@ -121,14 +103,13 @@ const handleLogout = async () => {
         {/* <NavUser user={data.user} /> */}
         <div className="h-[48px] w-full flex flex-row items-center gap-[10px] px-[16px]">
           <i className="logout-icon size-[28px] text-[#757575]" />
-              <button
+          <button
             type="button"
             onClick={handleLogout}
             className="text-[#26262B] cursor-pointer text-[18px] font-[700]"
           >
-           Log Out
+            Log Out
           </button>
-       
         </div>
       </SidebarFooter>
     </Sidebar>
