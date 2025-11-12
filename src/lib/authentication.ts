@@ -20,6 +20,7 @@ type Session = {
 };
 
 async function encrypt(payload: Session): Promise<string> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return await new SignJWT(payload as any)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -32,6 +33,7 @@ async function decrypt(input: string): Promise<Session | null> {
     const { payload } = await jwtVerify(input, key, {
       algorithms: ["HS256"],
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return payload as any;
   } catch {
     return null;
