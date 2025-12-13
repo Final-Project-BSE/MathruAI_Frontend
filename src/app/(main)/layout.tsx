@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { getSession } from "@/lib/authentication";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,6 +19,10 @@ type Props = {
 };
 
 export default async function RootLayout({ children }: Props) {
+
+  const session = await getSession();
+  const userRole = session?.user?.roles?.[0] || '';
+
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
       <body
@@ -25,7 +30,7 @@ export default async function RootLayout({ children }: Props) {
         suppressHydrationWarning
       >
         <SidebarProvider>
-          <AppSidebar/>
+          <AppSidebar userRole={userRole}/>
             {children}
         </SidebarProvider> 
       </body>
