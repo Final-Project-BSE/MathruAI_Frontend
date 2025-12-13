@@ -109,8 +109,8 @@ const handleLogout = async () => {
                 <Image
                   src="/images/logo.jpeg"
                   alt="Logo"
-                  width={88}
-                  height={88}
+                  width={120}
+                  height={120}
                   className="overflow-hidden rounded-full"
                 />
               </a>

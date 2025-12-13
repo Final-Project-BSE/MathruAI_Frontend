@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useRef } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ChatSidebar, ChatSidebarRef } from "@/components/chat-sidebar";
-
+import { AppSidebar } from "@/components/app-sidebar";
 interface ChatContextType {
   activeSessionId: number | null;
   setActiveSessionId: (id: number | null) => void;
@@ -53,6 +53,7 @@ export default function ChatbotLayout({
         />
         <main className="w-full">
           <SidebarTrigger />
+           <AppSidebar/>
           {children}
         </main>
       </SidebarProvider>

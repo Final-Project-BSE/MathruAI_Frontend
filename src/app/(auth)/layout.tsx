@@ -12,8 +12,8 @@ const AuthLayout = async ({ children }: { children: React.ReactNode }) => {
   return (
     <AuthWrapper >
       <div className="max-w-screen flex flex-col md:flex-row justify-between h-full">
-        <div className="w-full md:w-[61.4%] h-svh max-sm:h-full sticky right-0 top-0 flex flex-col justify-between max-lg:hidden bg-white">
-          <div className="h-screen w-full max-sm:hidden relative flex overflow-hidden p-4">
+        <div className="w-full md:w-[48.4%] h-svh max-sm:h-full sticky right-0 top-0 flex flex-col justify-between max-lg:hidden bg-white">
+          <div className="h-screen w-full max-sm:hidden relative flex overflow-hidden p-5">
             <Image
               className="object-container h-full w-full rounded-lg"
               alt="login background"
@@ -26,7 +26,7 @@ const AuthLayout = async ({ children }: { children: React.ReactNode }) => {
             />
           </div>
         </div>
-        <div className=" w-full lg:w-[38.5%]  bg-white px-4 lg:px-[40px]">
+        <div className=" w-full lg:w-[48.5%]  bg-white px-4 lg:px-[40px]">
           {children}
         </div>
       </div>
