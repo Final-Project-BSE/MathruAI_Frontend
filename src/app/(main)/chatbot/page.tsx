@@ -304,17 +304,17 @@ export default function ChatBotPage() {
 
   return (
     <Container title="Pregnancy Advisor ChatBot">
-      <div className="max-w-4xl mx-auto h-screen flex flex-col bg-gradient-to-br from-pink-50 to-purple-50">
+      <div className="flex flex-col">
         {/* Header */}
-        <div className="bg-white shadow-sm border-b border-pink-100 p-4 rounded-t-lg">
+        <div className="bg-white shadow-sm border-b border-pink-100 p-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="bg-gradient-to-r from-pink-500 to-purple-600 p-2 rounded-full">
+              <div className="bg-gradient-to-r from-pink-300 to-pink-400 p-2 rounded-full">
                 <Baby className="h-6 w-6 text-white" />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                  Pregnancy Advisor
+                  HelloBump
                   <Heart className="h-5 w-5 text-pink-500" />
                 </h1>
                 <div className="flex items-center gap-4 text-sm">
@@ -322,16 +322,6 @@ export default function ChatBotPage() {
                     <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
                     {isConnected ? 'Connected' : 'Disconnected'}
                   </span>
-                  {systemStats && (
-                    <span className="text-gray-600">
-                      📚 {systemStats?.knowledge_base_stats?.total_chunks || 0} knowledge chunks
-                    </span>
-                  )}
-                  {currentSessionId && (
-                    <span className="text-gray-500 text-xs">
-                      Session #{currentSessionId}
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
@@ -353,7 +343,7 @@ export default function ChatBotPage() {
         </div>
 
         {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-white/50 to-pink-50/30">
+        <div className="flex-1 overflow-y-auto p-4 pb-44 space-y-4 bg-gradient-to-b from-white/50 to-pink-50/30">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -361,7 +351,7 @@ export default function ChatBotPage() {
             >
               <div
                 className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${message.isUser
-                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-br-sm'
+                  ? 'bg-gradient-to-r from-pink-400 to-pink-400 text-white rounded-br-sm'
                   : 'bg-white text-gray-800 rounded-bl-sm border border-pink-100'
                   }`}
               >
@@ -383,7 +373,7 @@ export default function ChatBotPage() {
         </div>
 
         {/* Input Form */}
-        <div className="bg-white border-t border-pink-100 p-4 rounded-b-lg">
+        <div className="fixed bottom-0 left-0 md:left-[16rem] md:right-[2rem] bg-white border-t border-pink-100 p-4 z-50">
           <form onSubmit={handleSubmit} className="flex gap-3">
             <div className="flex-1 relative">
               <input
@@ -399,7 +389,7 @@ export default function ChatBotPage() {
             <button
               type="submit"
               disabled={isLoading || !inputMessage.trim() || !isConnected}
-              className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-full hover:from-pink-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:scale-105"
+              className="px-6 py-3 bg-gradient-to-r from-pink-300 to-pink-400 text-white rounded-full hover:from-pink-400 hover:to-pink-500 disabled:opacity-100 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:scale-105"
             >
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />

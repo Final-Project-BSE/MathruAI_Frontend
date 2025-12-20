@@ -52,7 +52,7 @@ export default function ChatbotLayout({
           onNewChat={handleNewChat}
         />
         <main className="w-full">
-          <SidebarTrigger />
+          {/* <SidebarTrigger /> */}
           {children}
         </main>
       </SidebarProvider>

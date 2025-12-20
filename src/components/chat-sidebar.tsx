@@ -318,14 +318,14 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
     const groupedSessions = groupSessionsByDate(chatSessions);
 
     return (
-      <Sidebar collapsible="offcanvas" {...props}>
+      <Sidebar reserveSpace={false} collapsible="offcanvas" {...props}>
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
                 <button type="button" className="flex items-center gap-2">
                   <IconInnerShadowTop className="!size-5 text-pink-500" />
-                  <span className="font-semibold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
+                  <span className="font-semibold bg-gradient-to-br from-pink-500 to-pink-500 bg-clip-text text-transparent">
                     Pregnancy Advisor
                   </span>
                 </button>
@@ -336,7 +336,7 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
             <button
               onClick={handleNewChat}
               disabled={creatingSession}
-              className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg hover:from-pink-600 hover:to-purple-700 transition-all duration-200 shadow-md disabled:opacity-50"
+              className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-pink-400 to-pink-400 text-white rounded-lg hover:from-pink-600 hover:to-purple-700 transition-all duration-200 shadow-md disabled:opacity-50"
             >
               {creatingSession ? (
                 <IconLoader className="h-5 w-5 animate-spin" />
