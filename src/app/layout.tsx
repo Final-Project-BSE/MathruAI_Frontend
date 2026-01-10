@@ -1,7 +1,6 @@
 import { Inter } from "next/font/google";
 
 import type { Metadata } from "next";
-// import { SessionProvider } from "@/components/providers/SessionProvider"
 import "./globals.css";
 
 

@@ -1,23 +1,12 @@
+'use client';
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Activity, Loader2, Save } from 'lucide-react';
-
-interface VitalsState {
-  Age: string;
-  SystolicBP: string;
-  DiastolicBP: string;
-  BS: string;
-  BodyTemp: string;
-  BMI: string;
-  HeartRate: string;
-  PreviousComplications: number;
-  PreexistingDiabetes: number;
-  GestationalDiabetes: number;
-  MentalHealth: number;
-}
+import type { VitalsState } from '../../../api/healthmonitor/types';
 
 interface VitalsFormProps {
   vitals: VitalsState;
@@ -34,13 +23,12 @@ const VitalsForm: React.FC<VitalsFormProps> = ({
   onCheckboxChange,
   onSubmit,
   loading,
-  isUpdate
+  isUpdate,
 }) => {
   const [useBMICalculator, setUseBMICalculator] = useState(false);
   const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
 
-  // Calculate BMI from weight and height
   const calculateBMI = (weightKg: number, heightCm: number): string => {
     if (!weightKg || !heightCm) return '';
     const heightM = heightCm / 100;
@@ -72,6 +60,7 @@ const VitalsForm: React.FC<VitalsFormProps> = ({
           Enter Vital Signs
         </CardTitle>
       </CardHeader>
+
       <CardContent className="space-y-4">
         <div>
           <Label htmlFor="age" className="text-sm font-medium text-gray-700">
@@ -88,9 +77,7 @@ const VitalsForm: React.FC<VitalsFormProps> = ({
         </div>
 
         <div>
-          <Label className="text-sm font-medium text-gray-700">
-            Blood Pressure (mmHg) *
-          </Label>
+          <Label className="text-sm font-medium text-gray-700">Blood Pressure (mmHg) *</Label>
           <div className="flex space-x-2 mt-1">
             <Input
               placeholder="120"
@@ -183,11 +170,10 @@ const VitalsForm: React.FC<VitalsFormProps> = ({
                   />
                 </div>
               </div>
+
               <div className="bg-pink-50 border border-pink-200 rounded p-2">
                 <p className="text-xs text-gray-600">Calculated BMI:</p>
-                <p className="text-lg font-semibold text-pink-600">
-                  {vitals.BMI || '-'}
-                </p>
+                <p className="text-lg font-semibold text-pink-600">{vitals.BMI || '-'}</p>
               </div>
             </div>
           ) : (
@@ -218,9 +204,7 @@ const VitalsForm: React.FC<VitalsFormProps> = ({
         </div>
 
         <div className="space-y-3 pt-2 border-t">
-          <Label className="text-sm font-medium text-gray-700">
-            Additional Risk Factors
-          </Label>
+          <Label className="text-sm font-medium text-gray-700">Additional Risk Factors</Label>
 
           <div className="flex items-center space-x-2">
             <input

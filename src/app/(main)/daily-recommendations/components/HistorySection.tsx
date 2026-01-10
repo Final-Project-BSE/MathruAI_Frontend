@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookOpen, Calendar } from 'lucide-react';
-import type { HistoryItem } from './types';
+import type { HistoryItem } from '../../../api/dailyrecommendation/types';
 
 interface HistorySectionProps {
   history: HistoryItem[];
@@ -40,14 +40,12 @@ const HistorySection: React.FC<HistorySectionProps> = ({ history, loading }) => 
                     {new Date(item.date).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
-                      year: 'numeric'
+                      year: 'numeric',
                     })}
                   </span>
                   <Calendar className="w-4 h-4 text-gray-400 group-hover:text-purple-500 transition-colors" />
                 </div>
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  {item.recommendation}
-                </p>
+                <p className="text-sm text-gray-700 leading-relaxed">{item.recommendation}</p>
               </div>
             ))}
           </div>

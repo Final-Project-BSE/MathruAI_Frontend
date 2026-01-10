@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { LoadingState } from "./components/LoadingState";
+import { LoadingState } from "../../../components/common/LoadingState";
 import { AuthRequired } from "./components/AuthRequired";
 import { CalculatorCard } from "./components/CalculatorCard";
 import { StatsGrid, type CycleStats } from "./components/StatsGrid";

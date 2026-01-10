@@ -64,7 +64,7 @@ export default function ReproductivePage() {
           <Card className="bg-white/90 backdrop-blur">
             <CardHeader>
               <CardTitle className="text-pink-600 flex items-center gap-2 text-sm md:text-base">
-                <span className="text-green-500">✓</span> Today&apos;s Recommendations
+               Today&apos;s Recommendations
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -120,7 +120,7 @@ export default function ReproductivePage() {
             <CardHeader>
               <CardTitle className="text-pink-600 flex items-center justify-between text-sm md:text-base">
                 <span className="flex items-center gap-2">
-                  <span className="text-pink-500">♀</span> Fertility & Ovulation Tracker
+                  Fertility & Ovulation Tracker
                 </span>
                 <Link href="/dashboard/reproductive/cycle-tracker">
                   <Button variant="ghost" size="sm" className="text-xs">
@@ -200,7 +200,7 @@ export default function ReproductivePage() {
           <Card className="bg-white/90 backdrop-blur md:col-span-2 lg:col-span-1">
             <CardHeader>
               <CardTitle className="text-pink-600 flex items-center gap-2 text-sm md:text-base">
-                <span>📢</span> Health Announcements
+                Health Announcements
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -219,7 +219,7 @@ export default function ReproductivePage() {
           <Card className="bg-white/90 backdrop-blur">
             <CardHeader>
               <CardTitle className="text-pink-600 flex items-center gap-2 text-sm md:text-base">
-                <span>🔔</span> Upcoming Reminders
+                Upcoming Reminders
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -257,7 +257,7 @@ export default function ReproductivePage() {
           <Card className="bg-white/90 backdrop-blur">
             <CardHeader>
               <CardTitle className="text-pink-600 flex items-center gap-2 text-sm md:text-base">
-                <span>👩‍⚕️</span> Midwife Connectivity
+               Midwife Connectivity
               </CardTitle>
             </CardHeader>
             <CardContent>

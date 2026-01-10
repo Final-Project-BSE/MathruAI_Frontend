@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useRef } from "react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { ChatSidebar, ChatSidebarRef } from "@/components/chat-sidebar";
 
 interface ChatContextType {
@@ -51,10 +51,7 @@ export default function ChatbotLayout({
           onSessionSelect={setActiveSessionId}
           onNewChat={handleNewChat}
         />
-        <main className="w-full">
-          {/* <SidebarTrigger /> */}
-          {children}
-        </main>
+        <main className="w-full">{children}</main>
       </SidebarProvider>
     </ChatContext.Provider>
   );

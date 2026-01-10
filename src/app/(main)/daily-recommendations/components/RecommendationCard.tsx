@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sparkles, RefreshCw, User, Settings } from 'lucide-react';
-import type { RecommendationData } from './types';
+import type { RecommendationData } from '../../../api/dailyrecommendation/types';
 
 interface RecommendationCardProps {
   recommendation: RecommendationData | null;

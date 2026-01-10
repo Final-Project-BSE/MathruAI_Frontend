@@ -96,7 +96,7 @@ export function CycleCalendar(props: Props) {
           </div>
         </div>
 
-        <Button onClick={onRecalculate} variant="outline" className="w-full mt-4">
+        <Button onClick={onRecalculate} className="w-full mt-4 bg-red-500 hover:bg-red-600">
           Recalculate
         </Button>
       </CardContent>

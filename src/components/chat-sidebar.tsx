@@ -14,9 +14,6 @@ import {
   IconPlus,
   IconTrash,
   IconDots,
-  IconSearch,
-  IconSettings,
-  IconHelp,
   IconInnerShadowTop,
   IconClock,
   IconLoader,
@@ -36,7 +33,9 @@ import {
 } from "@/components/ui/sidebar";
 import { getSession } from "@/lib/authentication";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { ChatSession as ApiChatSession } from "../app/api/chatbot/types";
+import apis from "../app/api/chatbot/api";
+
 
 // Types
 interface ChatSession {
@@ -113,10 +112,14 @@ function ChatHistoryItem({
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    const diffInHours = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+    );
 
     if (diffInHours < 1) {
-      const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+      const diffInMinutes = Math.floor(
+        (now.getTime() - date.getTime()) / (1000 * 60)
+      );
       return `${diffInMinutes}m ago`;
     } else if (diffInHours < 24) {
       return `${diffInHours}h ago`;
@@ -142,8 +145,9 @@ function ChatHistoryItem({
     <SidebarMenuItem>
       <div
         onClick={() => onSelect(session.id)}
-        className={`group relative rounded-lg p-3 cursor-pointer transition-all duration-200 hover:bg-pink-50 ${isActive ? "bg-pink-100 border-l-4 border-pink-500" : ""
-          }`}
+        className={`group relative rounded-lg p-3 cursor-pointer transition-all duration-200 hover:bg-pink-50 ${
+          isActive ? "bg-pink-100 border-l-4 border-pink-500" : ""
+        }`}
       >
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
@@ -197,6 +201,15 @@ function ChatHistoryItem({
   );
 }
 
+// normalize backend chat sessions into the UI ChatSession shape
+function normalizeSessions(sessions: ApiChatSession[]): ChatSession[] {
+  return sessions.map((s: any) => ({
+    ...s,
+    session_id: s.session_id ?? s.id,
+    last_activity: s.updated_at || s.last_activity || s.created_at,
+  }));
+}
+
 // Main Sidebar Component
 export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
   ({ activeSessionId, onSessionSelect, onNewChat, ...props }, ref) => {
@@ -206,77 +219,66 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
     const [creatingSession, setCreatingSession] = useState(false);
     const [token, setToken] = useState<string | null>(null);
 
+    const ensureToken = useCallback(async (): Promise<string | null> => {
+      if (token) return token;
+      const session = await getSession();
+      const jwt = session?.user?.token || null;
+      if (jwt) setToken(jwt);
+      return jwt;
+    }, [token]);
+
     const fetchChatSessions = useCallback(async () => {
-      if (!token) {
-        const session = await getSession();
-        if (session?.user?.token) {
-          setToken(session.user.token);
-        } else {
-          setError("Please log in to use the chatbot.");
-          setLoading(false);
-          return;
-        }
+      const jwt = await ensureToken();
+      if (!jwt) {
+        setError("Please log in to use the chatbot.");
+        setLoading(false);
+        return;
       }
 
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/chats`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const data = await response.json();
+        setError(null);
+
+        const data = await apis.listChats(jwt);
+
         if (data.status === "success") {
-          const normalized = data.sessions.map((s: any) => ({
-            ...s,
-            session_id: s.session_id ?? s.id,
-            last_activity: s.updated_at || s.created_at,
-          }));
-          setChatSessions(normalized);
+          setChatSessions(normalizeSessions(data.sessions || []));
         } else {
           setError(data.message || "Failed to load chat sessions");
         }
-      } catch {
-        setError("Unable to connect to server");
+      } catch (e: any) {
+        setError(e?.message || "Unable to connect to server");
       } finally {
         setLoading(false);
       }
-    }, [token]);
+    }, [ensureToken]);
 
     useImperativeHandle(ref, () => ({
       refreshChatHistory: fetchChatSessions,
     }));
 
     useEffect(() => {
+      // preload token once
       const initialize = async () => {
-        const session = await getSession();
-        if (session?.user?.token) {
-          setToken(session.user.token);
-        }
+        await ensureToken();
       };
       initialize();
-    }, []);
+    }, [ensureToken]);
 
     useEffect(() => {
       if (token) fetchChatSessions();
     }, [token, fetchChatSessions]);
 
     const handleNewChat = async () => {
-      if (!token) return setError("Please log in first");
+      const jwt = await ensureToken();
+      if (!jwt) return setError("Please log in first");
+
       setCreatingSession(true);
       try {
-        const response = await fetch(`${API_BASE_URL}/chats`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            session_name: `Chat ${new Date().toLocaleDateString()}`,
-          }),
+        const data = await apis.createChat(jwt, {
+          session_name: `Chat ${new Date().toLocaleDateString()}`,
         });
-        const data = await response.json();
+
         if (data.status === "success") {
           await fetchChatSessions();
           onSessionSelect?.(data.session_id);
@@ -284,34 +286,29 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
         } else {
           setError(data.message || "Failed to create new chat");
         }
-      } catch {
-        setError("Failed to create new chat");
+      } catch (e: any) {
+        setError(e?.message || "Failed to create new chat");
       } finally {
         setCreatingSession(false);
       }
     };
 
     const handleDeleteChat = async (sessionId: number) => {
-      if (!token) return setError("Please log in first");
+      const jwt = await ensureToken();
+      if (!jwt) return setError("Please log in first");
       if (!confirm("Are you sure you want to delete this chat?")) return;
 
       try {
-        const response = await fetch(`${API_BASE_URL}/chats/${sessionId}`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const data = await response.json();
+        const data = await apis.deleteChat(jwt, sessionId);
+
         if (data.status === "success") {
           setChatSessions((prev) => prev.filter((s) => s.id !== sessionId));
           if (activeSessionId === sessionId) onSessionSelect?.(null);
         } else {
           setError(data.message || "Failed to delete chat");
         }
-      } catch {
-        setError("Failed to delete chat");
+      } catch (e: any) {
+        setError(e?.message || "Failed to delete chat");
       }
     };
 
@@ -332,6 +329,7 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
+
           <div className="px-3 py-2">
             <button
               onClick={handleNewChat}
@@ -369,7 +367,9 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
                 className="p-1 hover:bg-gray-100 rounded"
               >
                 <IconLoader
-                  className={`h-3 w-3 text-gray-400 ${loading ? "animate-spin" : ""}`}
+                  className={`h-3 w-3 text-gray-400 ${
+                    loading ? "animate-spin" : ""
+                  }`}
                 />
               </button>
             </SidebarGroupLabel>
@@ -389,10 +389,10 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
                         {label === "today"
                           ? "Today"
                           : label === "yesterday"
-                            ? "Yesterday"
-                            : label === "thisWeek"
-                              ? "This Week"
-                              : "Older"}
+                          ? "Yesterday"
+                          : label === "thisWeek"
+                          ? "This Week"
+                          : "Older"}
                       </div>
                       {sessions.map((session) => (
                         <ChatHistoryItem

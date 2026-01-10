@@ -17,7 +17,7 @@ type Props = {
   loading: boolean;
   error: string | null;
   success: boolean;
-  maxDate: string; // YYYY-MM-DD
+  maxDate: string;
 };
 
 export function CalculatorCard(props: Props) {
