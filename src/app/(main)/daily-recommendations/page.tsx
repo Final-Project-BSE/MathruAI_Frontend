@@ -1,5 +1,3 @@
-// src/app/(main)/daily-recommendations/page.tsx
-
 import React from 'react';
 import DailyRecommendationDashboard from './components/DailyRecommendationDashboard';
 
