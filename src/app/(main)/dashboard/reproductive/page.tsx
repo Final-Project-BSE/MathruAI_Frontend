@@ -31,7 +31,7 @@ export default function ReproductivePage() {
 
   return (
     <Container title="Reproductive Planning Dashboard">
-      <div className="bg-gradient-to-br from-pink-100 to-pink-200 min-h-screen -m-5 p-4 md:p-6">
+      <div className="bg-gradient-to-br from-pink-100 to-pink-200 min-h-screen p-4 md:p-6">
         {/* Header Section - Responsive */}
         <div className="bg-gradient-to-r from-pink-300 to-pink-400 rounded-lg p-4 md:p-6 mb-6 text-white">
           <div className="flex flex-col md:flex-row justify-between items-start gap-4">
@@ -52,7 +52,7 @@ export default function ReproductivePage() {
                 <AvatarFallback className="bg-pink-500 text-white">SJ</AvatarFallback>
               </Avatar>
               <div>
-                <Button onClick={() => setIsPopupOpen(true)}>Update Data</Button>
+                <Button className="bg-pink-500 text-white" onClick={() => setIsPopupOpen(true)}>Update Data</Button>
               </div>
             </div>
           </div>
@@ -64,7 +64,7 @@ export default function ReproductivePage() {
           <Card className="bg-white/90 backdrop-blur">
             <CardHeader>
               <CardTitle className="text-pink-600 flex items-center gap-2 text-sm md:text-base">
-                <span className="text-green-500">✓</span> Today&apos;s Recommendations
+               Today&apos;s Recommendations
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -120,7 +120,7 @@ export default function ReproductivePage() {
             <CardHeader>
               <CardTitle className="text-pink-600 flex items-center justify-between text-sm md:text-base">
                 <span className="flex items-center gap-2">
-                  <span className="text-pink-500">♀</span> Fertility & Ovulation Tracker
+                  Fertility & Ovulation Tracker
                 </span>
                 <Link href="/dashboard/reproductive/cycle-tracker">
                   <Button variant="ghost" size="sm" className="text-xs">
@@ -200,7 +200,7 @@ export default function ReproductivePage() {
           <Card className="bg-white/90 backdrop-blur md:col-span-2 lg:col-span-1">
             <CardHeader>
               <CardTitle className="text-pink-600 flex items-center gap-2 text-sm md:text-base">
-                <span>📢</span> Health Announcements
+                Health Announcements
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -219,7 +219,7 @@ export default function ReproductivePage() {
           <Card className="bg-white/90 backdrop-blur">
             <CardHeader>
               <CardTitle className="text-pink-600 flex items-center gap-2 text-sm md:text-base">
-                <span>🔔</span> Upcoming Reminders
+                Upcoming Reminders
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -257,7 +257,7 @@ export default function ReproductivePage() {
           <Card className="bg-white/90 backdrop-blur">
             <CardHeader>
               <CardTitle className="text-pink-600 flex items-center gap-2 text-sm md:text-base">
-                <span>👩‍⚕️</span> Midwife Connectivity
+               Midwife Connectivity
               </CardTitle>
             </CardHeader>
             <CardContent>

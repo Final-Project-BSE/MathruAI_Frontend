@@ -1,402 +1,303 @@
 "use client";
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Calendar,
-  Droplets,
-  Heart,
-  Sun,
-  TrendingUp,
-  Target,
-  Activity,
-  Lightbulb
-} from 'lucide-react';
 
-interface CycleDay {
-  date: number;
-  isCurrentDay: boolean;
-  isPeriod: boolean;
-  isFertile: boolean;
-  isOvulation: boolean;
-  isToday: boolean;
-  symptoms?: string[];
-  mood?: string;
+import React, { useEffect, useMemo, useState } from "react";
+import { LoadingState } from "../../../components/common/LoadingState";
+import { AuthRequired } from "./components/AuthRequired";
+import { CalculatorCard } from "./components/CalculatorCard";
+import { StatsGrid, type CycleStats } from "./components/StatsGrid";
+import { CycleCalendar, type CycleDay } from "./components/CycleCalendar";
+import { CycleInsights } from "./components/CycleInsights";
+import Container from "@/components/shared/container"
+
+import {
+  calculateFertility,
+  getLatestFertility,
+  type FertilityResponseDto,
+} from "../../api/cycletracker/api";
+
+function formatDateForApi(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
-interface CycleStats {
-  currentDay: number;
+function deriveLastPeriod(nextPeriodISO: string, len: number) {
+  const d = new Date(nextPeriodISO);
+  d.setDate(d.getDate() - len);
+  return d;
+}
+
+function buildCalendarDays(params: {
+  year: number;
+  month: number; // 0-based
+  fertilityData: FertilityResponseDto;
+  lastPeriodDate: string; // optional
   cycleLength: number;
-  nextPeriod: number;
-  fertile: number;
-}
+}): CycleDay[] {
+  const { year, month, fertilityData, lastPeriodDate, cycleLength } = params;
 
-interface Symptoms {
-  periodFlow: 'Heavy' | 'Medium' | 'Light' | null;
-  ovulation: 'Cramps' | 'Headache' | 'Spotting' | null;
-  bleeding: 'Spotting' | 'Light' | 'Medium' | 'Heavy' | null;
-  mood: 'Happy' | 'Anxious' | 'Unstable' | 'Sad' | null;
-  cervicalMucus: 'Dry' | 'Sticky' | 'Creamy' | 'Egg White' | null;
-}
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date();
 
-const cycleStats: CycleStats = {
-  currentDay: 14,
-  cycleLength: 28,
-  nextPeriod: 14,
-  fertile: 3
-};
+  const periodDuration = 5;
 
-const currentSymptoms: Symptoms = {
-  periodFlow: 'Medium',
-  ovulation: 'Cramps',
-  bleeding: 'Spotting',
-  mood: 'Happy',
-  cervicalMucus: 'Egg White'
-};
+  const nextPeriod = new Date(fertilityData.nextPeriodDate);
 
-// Generate calendar days for August 2025
-const generateCalendarDays = (): CycleDay[] => {
+  const lastPeriodStart = lastPeriodDate
+    ? new Date(`${lastPeriodDate}T00:00:00`) // avoids timezone shift
+    : deriveLastPeriod(fertilityData.nextPeriodDate, cycleLength);
+
+  const fertileStart = new Date(fertilityData.fertileWindowStart);
+  const fertileEnd = new Date(fertilityData.fertileWindowEnd);
+  const ovulation = new Date(fertilityData.ovulationDate);
+
+  const addDays = (d: Date, n: number) => new Date(d.getTime() + n * 24 * 60 * 60 * 1000);
+
+  const lastPeriodEnd = addDays(lastPeriodStart, periodDuration);
+  const nextPeriodEnd = addDays(nextPeriod, periodDuration);
+
   const days: CycleDay[] = [];
-  const today = 14; // Current day
-  const periodDays = [1, 2, 3, 4, 5]; // Period days
-  const fertileDays = [12, 13, 14, 15, 16]; // Fertile window
-  const ovulationDay = 14; // Ovulation day
-  
-  for (let i = 1; i <= 31; i++) {
+
+  for (let i = 1; i <= daysInMonth; i++) {
+    const currentDate = new Date(year, month, i);
+
+    const isPeriod =
+      (currentDate >= lastPeriodStart && currentDate < lastPeriodEnd) ||
+      (currentDate >= nextPeriod && currentDate < nextPeriodEnd);
+
+    const isFertile = currentDate >= fertileStart && currentDate <= fertileEnd;
+    const isOvulation = currentDate.toDateString() === ovulation.toDateString();
+    const isToday = currentDate.toDateString() === today.toDateString();
+
     days.push({
       date: i,
-      isCurrentDay: i === today,
-      isPeriod: periodDays.includes(i),
-      isFertile: fertileDays.includes(i),
-      isOvulation: i === ovulationDay,
-      isToday: i === today,
+      isPeriod,
+      isFertile,
+      isOvulation,
+      isToday,
     });
   }
-  
+
   return days;
-};
+}
 
-const calendarDays = generateCalendarDays();
+function calcStats(params: {
+  fertilityData: FertilityResponseDto;
+  lastPeriodDate: string;
+  cycleLength: number;
+}): CycleStats {
+  const { fertilityData, lastPeriodDate, cycleLength } = params;
 
-const getDayClassName = (day: CycleDay) => {
-  if (day.isOvulation) return 'bg-red-500 text-white font-bold';
-  if (day.isPeriod) return 'bg-red-100 text-red-700';
-  if (day.isFertile) return 'bg-pink-100 text-pink-700';
-  if (day.isToday) return 'bg-gray-800 text-white';
-  return 'bg-white text-gray-700 hover:bg-gray-100';
-};
+  const today = new Date();
 
-const getSymptomBadgeColor = (type: string, value: string | null) => {
-  if (!value) return 'bg-gray-100 text-gray-500';
-  
-  switch (type) {
-    case 'periodFlow':
-      return value === 'Heavy' ? 'bg-red-100 text-red-700' : 
-             value === 'Medium' ? 'bg-pink-100 text-pink-700' : 'bg-pink-50 text-pink-600';
-    case 'ovulation':
-      return 'bg-orange-100 text-orange-700';
-    case 'bleeding':
-      return 'bg-red-100 text-red-700';
-    case 'mood':
-      return value === 'Happy' ? 'bg-green-100 text-green-700' :
-             value === 'Anxious' ? 'bg-yellow-100 text-yellow-700' :
-             value === 'Unstable' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700';
-    case 'cervicalMucus':
-      return 'bg-blue-100 text-blue-700';
-    default:
-      return 'bg-gray-100 text-gray-700';
+  const lastPeriod = lastPeriodDate
+    ? new Date(`${lastPeriodDate}T00:00:00`) // avoid timezone shift
+    : deriveLastPeriod(fertilityData.nextPeriodDate, cycleLength);
+
+  const nextPeriod = new Date(fertilityData.nextPeriodDate);
+  const fertileEnd = new Date(fertilityData.fertileWindowEnd);
+
+  const currentDay =
+    Math.floor((today.getTime() - lastPeriod.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+  const daysToNextPeriod = Math.ceil((nextPeriod.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const daysToFertileEnd = Math.max(
+    0,
+    Math.ceil((fertileEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  );
+
+  return {
+    currentDay: Math.max(0, currentDay),
+    cycleLength,
+    nextPeriod: Math.max(0, daysToNextPeriod),
+    fertile: daysToFertileEnd,
+  };
+}
+
+export default function CycleTrackerPage() {
+  const [token, setToken] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const [lastPeriodDate, setLastPeriodDate] = useState("");
+  const [cycleLength, setCycleLength] = useState(28);
+
+  const [fertilityData, setFertilityData] = useState<FertilityResponseDto | null>(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [calendarDays, setCalendarDays] = useState<CycleDay[]>([]);
+
+  // Load local persisted inputs
+  useEffect(() => {
+    const savedLast = localStorage.getItem("ct_lastPeriodDate");
+    const savedLen = localStorage.getItem("ct_cycleLength");
+    if (savedLast) setLastPeriodDate(savedLast);
+    if (savedLen) setCycleLength(Number(savedLen));
+  }, []);
+
+  // Auth + load latest from backend
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        const { getSession } = await import("@/lib/authentication");
+        const session = await getSession();
+
+        if (session?.user?.token) {
+          setToken(session.user.token);
+          setIsAuthenticated(true);
+
+          const latest = await getLatestFertility(session.user.token);
+          if (latest) {
+            setFertilityData(latest);
+            setError(null);
+          }
+        } else {
+          setError("Please log in to access the cycle tracker.");
+          setIsAuthenticated(false);
+        }
+      } catch {
+        setError("Authentication error. Please log in again.");
+        setIsAuthenticated(false);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    initialize();
+  }, []);
+
+  // Build calendar when month/data changes
+  useEffect(() => {
+    if (!fertilityData) return;
+
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+
+    setCalendarDays(
+      buildCalendarDays({
+        year,
+        month,
+        fertilityData,
+        lastPeriodDate,
+        cycleLength,
+      })
+    );
+  }, [fertilityData, currentMonth, lastPeriodDate, cycleLength]);
+
+  const stats = useMemo(() => {
+    if (!fertilityData) {
+      return { currentDay: 0, cycleLength, nextPeriod: 0, fertile: 0 };
+    }
+    return calcStats({ fertilityData, lastPeriodDate, cycleLength });
+  }, [fertilityData, lastPeriodDate, cycleLength]);
+
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ];
+  const displayMonth = `${monthNames[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`;
+
+  const leadingEmptyDays = useMemo(() => {
+    return new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
+  }, [currentMonth]);
+
+  async function handleCalculate() {
+    if (!lastPeriodDate) {
+      setError("Please enter your last period date");
+      return;
+    }
+    if (!token) {
+      setError("Please log in to calculate fertility window");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      setSuccess(false);
+
+      const data = await calculateFertility(token, {
+        lastPeriodDate,
+        averageCycleLength: cycleLength,
+      });
+
+      setFertilityData(data);
+      localStorage.setItem("ct_lastPeriodDate", lastPeriodDate);
+      localStorage.setItem("ct_cycleLength", String(cycleLength));
+
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to calculate fertility window");
+    } finally {
+      setLoading(false);
+    }
   }
-};
 
-export default function CycleTracker() {
-  const [selectedMonth, setSelectedMonth] = useState('August 2025');
-  const [quickLogDay, setQuickLogDay] = useState(14);
+  function handleRecalculate() {
+    setFertilityData(null);
+    setLastPeriodDate("");
+  }
+
+  if (loadingData) return <LoadingState />;
+
+  if (!isAuthenticated) {
+    return <AuthRequired message={error || "Please log in to access the Cycle Tracker"} />;
+  }
 
   return (
+    <Container title="Cycle Tracker">
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-pink-200 to-pink-300 p-6">
-      {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">Cycle Tracker</h1>
-        <p className="text-pink-100">Track your cycle and symptoms. Sync calendar to see scheduled appointments</p>
+        <p className="text-gray-700">Track your cycle and fertility window</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-white/90 backdrop-blur-sm">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-red-500 mb-1">{cycleStats.currentDay}</div>
-            <div className="text-sm text-gray-600">Current Day</div>
-            <div className="text-xs text-gray-500">Period of cycle</div>
-          </CardContent>
-        </Card>
+      {!fertilityData && (
+        <CalculatorCard
+          lastPeriodDate={lastPeriodDate}
+          cycleLength={cycleLength}
+          onLastPeriodDateChange={setLastPeriodDate}
+          onCycleLengthChange={setCycleLength}
+          onCalculate={handleCalculate}
+          loading={loading}
+          error={error}
+          success={success}
+          maxDate={formatDateForApi(new Date())}
+        />
+      )}
 
-        <Card className="bg-white/90 backdrop-blur-sm">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-500 mb-1">{cycleStats.cycleLength}</div>
-            <div className="text-sm text-gray-600">Cycle Length</div>
-            <div className="text-xs text-gray-500">Average</div>
-          </CardContent>
-        </Card>
+      {fertilityData && (
+        <>
+          <StatsGrid stats={stats} />
 
-        <Card className="bg-white/90 backdrop-blur-sm">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-500 mb-1">{cycleStats.nextPeriod}</div>
-            <div className="text-sm text-gray-600">Next Period</div>
-            <div className="text-xs text-gray-500">Days left</div>
-          </CardContent>
-        </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <CycleCalendar
+                displayMonth={displayMonth}
+                leadingEmptyDays={leadingEmptyDays}
+                days={calendarDays}
+                onPrevMonth={() =>
+                  setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))
+                }
+                onNextMonth={() =>
+                  setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))
+                }
+                onRecalculate={handleRecalculate}
+              />
+            </div>
 
-        <Card className="bg-white/90 backdrop-blur-sm">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-purple-500 mb-1">{cycleStats.fertile}</div>
-            <div className="text-sm text-gray-600">Fertile Days</div>
-            <div className="text-xs text-gray-500">Remaining</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calendar */}
-        <div className="lg:col-span-2">
-          <Card className="bg-white/90 backdrop-blur-sm">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold">{selectedMonth}</CardTitle>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm">
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <span className="text-sm font-medium">August 2025</span>
-                  <Button variant="ghost" size="sm">
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-              
-              {/* Calendar Headers */}
-              <div className="grid grid-cols-7 gap-1 mt-4">
-                {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((day) => (
-                  <div key={day} className="text-center text-xs font-medium text-gray-500 p-2">
-                    {day}
-                  </div>
-                ))}
-              </div>
-            </CardHeader>
-            
-            <CardContent>
-              {/* Calendar Grid */}
-              <div className="grid grid-cols-7 gap-1">
-                {/* Empty cells for days before month starts */}
-                {[...Array(3)].map((_, i) => (
-                  <div key={`empty-${i}`} className="p-3"></div>
-                ))}
-                
-                {/* Calendar days */}
-                {calendarDays.map((day) => (
-                  <button
-                    key={day.date}
-                    className={`
-                      p-3 text-sm rounded-lg border transition-colors
-                      ${getDayClassName(day)}
-                    `}
-                  >
-                    {day.date}
-                  </button>
-                ))}
-              </div>
-
-              {/* Legend */}
-              <div className="flex items-center justify-center gap-6 mt-6 text-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-red-100 rounded border"></div>
-                  <span className="text-gray-600">Period</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-pink-100 rounded border"></div>
-                  <span className="text-gray-600">Fertile Window</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-red-500 rounded"></div>
-                  <span className="text-gray-600">Ovulation</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-gray-800 rounded"></div>
-                  <span className="text-gray-600">Today</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Sidebar */}
-        <div className="space-y-6">
-          {/* Quick Log */}
-          <Card className="bg-white/90 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold">Quick Log - Day {quickLogDay}</CardTitle>
-              <p className="text-sm text-gray-600">Period Flow</p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Period Flow */}
-              <div>
-                <div className="text-sm font-medium mb-2">Symptoms</div>
-                <div className="flex flex-wrap gap-2">
-                  <Tabs defaultValue="periodFlow">
-                    <TabsList className="grid grid-cols-4 w-full">
-                      <TabsTrigger value="none" className="text-xs">None</TabsTrigger>
-                      <TabsTrigger value="light" className="text-xs">Light</TabsTrigger>
-                      <TabsTrigger value="medium" className="text-xs bg-pink-100">Medium</TabsTrigger>
-                      <TabsTrigger value="heavy" className="text-xs">Heavy</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </div>
-              </div>
-
-              {/* Ovulation */}
-              <div>
-                <div className="flex flex-wrap gap-2">
-                  <Badge className={getSymptomBadgeColor('ovulation', 'Cramps')}>
-                    Cramps
-                  </Badge>
-                  <Badge className="bg-gray-100 text-gray-500">
-                    Headache
-                  </Badge>
-                  <Badge className="bg-gray-100 text-gray-500">
-                    Spotting
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Bleeding */}
-              <div>
-                <div className="text-sm font-medium mb-2">Bleeding</div>
-                <div className="flex flex-wrap gap-2">
-                  <Badge className={getSymptomBadgeColor('bleeding', 'Spotting')}>
-                    Spotting
-                  </Badge>
-                  <Badge className="bg-gray-100 text-gray-500">
-                    Mild Cramping
-                  </Badge>
-                  <Badge className="bg-gray-100 text-gray-500">
-                    Tender Breasts
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Cervical Mucus */}
-              <div>
-                <div className="text-sm font-medium mb-2">Cervical Mucus</div>
-                <div className="flex flex-wrap gap-2">
-                  <Badge className="bg-gray-100 text-gray-500">
-                    Dry
-                  </Badge>
-                  <Badge className="bg-gray-100 text-gray-500">
-                    Sticky
-                  </Badge>
-                  <Badge className="bg-gray-100 text-gray-500">
-                    Creamy
-                  </Badge>
-                  <Badge className={getSymptomBadgeColor('cervicalMucus', 'Egg White')}>
-                    Egg White
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Mood */}
-              <div>
-                <div className="text-sm font-medium mb-2">Mood</div>
-                <div className="flex flex-wrap gap-2">
-                  <Badge className={getSymptomBadgeColor('mood', 'Happy')}>
-                    Happy
-                  </Badge>
-                  <Badge className="bg-gray-100 text-gray-500">
-                    Anxious
-                  </Badge>
-                  <Badge className="bg-gray-100 text-gray-500">
-                    Unstable
-                  </Badge>
-                  <Badge className="bg-gray-100 text-gray-500">
-                    Sad
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Energetic */}
-              <div>
-                <div className="text-sm font-medium mb-2">Energetic</div>
-                <div className="flex flex-wrap gap-2">
-                  <Badge className="bg-gray-100 text-gray-500">
-                    Low
-                  </Badge>
-                  <Badge className="bg-gray-100 text-gray-500">
-                    Moderate
-                  </Badge>
-                  <Badge className="bg-gray-100 text-gray-500">
-                    High
-                  </Badge>
-                </div>
-              </div>
-
-              <Button className="w-full bg-red-500 hover:bg-red-600 text-white">
-                Save Today's Data
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Cycle Insights */}
-          <Card className="bg-white/90 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold">Cycle Insights</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-blue-100 rounded-full mt-1">
-                  <Target className="w-4 h-4 text-blue-600" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm">Ovulation Prediction</h4>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    Your fertile window started. Use your thermometer and 
-                    cervical positions to track ovulation timing.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-green-100 rounded-full mt-1">
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm">Cycle Pattern</h4>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    Your cycles have been consistent at 28 days 
-                    over the past 3 months. Your predicted menstrual 
-                    date is accurate.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-purple-100 rounded-full mt-1">
-                  <Lightbulb className="w-4 h-4 text-purple-600" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm">Health Tip</h4>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    Consider tracking your basal body temperature for 
-                    more accurate ovulation detection.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            <div className="space-y-6">
+              <CycleInsights fertilityData={fertilityData} />
+            </div>
+          </div>
+        </>
+      )}
     </div>
+    </Container>
   );
 }

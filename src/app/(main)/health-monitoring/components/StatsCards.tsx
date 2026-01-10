@@ -1,20 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Activity, Heart, Droplet, Zap } from 'lucide-react';
-
-interface VitalsState {
-  Age: string;
-  SystolicBP: string;
-  DiastolicBP: string;
-  BS: string;
-  BodyTemp: string;
-  BMI: string;
-  HeartRate: string;
-  PreviousComplications: number;
-  PreexistingDiabetes: number;
-  GestationalDiabetes: number;
-  MentalHealth: number;
-}
+import type { VitalsState } from '../../../api/healthmonitor/types';
 
 interface StatsCardsProps {
   vitals: VitalsState;
@@ -73,20 +60,18 @@ const StatsCards: React.FC<StatsCardsProps> = ({ vitals }) => {
       icon: Activity,
       bgColor: 'bg-purple-50',
       iconColor: 'text-purple-600',
-      borderColor: 'border-purple-200'
+      borderColor: 'border-purple-200',
     },
     {
       title: 'Blood Pressure',
-      value: vitals.SystolicBP && vitals.DiastolicBP 
-        ? `${vitals.SystolicBP}/${vitals.DiastolicBP}` 
-        : '-',
+      value: vitals.SystolicBP && vitals.DiastolicBP ? `${vitals.SystolicBP}/${vitals.DiastolicBP}` : '-',
       unit: 'mmHg',
       status: bpStatus.status,
       statusColor: bpStatus.color,
       icon: Heart,
       bgColor: 'bg-red-50',
       iconColor: 'text-red-600',
-      borderColor: 'border-red-200'
+      borderColor: 'border-red-200',
     },
     {
       title: 'Blood Sugar',
@@ -97,7 +82,7 @@ const StatsCards: React.FC<StatsCardsProps> = ({ vitals }) => {
       icon: Droplet,
       bgColor: 'bg-blue-50',
       iconColor: 'text-blue-600',
-      borderColor: 'border-blue-200'
+      borderColor: 'border-blue-200',
     },
     {
       title: 'Heart Rate',
@@ -108,15 +93,15 @@ const StatsCards: React.FC<StatsCardsProps> = ({ vitals }) => {
       icon: Zap,
       bgColor: 'bg-pink-50',
       iconColor: 'text-pink-600',
-      borderColor: 'border-pink-200'
-    }
+      borderColor: 'border-pink-200',
+    },
   ];
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {stats.map((stat, index) => (
-        <Card 
-          key={index} 
+        <Card
+          key={index}
           className={`${stat.bgColor} border-2 ${stat.borderColor} shadow-md hover:shadow-lg transition-shadow`}
         >
           <CardContent className="p-6">
@@ -131,9 +116,7 @@ const StatsCards: React.FC<StatsCardsProps> = ({ vitals }) => {
             <div className="space-y-1">
               <p className="text-sm font-medium text-gray-600">{stat.title}</p>
               <div className="flex items-baseline space-x-2">
-                <p className="text-3xl font-bold text-gray-800">
-                  {stat.value}
-                </p>
+                <p className="text-3xl font-bold text-gray-800">{stat.value}</p>
                 <p className="text-sm text-gray-500">{stat.unit}</p>
               </div>
             </div>

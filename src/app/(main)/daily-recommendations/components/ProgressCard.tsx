@@ -36,7 +36,7 @@ const ProgressCard: React.FC<ProgressCardProps> = ({ pregnancyWeek }) => {
           </div>
           <div className="relative w-full bg-gray-200 rounded-full h-4 overflow-hidden">
             <div
-              className="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-full transition-all duration-1000 ease-out"
+              className="absolute top-0 left-0 h-full bg-green-600 rounded-full transition-all duration-1000 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>

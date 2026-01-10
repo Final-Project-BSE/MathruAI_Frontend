@@ -1,180 +1,82 @@
-// src/services/api.ts
+// api.ts
+import axios, { AxiosError } from 'axios';
+import type { UserData, RecommendationData, HistoryItem } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const PREGNANCY_API = `${API_BASE_URL}/pregnancy`;
 
-// Store token in memory (you can use localStorage in a real app)
-let authToken: string | null = null;
+const http = axios.create({
+  baseURL: PREGNANCY_API,
+  headers: { 'Content-Type': 'application/json' },
+});
 
-export const setAuthToken = (token: string) => {
-  authToken = token;
+function authHeader(token: string) {
+  return { Authorization: `Bearer ${token}` };
+}
+
+function isAxios404(err: unknown) {
+  return axios.isAxiosError(err) && err.response?.status === 404;
+}
+
+const apis = {
+  // Optional endpoint used by your JWT fallback flow
+  async me(token: string): Promise<{ user_id?: number; id?: number }> {
+    const res = await http.get('/auth/me', { headers: authHeader(token) });
+    return res.data;
+  },
+
+  async getUser(token: string, userId: number): Promise<UserData> {
+    const res = await http.get(`/user/${userId}`, {
+      headers: authHeader(token),
+    });
+    return res.data;
+  },
+
+  async getTodayRecommendation(token: string, userId: number): Promise<RecommendationData | null> {
+    try {
+      const res = await http.get(`/recommendation/${userId}`, {
+        headers: authHeader(token),
+      });
+      return res.data;
+    } catch (err) {
+      if (isAxios404(err)) return null;
+      throw err;
+    }
+  },
+
+  async refreshRecommendation(token: string, userId: number): Promise<RecommendationData> {
+    // force regenerate
+    const res = await http.get(`/recommendation/${userId}`, {
+      headers: authHeader(token),
+      params: { force_regenerate: true },
+    });
+    return res.data;
+  },
+
+  async getHistory(token: string, userId: number, limit = 7): Promise<HistoryItem[]> {
+    const res = await http.get(`/recommendations/history/${userId}`, {
+      headers: authHeader(token),
+      params: { limit },
+    });
+
+    // your backend returns { recommendations: [...] }
+    return res.data?.recommendations || [];
+  },
+
+  async updateUserSettings(
+    token: string,
+    userId: number,
+    payload: {
+      pregnancy_week: number;
+      preferences: string;
+      regenerate_recommendation: boolean;
+    }
+  ): Promise<any> {
+    const res = await http.put(`/user/${userId}/data`, payload, {
+      headers: authHeader(token),
+    });
+    return res.data;
+  },
 };
 
-export const getAuthToken = () => {
-  return authToken;
-};
-
-const getHeaders = () => {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-  
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
-  }
-  
-  return headers;
-};
-
-// Health Check
-export const checkHealth = async () => {
-  const response = await fetch(`${API_BASE_URL}/health`, {
-    method: 'GET',
-  });
-  
-  if (!response.ok) {
-    throw new Error('Health check failed');
-  }
-  
-  return response.json();
-};
-
-// Get User Information
-export const getUser = async (userId: number) => {
-  const response = await fetch(`${API_BASE_URL}/user/${userId}`, {
-    method: 'GET',
-    headers: getHeaders(),
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch user');
-  }
-  
-  return response.json();
-};
-
-// Get Daily Recommendation
-export const getDailyRecommendation = async (userId: number, forceRegenerate: boolean = false) => {
-  const url = new URL(`${API_BASE_URL}/recommendation/${userId}`);
-  if (forceRegenerate) {
-    url.searchParams.append('force_regenerate', 'true');
-  }
-  
-  const response = await fetch(url.toString(), {
-    method: 'GET',
-    headers: getHeaders(),
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch recommendation');
-  }
-  
-  return response.json();
-};
-
-// Get Recommendation History
-export const getRecommendationHistory = async (userId: number, limit: number = 30) => {
-  const url = new URL(`${API_BASE_URL}/recommendations/history/${userId}`);
-  url.searchParams.append('limit', limit.toString());
-  
-  const response = await fetch(url.toString(), {
-    method: 'GET',
-    headers: getHeaders(),
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch recommendation history');
-  }
-  
-  return response.json();
-};
-
-// Update User Data
-export const updateUserData = async (
-  userId: number, 
-  data: {
-    pregnancy_week?: number;
-    preferences?: string;
-    regenerate_recommendation?: boolean;
-  }
-) => {
-  const response = await fetch(`${API_BASE_URL}/user/${userId}/data`, {
-    method: 'PUT',
-    headers: getHeaders(),
-    body: JSON.stringify(data),
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to update user data');
-  }
-  
-  return response.json();
-};
-
-// Get User Data History
-export const getUserDataHistory = async (userId: number, limit: number = 10) => {
-  const url = new URL(`${API_BASE_URL}/user/${userId}/data/history`);
-  url.searchParams.append('limit', limit.toString());
-  
-  const response = await fetch(url.toString(), {
-    method: 'GET',
-    headers: getHeaders(),
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch user data history');
-  }
-  
-  return response.json();
-};
-
-// Get System Stats
-export const getSystemStats = async () => {
-  const response = await fetch(`${API_BASE_URL}/stats`, {
-    method: 'GET',
-    headers: getHeaders(),
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch system stats');
-  }
-  
-  return response.json();
-};
-
-// Search Knowledge Base
-export const searchKnowledgeBase = async (query: string, topK: number = 5) => {
-  const response = await fetch(`${API_BASE_URL}/search`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({ query, top_k: topK }),
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to search knowledge base');
-  }
-  
-  return response.json();
-};
-
-// Upload PDF
-export const uploadPDF = async (file: File) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  
-  const headers: HeadersInit = {};
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
-  }
-  
-  const response = await fetch(`${API_BASE_URL}/upload-pdf`, {
-    method: 'POST',
-    headers,
-    body: formData,
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to upload PDF');
-  }
-  
-  return response.json();
-};
+export default apis;
