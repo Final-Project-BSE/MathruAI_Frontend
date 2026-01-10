@@ -1,5 +1,3 @@
-// src/app/(main)/daily-recommendations/components/DailyRecommendationDashboard.tsx
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
