@@ -31,7 +31,7 @@ export default function ReproductivePage() {
 
   return (
     <Container title="Reproductive Planning Dashboard">
-      <div className="bg-gradient-to-br from-pink-100 to-pink-200 min-h-screen -m-5 p-4 md:p-6">
+      <div className="bg-gradient-to-br from-pink-100 to-pink-200 min-h-screen p-4 md:p-6">
         {/* Header Section - Responsive */}
         <div className="bg-gradient-to-r from-pink-300 to-pink-400 rounded-lg p-4 md:p-6 mb-6 text-white">
           <div className="flex flex-col md:flex-row justify-between items-start gap-4">
@@ -52,7 +52,7 @@ export default function ReproductivePage() {
                 <AvatarFallback className="bg-pink-500 text-white">SJ</AvatarFallback>
               </Avatar>
               <div>
-                <Button onClick={() => setIsPopupOpen(true)}>Update Data</Button>
+                <Button className="bg-pink-500 text-white" onClick={() => setIsPopupOpen(true)}>Update Data</Button>
               </div>
             </div>
           </div>

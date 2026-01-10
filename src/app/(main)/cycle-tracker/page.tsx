@@ -7,6 +7,8 @@ import { CalculatorCard } from "./components/CalculatorCard";
 import { StatsGrid, type CycleStats } from "./components/StatsGrid";
 import { CycleCalendar, type CycleDay } from "./components/CycleCalendar";
 import { CycleInsights } from "./components/CycleInsights";
+import Container from "@/components/shared/container"
+
 import {
   calculateFertility,
   getLatestFertility,
@@ -248,6 +250,7 @@ export default function CycleTrackerPage() {
   }
 
   return (
+    <Container title="Cycle Tracker">
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-pink-200 to-pink-300 p-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">Cycle Tracker</h1>
@@ -295,5 +298,6 @@ export default function CycleTrackerPage() {
         </>
       )}
     </div>
+    </Container>
   );
 }

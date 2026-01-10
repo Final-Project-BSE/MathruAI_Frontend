@@ -51,7 +51,7 @@ const PatientProfileSummary: React.FC<PatientProfileSummaryProps> = ({
   }
 
   return (
-    <div className="bg-purple-50 p-6 rounded-lg border-2 border-purple-200">
+    <div className="bg-purple-50 p-6 mt-10 rounded-lg border-2 border-purple-200">
       <div className="flex items-center space-x-2 mb-4">
         <User className="h-5 w-5 text-purple-600" />
         <h3 className="text-lg font-semibold text-gray-800">

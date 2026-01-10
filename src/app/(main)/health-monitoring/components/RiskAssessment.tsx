@@ -58,11 +58,6 @@ const RiskAssessmentComponent: React.FC<RiskAssessmentProps> = ({
         <CardTitle className="text-lg font-semibold flex items-center">
           <TrendingUp className="h-5 w-5 mr-2 text-pink-500" />
           Risk Assessment Results
-          {predictionResult && (
-            <Badge variant="outline" className="ml-auto text-xs">
-              {currentPredictionId ? `ID: ${currentPredictionId}` : 'New'}
-            </Badge>
-          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -94,7 +89,7 @@ const RiskAssessmentComponent: React.FC<RiskAssessmentProps> = ({
                   </Badge>
                 </div>
                 <div className="flex items-center space-x-2 mb-4">
-                  <span className="text-sm text-gray-600">Confidence:</span>
+                  {/* <span className="text-sm text-gray-600">Confidence:</span> */}
                   <div className="flex-1 bg-gray-200 rounded-full h-3">
                     <div
                       className="bg-pink-500 h-3 rounded-full transition-all duration-500"
@@ -126,7 +121,7 @@ const RiskAssessmentComponent: React.FC<RiskAssessmentProps> = ({
                           <span className="text-xs text-gray-600 w-24">{level}:</span>
                           <div className="flex-1 bg-gray-200 rounded-full h-2">
                             <div
-                              className="bg-gradient-to-r from-pink-400 to-purple-400 h-2 rounded-full"
+                              className="bg-pink-300 h-2 rounded-full"
                               style={{
                                 width: `${(probValue * 100).toFixed(0)}%`
                               }}

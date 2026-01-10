@@ -21,7 +21,6 @@ export default async function RootLayout({ children }: Props) {
         <SidebarProvider>
           <div className="flex min-h-svh w-full">
             <AppSidebar userRole={userRole} />
-            {/* min-w-0 is important so content can truly expand and not “shrink” */}
             <main className="flex-1 min-w-0 w-full">
               {children}
             </main>

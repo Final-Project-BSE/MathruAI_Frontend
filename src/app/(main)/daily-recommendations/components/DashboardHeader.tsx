@@ -24,12 +24,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   return (
     <div className="mb-8 flex justify-between items-center">
       <div className="flex items-center gap-4">
-        <div className="w-16 h-16 bg-gradient-to-br from-pink-400 via-purple-500 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
-          <Heart className="w-8 h-8 text-white" />
-        </div>
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            Welcome, {userName}!
+          <h1 className="text-3xl font-bold bg-clip-text">
+            Check Today's Recommendation, {userName}!
           </h1>
           <p className="text-gray-600 mt-1">
             Week {pregnancyWeek} of your pregnancy journey
@@ -53,14 +50,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           <span>Refresh</span>
-        </Button>
-        <Button
-          onClick={onLogout}
-          variant="outline"
-          className="flex items-center space-x-2"
-        >
-          <LogOut className="h-4 w-4" />
-          <span>Logout</span>
         </Button>
       </div>
     </div>

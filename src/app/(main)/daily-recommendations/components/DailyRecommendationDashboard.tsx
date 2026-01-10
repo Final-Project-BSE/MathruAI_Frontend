@@ -40,7 +40,6 @@ const DailyRecommendationDashboard = () => {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   const PREGNANCY_API = `${API_BASE_URL}/pregnancy`;
 
-  // Initialize - Get JWT token from session and decode user ID
   useEffect(() => {
     const initialize = async () => {
       try {
