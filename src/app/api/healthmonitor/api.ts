@@ -1,4 +1,3 @@
-// api.ts
 import axios, { AxiosError } from 'axios';
 import type { APIResponse, PredictionResult } from './types';
 
@@ -42,7 +41,6 @@ export type BackendPredictionRecord = {
     alternative_advice?: string[];
     patient_profile?: Record<string, any>;
   };
-  // sometimes backend may already return in normalized shape
   risk_assessment?: {
     risk_level: string;
     confidence: number;
@@ -59,7 +57,6 @@ export type BackendPredictionRecord = {
 export function normalizePrediction(record: BackendPredictionRecord): PredictionResult {
   const predId = record.prediction_id || record.id || '';
 
-  // If backend already returns normalized fields, prefer them.
   if (record.risk_assessment && record.health_guidance) {
     return {
       prediction_id: predId,
@@ -71,7 +68,6 @@ export function normalizePrediction(record: BackendPredictionRecord): Prediction
     };
   }
 
-  // Otherwise, transform from nested "prediction"
   return {
     prediction_id: predId,
     user_id: record.user_id,
@@ -101,7 +97,6 @@ const apis = {
         return normalizePrediction(res.data.data);
       }
 
-      // backend might return {status:'error'} without throwing
       return null;
     } catch (err) {
       const axiosErr = err as AxiosError<any>;

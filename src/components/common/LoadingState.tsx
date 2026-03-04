@@ -9,12 +9,9 @@ export function LoadingState() {
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-pink-200 to-pink-300 p-6 flex items-center justify-center">
       <Card className="bg-white/90 backdrop-blur-sm p-6">
         <div className="flex flex-col items-center gap-4">
-          {/* Spinner wrapper */}
           <div className="relative w-24 h-24">
-            {/* Rotating ring */}
             <div className="absolute inset-0 rounded-full border-4 border-pink-200 border-t-pink-500 animate-spin" />
 
-            {/* Center image */}
             <div className="absolute inset-2 rounded-full overflow-hidden bg-white shadow-sm">
               <Image
                 src="/images/logo.jpeg"

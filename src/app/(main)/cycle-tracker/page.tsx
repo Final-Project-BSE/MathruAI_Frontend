@@ -30,9 +30,9 @@ function deriveLastPeriod(nextPeriodISO: string, len: number) {
 
 function buildCalendarDays(params: {
   year: number;
-  month: number; // 0-based
+  month: number;
   fertilityData: FertilityResponseDto;
-  lastPeriodDate: string; // optional
+  lastPeriodDate: string;
   cycleLength: number;
 }): CycleDay[] {
   const { year, month, fertilityData, lastPeriodDate, cycleLength } = params;
@@ -92,7 +92,7 @@ function calcStats(params: {
   const today = new Date();
 
   const lastPeriod = lastPeriodDate
-    ? new Date(`${lastPeriodDate}T00:00:00`) // avoid timezone shift
+    ? new Date(`${lastPeriodDate}T00:00:00`)
     : deriveLastPeriod(fertilityData.nextPeriodDate, cycleLength);
 
   const nextPeriod = new Date(fertilityData.nextPeriodDate);
@@ -131,7 +131,6 @@ export default function CycleTrackerPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [calendarDays, setCalendarDays] = useState<CycleDay[]>([]);
 
-  // Load local persisted inputs
   useEffect(() => {
     const savedLast = localStorage.getItem("ct_lastPeriodDate");
     const savedLen = localStorage.getItem("ct_cycleLength");
@@ -139,7 +138,6 @@ export default function CycleTrackerPage() {
     if (savedLen) setCycleLength(Number(savedLen));
   }, []);
 
-  // Auth + load latest from backend
   useEffect(() => {
     const initialize = async () => {
       try {
@@ -170,7 +168,6 @@ export default function CycleTrackerPage() {
     initialize();
   }, []);
 
-  // Build calendar when month/data changes
   useEffect(() => {
     if (!fertilityData) return;
 

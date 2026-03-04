@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Heart, Loader2, AlertTriangle } from 'lucide-react';
 
-// Import components
 import DashboardHeader from './DashboardHeader';
 import ErrorAlert from './ErrorAlert';
 import SuccessAlert from './SuccessAlert';
@@ -14,25 +13,20 @@ import RecommendationCard from './RecommendationCard';
 import HistorySection from './HistorySection';
 import SettingsModal from './SettingsModal';
 
-// Import types
 import type { UserData, RecommendationData, HistoryItem } from '../../../api/dailyrecommendation/types';
 
-// Import APIs (axios)
 import apis from '../../../api/dailyrecommendation/api';
 import { LoadingState } from '@/components/common/LoadingState';
 
 const DailyRecommendationDashboard = () => {
-  // Auth state
   const [token, setToken] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
 
-  // Data state
   const [userData, setUserData] = useState<UserData | null>(null);
   const [recommendation, setRecommendation] = useState<RecommendationData | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
-  // UI state
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +41,7 @@ const DailyRecommendationDashboard = () => {
         const session = await getSession();
 
         if (!session?.user?.token) {
-          console.warn('⚠️ No session found — please log in first.');
+          console.warn('No session found — please log in first.');
           setError('Please log in to access the daily recommendations dashboard.');
           setIsAuthenticated(false);
           setLoadingData(false);
@@ -57,9 +51,8 @@ const DailyRecommendationDashboard = () => {
         const jwt = session.user.token;
         setToken(jwt);
         setIsAuthenticated(true);
-        console.log('✅ JWT token loaded for Daily Recommendation Dashboard');
+        console.log('JWT token loaded for Daily Recommendation Dashboard');
 
-        // Decode JWT to extract user information
         try {
           const tokenParts = jwt.split('.');
           if (tokenParts.length !== 3) throw new Error('Invalid JWT token format');
@@ -67,10 +60,9 @@ const DailyRecommendationDashboard = () => {
           const payload = JSON.parse(atob(tokenParts[1]));
           console.log('Decoded JWT payload:', payload);
 
-          // Try multiple possible field names for user ID
           let uid = payload.user_id || payload.userId || payload.id || payload.uid;
 
-          // Fallback: fetch /auth/me if no uid found in token
+          // Fallback
           if (!uid && payload.sub) {
             console.warn('No user_id in JWT token, will try /auth/me');
             try {
@@ -209,7 +201,6 @@ const DailyRecommendationDashboard = () => {
       const data = await apis.updateUserSettings(token, userId, payload);
       console.log('Response:', data);
 
-      // Update local userData
       if (userData) {
         setUserData({
           ...userData,
@@ -258,7 +249,6 @@ const DailyRecommendationDashboard = () => {
     }
   };
 
-  // Loading screen
   if (loadingData) {
     return (
       <div>
@@ -267,7 +257,6 @@ const DailyRecommendationDashboard = () => {
     );
   }
 
-  // Not authenticated screen
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 flex items-center justify-center p-8">

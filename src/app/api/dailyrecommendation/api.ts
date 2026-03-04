@@ -1,4 +1,3 @@
-// api.ts
 import axios, { AxiosError } from 'axios';
 import type { UserData, RecommendationData, HistoryItem } from './types';
 
@@ -19,7 +18,6 @@ function isAxios404(err: unknown) {
 }
 
 const apis = {
-  // Optional endpoint used by your JWT fallback flow
   async me(token: string): Promise<{ user_id?: number; id?: number }> {
     const res = await http.get('/auth/me', { headers: authHeader(token) });
     return res.data;
@@ -59,7 +57,6 @@ const apis = {
       params: { limit },
     });
 
-    // your backend returns { recommendations: [...] }
     return res.data?.recommendations || [];
   },
 

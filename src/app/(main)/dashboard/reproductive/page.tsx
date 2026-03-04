@@ -32,7 +32,6 @@ export default function ReproductivePage() {
   return (
     <Container title="Reproductive Planning Dashboard">
       <div className="bg-gradient-to-br from-pink-100 to-pink-200 min-h-screen p-4 md:p-6">
-        {/* Header Section - Responsive */}
         <div className="bg-gradient-to-r from-pink-300 to-pink-400 rounded-lg p-4 md:p-6 mb-6 text-white">
           <div className="flex flex-col md:flex-row justify-between items-start gap-4">
             <div className="flex-1">
@@ -58,7 +57,6 @@ export default function ReproductivePage() {
           </div>
         </div>
 
-        {/* Main Content Grid - Responsive */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Today's Recommendations */}
           <Card className="bg-white/90 backdrop-blur">

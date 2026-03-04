@@ -37,7 +37,6 @@ import { ChatSession as ApiChatSession } from "../app/api/chatbot/types";
 import apis from "../app/api/chatbot/api";
 
 
-// Types
 interface ChatSession {
   id: number;
   session_id?: number;
@@ -58,7 +57,6 @@ interface ChatSidebarProps extends React.ComponentProps<typeof Sidebar> {
   onRefreshNeeded?: () => void;
 }
 
-// Helper Functions
 function groupSessionsByDate(sessions: ChatSession[]) {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -94,7 +92,6 @@ function groupSessionsByDate(sessions: ChatSession[]) {
   return groups;
 }
 
-// Chat History Item
 function ChatHistoryItem({
   session,
   isActive,
@@ -201,7 +198,6 @@ function ChatHistoryItem({
   );
 }
 
-// normalize backend chat sessions into the UI ChatSession shape
 function normalizeSessions(sessions: ApiChatSession[]): ChatSession[] {
   return sessions.map((s: any) => ({
     ...s,
@@ -210,7 +206,7 @@ function normalizeSessions(sessions: ApiChatSession[]): ChatSession[] {
   }));
 }
 
-// Main Sidebar Component
+// Main Component
 export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
   ({ activeSessionId, onSessionSelect, onNewChat, ...props }, ref) => {
     const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
@@ -258,7 +254,6 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
     }));
 
     useEffect(() => {
-      // preload token once
       const initialize = async () => {
         await ensureToken();
       };
