@@ -21,16 +21,21 @@ export const ROUTE_ACCESS: Record<string, UserRole[]> = {
   '/dashboard/pregnancy': [ROLES.PREGNANT_MOTHER, ROLES.MIDWIFE],
   '/dashboard/postpartum': [ROLES.POST_PREGNANT_MOTHER, ROLES.MIDWIFE],
   '/dashboard/admin': [ROLES.MIDWIFE],
+
+  '/cycle-tracker': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
+  '/health-monitoring': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
+  '/daily-recommendations': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
+  '/midwife-connection': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
+  '/chatbot': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
+  '/notifications': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
+  '/announcement': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
 };
 
-// Helper function to get dashboard for a role
 export function getDashboardForRole(role: string): string {
   return ROLE_DASHBOARDS[role as UserRole] || '/sign-in';
 }
 
-// Helper function to check if role can access route
 export function canAccessRoute(role: string, route: string): boolean {
-  // Find matching route pattern
   for (const [routePattern, allowedRoles] of Object.entries(ROUTE_ACCESS)) {
     if (route.startsWith(routePattern)) {
       return allowedRoles.includes(role as UserRole);

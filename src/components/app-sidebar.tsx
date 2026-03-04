@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useRouter } from "next/navigation";
 import { logout } from "@/lib/authentication";
-
+import { canAccessRoute } from "@/lib/roleConfig";
 
 const data = {
   user: {
@@ -76,7 +76,7 @@ const data = {
   ],
 };
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ userRole, ...props }: React.ComponentProps<typeof Sidebar> & {userRole:string}) {
 
   const router = useRouter();
 
@@ -84,6 +84,10 @@ const handleLogout = async () => {
   await logout();
   router.push("/sign-in");
 }; 
+
+const accessibleNavItems = data.navMain.filter(item => {
+  return canAccessRoute(userRole, item.url)
+})
 
   return (
     <Sidebar
@@ -115,10 +119,9 @@ const handleLogout = async () => {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent className="!bg-white">
-        <NavMain items={data.navMain} />
+        <NavMain items={accessibleNavItems} />
       </SidebarContent>
       <SidebarFooter className="!bg-white">
-        {/* <NavUser user={data.user} /> */}
         <div className="h-[48px] w-full flex flex-row items-center gap-[10px] px-[16px]">
           <i className="logout-icon size-[28px] text-[#757575]" />
               <button

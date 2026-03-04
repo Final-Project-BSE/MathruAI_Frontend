@@ -10,7 +10,7 @@ const Container = ({
   return (
     <div className="min-h-screen flex flex-col">
       <SiteHeader title={title} />
-      <main className="p-5">{children}</main>
+      <main className="">{children}</main>
     </div>
   );
 };
