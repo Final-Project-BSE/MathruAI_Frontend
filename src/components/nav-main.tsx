@@ -30,7 +30,7 @@ export function NavMain({
               <SidebarMenuButton tooltip={item.title}
               asChild
               isActive={pathname === item.url}
-              className="flex !flex-row items-center h-[43px] gap-[10px] data-[active=true]:bg-[#CFE1EE] hover:bg-[#E4EDF5] data-[active=true]:text-[#2F4052] data-[active=true]:border-l-[#31465B] data-[active=true]:border-l-[4px] text-[#4D4D51] text-sm rounded-[8px]">
+              className="flex !flex-row items-center h-[43px] gap-[10px] data-[active=true]:bg-[#d04f51] hover:bg-[#ffffff] data-[active=true]:text-[#ffffff] data-[active=true]:border-l-[#ffffff] data-[active=true]:border-l-[4px] text-[#ffffff] text-sm rounded-[50px]">
                 {/* {item.icon && <item.icon />} */}
                 <a href={item.url} className="flex flex-row items-center h-full w-full px-[16px] gap-[2px]">
                 

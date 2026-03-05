@@ -29,6 +29,8 @@ export const ROUTE_ACCESS: Record<string, UserRole[]> = {
   '/chatbot': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
   '/notifications': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
   '/announcement': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
+  '/settings': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
+
 };
 
 export function getDashboardForRole(role: string): string {

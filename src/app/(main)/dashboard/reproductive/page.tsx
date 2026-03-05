@@ -36,7 +36,7 @@ export default function ReproductivePage() {
 
   return (
     <Container title="Reproductive Planning Dashboard">
-      <div className="bg-gradient-to-br from-pink-100 to-pink-200 min-h-screen p-4 md:p-6">
+      <div className="bg-[#fed2cc] min-h-screen p-4 md:p-6">
         <DashboardTopBar
           info={{ title: "Reproductive Planning Dashboard", subtitle: "Current Cycle Day", ultsubtitle: "Your cycle is looking healthy!" }}
           stats={stats}
