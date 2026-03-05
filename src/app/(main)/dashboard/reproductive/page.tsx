@@ -13,11 +13,15 @@ import { ROLES } from "@/lib/roleConfig"
 import { useNavigation } from "react-day-picker"
 import { useRouter } from "next/navigation"
 import { UpdateDataPopup } from "@/components/update-data-popup"
+import DashboardTopBar from "./components/DashboardTopBar"
+import { useCycleStats } from "@/hooks/useCycleStats";
+
 
 export default function ReproductivePage() {
   const [checkedItems, setCheckedItems] = useState<string[]>([])
   const [isPopupOpen, setIsPopupOpen] = useState(false)
 
+  const { loading, error, stats } = useCycleStats();
 
   const router = useRouter();
 
@@ -32,37 +36,16 @@ export default function ReproductivePage() {
   return (
     <Container title="Reproductive Planning Dashboard">
       <div className="bg-gradient-to-br from-pink-100 to-pink-200 min-h-screen p-4 md:p-6">
-        <div className="bg-gradient-to-r from-pink-300 to-pink-400 rounded-lg p-4 md:p-6 mb-6 text-white">
-          <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-            <div className="flex-1">
-              <h1 className="text-xl md:text-2xl font-bold mb-2">Reproductive Planning Dashboard</h1>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <div>
-                  <div className="text-3xl md:text-4xl font-bold">28</div>
-                  <div className="text-sm">Current Cycle Day</div>
-                  <div className="text-xs opacity-90">Your cycle is looking healthy!</div>
-                </div>
-              </div>
-            </div>
-            <div className="text-left md:text-right">
-              <div className="font-semibold">Sarah Johnson</div>
-              <div className="text-sm opacity-90">Patient ID: RP-2025-001</div>
-              <Avatar className="w-10 h-10 mt-2">
-                <AvatarFallback className="bg-pink-500 text-white">SJ</AvatarFallback>
-              </Avatar>
-              <div>
-                <Button className="bg-pink-500 text-white" onClick={() => setIsPopupOpen(true)}>Update Data</Button>
-              </div>
-            </div>
-          </div>
-        </div>
-
+        <DashboardTopBar
+          info={{ title: "Reproductive Planning Dashboard", subtitle: "Current Cycle Day", ultsubtitle: "Your cycle is looking healthy!" }}
+          stats={stats}
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Today's Recommendations */}
           <Card className="bg-white/90 backdrop-blur">
             <CardHeader>
               <CardTitle className="text-pink-600 flex items-center gap-2 text-sm md:text-base">
-               Today&apos;s Recommendations
+                Today&apos;s Recommendations
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -255,7 +238,7 @@ export default function ReproductivePage() {
           <Card className="bg-white/90 backdrop-blur">
             <CardHeader>
               <CardTitle className="text-pink-600 flex items-center gap-2 text-sm md:text-base">
-               Midwife Connectivity
+                Midwife Connectivity
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -285,9 +268,9 @@ export default function ReproductivePage() {
           </Card>
         </div>
       </div>
-      <UpdateDataPopup 
-        isOpen={isPopupOpen} 
-        onClose={() => setIsPopupOpen(false)} 
+      <UpdateDataPopup
+        isOpen={isPopupOpen}
+        onClose={() => setIsPopupOpen(false)}
       />
     </Container>
   )

@@ -8,6 +8,7 @@ import { StatsGrid, type CycleStats } from "./components/StatsGrid";
 import { CycleCalendar, type CycleDay } from "./components/CycleCalendar";
 import { CycleInsights } from "./components/CycleInsights";
 import Container from "@/components/shared/container"
+import { calcStats, deriveLastPeriod } from "@/lib/cycleTrackerStats";
 
 import {
   calculateFertility,
@@ -20,12 +21,6 @@ function formatDateForApi(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
-}
-
-function deriveLastPeriod(nextPeriodISO: string, len: number) {
-  const d = new Date(nextPeriodISO);
-  d.setDate(d.getDate() - len);
-  return d;
 }
 
 function buildCalendarDays(params: {
@@ -80,39 +75,6 @@ function buildCalendarDays(params: {
   }
 
   return days;
-}
-
-function calcStats(params: {
-  fertilityData: FertilityResponseDto;
-  lastPeriodDate: string;
-  cycleLength: number;
-}): CycleStats {
-  const { fertilityData, lastPeriodDate, cycleLength } = params;
-
-  const today = new Date();
-
-  const lastPeriod = lastPeriodDate
-    ? new Date(`${lastPeriodDate}T00:00:00`)
-    : deriveLastPeriod(fertilityData.nextPeriodDate, cycleLength);
-
-  const nextPeriod = new Date(fertilityData.nextPeriodDate);
-  const fertileEnd = new Date(fertilityData.fertileWindowEnd);
-
-  const currentDay =
-    Math.floor((today.getTime() - lastPeriod.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-
-  const daysToNextPeriod = Math.ceil((nextPeriod.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  const daysToFertileEnd = Math.max(
-    0,
-    Math.ceil((fertileEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-  );
-
-  return {
-    currentDay: Math.max(0, currentDay),
-    cycleLength,
-    nextPeriod: Math.max(0, daysToNextPeriod),
-    fertile: daysToFertileEnd,
-  };
 }
 
 export default function CycleTrackerPage() {
