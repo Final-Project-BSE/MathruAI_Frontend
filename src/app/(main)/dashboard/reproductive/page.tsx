@@ -15,7 +15,7 @@ import { useRouter } from "next/navigation"
 import { UpdateDataPopup } from "@/components/update-data-popup"
 import DashboardTopBar from "./components/DashboardTopBar"
 import { useCycleStats } from "@/hooks/useCycleStats";
-import DailyRecDashboardComp from "./components/DailyRecDashboardComp"
+import HealthStatusSum from "./components/HealthStatusSum"
 
 
 export default function ReproductivePage() {
@@ -41,10 +41,9 @@ export default function ReproductivePage() {
           info={{ title: "Reproductive Planning Dashboard", subtitle: "Current Cycle Day", ultsubtitle: "Your cycle is looking healthy!" }}
           stats={stats}
         />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
 
-          <DailyRecDashboardComp />
-
+          <HealthStatusSum />
           {/* Fertility & Ovulation Tracker */}
           <Card className="bg-white/90 backdrop-blur">
             <CardHeader>
@@ -79,48 +78,6 @@ export default function ReproductivePage() {
                   <div className="font-medium text-sm">Next Ovulation</div>
                   <div className="text-xs text-gray-600">Day 14</div>
                   <div className="text-lg font-bold">July 28, 2025</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Health Status Summary */}
-          <Card className="bg-white/90 backdrop-blur">
-            <CardHeader>
-              <CardTitle className="text-pink-600 flex items-center justify-between text-sm md:text-base">
-                Health Status Summary
-                <Link href="/dashboard/reproductive/health-monitoring">
-                  <Button variant="ghost" size="sm" className="text-xs">
-                    Monitor
-                  </Button>
-                </Link>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="font-medium text-green-600 text-sm">Good Health Status</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2 md:gap-4 text-center">
-                  <div>
-                    <div className="text-lg font-bold text-green-600">22.1</div>
-                    <div className="text-xs text-gray-600">BMI</div>
-                  </div>
-                  <div>
-                    <div className="text-lg font-bold text-orange-600">140</div>
-                    <div className="text-xs text-gray-600">BLOOD PRESSURE</div>
-                  </div>
-                  <div>
-                    <div className="text-lg font-bold text-blue-600">72</div>
-                    <div className="text-xs text-gray-600">HEART RATE</div>
-                  </div>
-                </div>
-                <div className="bg-green-50 p-3 rounded-lg">
-                  <div className="text-sm font-medium">Status: Good reproductive health</div>
-                  <div className="text-xs text-gray-600">
-                    Recommendation: Monitor blood pressure, maintain current lifestyle
-                  </div>
                 </div>
               </div>
             </CardContent>
