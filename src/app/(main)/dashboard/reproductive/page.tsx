@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation"
 import { UpdateDataPopup } from "@/components/update-data-popup"
 import DashboardTopBar from "./components/DashboardTopBar"
 import { useCycleStats } from "@/hooks/useCycleStats";
+import DailyRecDashboardComp from "./components/DailyRecDashboardComp"
 
 
 export default function ReproductivePage() {
@@ -41,60 +42,8 @@ export default function ReproductivePage() {
           stats={stats}
         />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {/* Today's Recommendations */}
-          <Card className="bg-white/90 backdrop-blur">
-            <CardHeader>
-              <CardTitle className="text-pink-600 flex items-center gap-2 text-sm md:text-base">
-                Today&apos;s Recommendations
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-green-50 p-3 md:p-4 rounded-lg space-y-3">
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id="water"
-                    className="mt-1"
-                    checked={checkedItems.includes("water")}
-                    onCheckedChange={(checked) => handleCheckboxChange("water", checked as boolean)}
-                  />
-                  <div>
-                    <label htmlFor="water" className="font-medium text-sm">
-                      Drink 8 glasses of water today
-                    </label>
-                    <p className="text-xs text-gray-600">Stay hydrated for optimal reproductive health</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id="vitamins"
-                    className="mt-1"
-                    checked={checkedItems.includes("vitamins")}
-                    onCheckedChange={(checked) => handleCheckboxChange("vitamins", checked as boolean)}
-                  />
-                  <div>
-                    <label htmlFor="vitamins" className="font-medium text-sm">
-                      Take prenatal vitamins
-                    </label>
-                    <p className="text-xs text-gray-600">Ensure adequate folic acid intake</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id="exercise"
-                    className="mt-1"
-                    checked={checkedItems.includes("exercise")}
-                    onCheckedChange={(checked) => handleCheckboxChange("exercise", checked as boolean)}
-                  />
-                  <div>
-                    <label htmlFor="exercise" className="font-medium text-sm">
-                      30 minutes of light exercise
-                    </label>
-                    <p className="text-xs text-gray-600">Boost fertility with gentle movement</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+
+          <DailyRecDashboardComp />
 
           {/* Fertility & Ovulation Tracker */}
           <Card className="bg-white/90 backdrop-blur">

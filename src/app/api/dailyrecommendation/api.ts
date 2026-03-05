@@ -1,5 +1,5 @@
-import axios, { AxiosError } from 'axios';
-import type { UserData, RecommendationData, HistoryItem } from './types';
+import axios from 'axios';
+import type { UserData, RecommendationData, HistoryItem, ChecklistItem } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 const PREGNANCY_API = `${API_BASE_URL}/pregnancy`;
@@ -24,17 +24,13 @@ const apis = {
   },
 
   async getUser(token: string, userId: number): Promise<UserData> {
-    const res = await http.get(`/user/${userId}`, {
-      headers: authHeader(token),
-    });
+    const res = await http.get(`/user/${userId}`, { headers: authHeader(token) });
     return res.data;
   },
 
   async getTodayRecommendation(token: string, userId: number): Promise<RecommendationData | null> {
     try {
-      const res = await http.get(`/recommendation/${userId}`, {
-        headers: authHeader(token),
-      });
+      const res = await http.get(`/recommendation/${userId}`, { headers: authHeader(token) });
       return res.data;
     } catch (err) {
       if (isAxios404(err)) return null;
@@ -43,10 +39,20 @@ const apis = {
   },
 
   async refreshRecommendation(token: string, userId: number): Promise<RecommendationData> {
-    // force regenerate
     const res = await http.get(`/recommendation/${userId}`, {
       headers: authHeader(token),
       params: { force_regenerate: true },
+    });
+    return res.data;
+  },
+
+  async saveChecklist(
+    token: string,
+    userId: number,
+    payload: { date: string; items: ChecklistItem[] }
+  ): Promise<{ message: string; saved_count: number }> {
+    const res = await http.put(`/recommendation/${userId}/checklist`, payload, {
+      headers: authHeader(token),
     });
     return res.data;
   },
@@ -69,9 +75,7 @@ const apis = {
       regenerate_recommendation: boolean;
     }
   ): Promise<any> {
-    const res = await http.put(`/user/${userId}/data`, payload, {
-      headers: authHeader(token),
-    });
+    const res = await http.put(`/user/${userId}/data`, payload, { headers: authHeader(token) });
     return res.data;
   },
 };

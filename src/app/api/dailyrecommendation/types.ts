@@ -7,17 +7,25 @@ export interface UserData {
   data_updated_at?: string;
 }
 
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
 export interface RecommendationData {
   user_id: number;
   date: string;
   recommendation: string;
   regenerated: boolean;
+  checklist?: ChecklistItem[];
 }
 
 export interface HistoryItem {
   date: string;
   recommendation: string;
   created_at?: string;
+  checklist?: ChecklistItem[];
 }
 
 export interface APIResponse<T> {
