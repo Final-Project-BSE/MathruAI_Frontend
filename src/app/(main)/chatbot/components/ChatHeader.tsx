@@ -16,18 +16,17 @@ export default function ChatHeader({
   canRetry,
 }: ChatHeaderProps) {
   return (
-    <div className="bg-white shadow-sm border-b border-pink-100 p-2">
+    <div className="bg-white shadow-sm border-b border-pink-100 rounded-4xl p-2 m-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="bg-gradient-to-r from-pink-300 to-pink-400 p-2 rounded-full">
+          <div className="bg-[#d04f51] p-2 rounded-full">
             <Baby className="h-6 w-6 text-white" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
               HelloBump
-              <Heart className="h-5 w-5 text-pink-500" />
             </h1>
-            <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-4 text-xs">
               <span
                 className={`flex items-center gap-1 ${
                   isConnected ? "text-green-600" : "text-red-600"

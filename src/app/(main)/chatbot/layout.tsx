@@ -32,10 +32,6 @@ export default function ChatbotLayout({
     await sidebarRef.current?.refreshChatHistory();
   };
 
-  const handleNewChat = () => {
-    setActiveSessionId(null);
-  };
-
   return (
     <ChatContext.Provider
       value={{
@@ -49,7 +45,6 @@ export default function ChatbotLayout({
           ref={sidebarRef}
           activeSessionId={activeSessionId}
           onSessionSelect={setActiveSessionId}
-          onNewChat={handleNewChat}
         />
         <main className="w-full">{children}</main>
       </SidebarProvider>
