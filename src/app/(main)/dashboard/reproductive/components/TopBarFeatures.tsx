@@ -22,38 +22,41 @@ const features = [
 ];
 
 export default function TopBarFeatures({
-    name = "Abanda Herman",
-    email = "abanda@gmail.com",
     avatarUrl = "/images/reproductive/repro2.png",
 }: TopBarFeaturesProps) {
 
     const [me, setMe] = useState<UserResponseDto | null>(null);
-    
-        const topbannerImageUrl = "/images/reproductive/repro1.png";
-    
-        useEffect(() => {
-            const loadMe = async () => {
-                try {
-                    const { getSession } = await import("@/lib/authentication");
-                    const session = await getSession();
-    
-                    const token = session?.user?.token;
-                    if (!token) return;
-    
-                    const user = await getcuruser(token);
-                    setMe(user);
-                } catch (e) {
-                    console.error("Failed to load current user:", e);
-                }
-            };
-    
-            loadMe();
-        }, []);
-    
-        const fullname = useMemo(() => {
-            if (!me) return "—";
-            return `${me.firstName} ${me.lastName}`.trim();
-        }, [me]);
+
+    const topbannerImageUrl = "/images/reproductive/repro1.png";
+
+    useEffect(() => {
+        const loadMe = async () => {
+            try {
+                const { getSession } = await import("@/lib/authentication");
+                const session = await getSession();
+
+                const token = session?.user?.token;
+                if (!token) return;
+
+                const user = await getcuruser(token);
+                setMe(user);
+            } catch (e) {
+                console.error("Failed to load current user:", e);
+            }
+        };
+
+        loadMe();
+    }, []);
+
+    const fullname = useMemo(() => {
+        if (!me) return "—";
+        return `${me.firstName} ${me.lastName}`.trim();
+    }, [me]);
+
+    const userEmail = useMemo(() => {
+        if (!me) return "—";
+        return me.email;
+    }, [me]);
 
     return (
         <div className="w-full mb-6">
@@ -130,7 +133,7 @@ export default function TopBarFeatures({
                         <div className="relative h-9 w-9 overflow-hidden rounded-full border border-white sm:h-10 sm:w-10">
                             <Image
                                 src={avatarUrl}
-                                alt={name}
+                                alt={fullname}
                                 fill
                                 className="object-cover"
                                 sizes="40px"
@@ -140,7 +143,7 @@ export default function TopBarFeatures({
 
                     <div className="min-w-0 text-left leading-tight">
                         <p className="truncate text-sm font-semibold text-neutral-900">{fullname}</p>
-                        <p className="hidden truncate text-xs text-neutral-500 sm:block">{email}</p>
+                        <p className="hidden truncate text-xs text-neutral-500 sm:block">{userEmail}</p>
                     </div>
                 </button>
             </div>

@@ -5,122 +5,116 @@ import { getcuruser } from "@/app/api/user/api";
 import type { UserResponseDto } from "@/app/api/user/types";
 
 type CycleStats = {
-    currentDay: number;
-    cycleLength: number;
-    nextPeriod: number;
-    fertile: number;
+  currentDay: number;
+  cycleLength: number;
+  nextPeriod: number;
+  fertile: number;
 };
 
 type TopBarInfo = {
-    title: string;
-    subtitle: string; // e.g. "Cycle Day"
-    ultsubtitle: string;
+  title: string;
+  subtitle: string;
+  ultsubtitle: string;
 };
 
 type DashboardTopBarProps = {
-    info: TopBarInfo;
-    stats?: CycleStats;
+  info: TopBarInfo;
+  stats?: CycleStats;
 };
 
 function DashboardTopBar({ info, stats }: DashboardTopBarProps) {
-    const [me, setMe] = useState<UserResponseDto | null>(null);
+  const [me, setMe] = useState<UserResponseDto | null>(null);
 
-    const topbannerImageUrl = "/images/reproductive/repro1.png";
+  const topbannerImageUrl = "/images/reproductive/repro1.png";
 
-    useEffect(() => {
-        const loadMe = async () => {
-            try {
-                const { getSession } = await import("@/lib/authentication");
-                const session = await getSession();
+  useEffect(() => {
+    const loadMe = async () => {
+      try {
+        const { getSession } = await import("@/lib/authentication");
+        const session = await getSession();
 
-                const token = session?.user?.token;
-                if (!token) return;
+        const token = session?.user?.token;
+        if (!token) return;
 
-                const user = await getcuruser(token);
-                setMe(user);
-            } catch (e) {
-                console.error("Failed to load current user:", e);
-            }
-        };
+        const user = await getcuruser(token);
+        setMe(user);
+      } catch (e) {
+        console.error("Failed to load current user:", e);
+      }
+    };
 
-        loadMe();
-    }, []);
+    loadMe();
+  }, []);
 
-    const fullname = useMemo(() => {
-        if (!me) return "—";
-        return `${me.firstName} ${me.lastName}`.trim();
-    }, [me]);
+  const fullname = useMemo(() => {
+    if (!me) return "—";
+    return me.firstName;
+  }, [me]);
 
-    return (
-        <div className="relative overflow-hidden bg-gradient-to-r from-[#fab0a7] to-[#d04f51] rounded-lg p-4 md:p-6 mb-6 text-white min-h-[170px] md:min-h-[190px]">
-            <img
-                src={topbannerImageUrl}
-                alt="Banner"
-                className="
-          absolute right-0 top-0 h-full
-          w-[180px] md:w-[240px] lg:w-[300px]
-          object-cover
-          opacity-90
-          pointer-events-none
-          select-none
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+
+    if (hour >= 5 && hour < 12) return "Good Morning";
+    if (hour >= 12 && hour < 17) return "Good Afternoon";
+    if (hour >= 17 && hour < 21) return "Good Evening";
+    return "Good Night";
+  }, []);
+
+  return (
+    <div className="relative mb-6 min-h-[170px] overflow-hidden rounded-lg bg-gradient-to-r from-[#fab0a7] to-[#d04f51] p-4 text-white md:min-h-[190px] md:p-6">
+      <img
+        src={topbannerImageUrl}
+        alt="Banner"
+        className="
+          pointer-events-none absolute right-0 top-0 h-full
+          w-[180px] select-none object-cover opacity-90
+          md:w-[240px] lg:w-[300px]
         "
-            />
+      />
 
-            <div className="relative z-10">
-                <h1 className="text-xl md:text-2xl font-bold mb-1">Hi! {fullname}</h1>
-                <div className="text-sm opacity-90">Patient ID: RP-2025-001</div>
-            </div>
+      <div className="relative z-10">
+        <h1 className="mb-1 text-xl font-bold md:text-2xl">
+          {greeting}, {fullname}
+        </h1>
+        <div className="text-sm opacity-90">Patient ID: RP-2025-001</div>
+      </div>
 
-            <div
-                className="
-          absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-          z-10
-          flex flex-col sm:flex-row items-center gap-6
-          px-3
+      <div
+        className="
+          absolute left-1/2 top-1/2 z-10
+          flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-6 px-3
+          sm:flex-row
         "
-            >
-                {/* Circle */}
-                <div className="flex flex-col items-center">
-                    <div
-                        className="
-              w-20 h-20 md:w-24 md:h-24
-              rounded-full
-              bg-white/20
-              border border-white/30
-              ring-1 ring-white/20
-              shadow-sm
-              flex items-center justify-center
+      >
+        <div className="flex flex-col items-center">
+          <div
+            className="
+              flex h-20 w-20 items-center justify-center rounded-full
+              border border-white/30 bg-white/20 shadow-sm ring-1 ring-white/20
+              md:h-24 md:w-24
             "
-                    >
-                        <span className="text-3xl md:text-4xl font-extrabold leading-none">
-                            {stats?.currentDay ?? "—"}
-                        </span>
-                    </div>
-                    <div className="mt-2 text-xs md:text-xs text-xs opacity-90 text-center">
-                        {info.subtitle}
-                    </div>
+          >
+            <span className="text-3xl font-extrabold leading-none md:text-4xl">
+              {stats?.currentDay ?? "—"}
+            </span>
+          </div>
 
-                    <div className="flex flex-col text-center sm:text-center text-[11px] opacity-95">
-                        <div>
-                            Next period in{" "}
-                            <span className="font-semibold text-white">
-                                {stats?.nextPeriod ?? "—"} days
-                            </span>
-                        </div>
-                        {/* <div>
-                            Fertile window in{" "}
-                            <span className="font-semibold text-white">
-                                {stats?.fertile ?? "—"} days
-                            </span>
-                        </div> */}
-                    </div>
-                </div>
+          <div className="mt-2 text-center text-xs opacity-90">
+            {info.subtitle}
+          </div>
 
-                {/* Other stats */}
-
+          <div className="flex flex-col text-center text-[11px] opacity-95">
+            <div>
+              Next period in{" "}
+              <span className="font-semibold text-white">
+                {stats?.nextPeriod ?? "—"} days
+              </span>
             </div>
-        </div >
-    );
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default DashboardTopBar;

@@ -161,8 +161,8 @@ export default function HealthStatusSum({
     if (r.includes('low')) {
       return {
         label: 'Good Health Status',
-        badge: 'bg-green-50 text-green-700 border-green-200',
-        dot: 'bg-green-500',
+        badge: 'bg-green-700 text-white border-green-200',
+        dot: 'bg-white',
       };
     }
 
@@ -177,8 +177,8 @@ export default function HealthStatusSum({
     if (r.includes('high')) {
       return {
         label: 'High Risk',
-        badge: 'bg-red-50 text-red-700 border-red-200',
-        dot: 'bg-red-500',
+        badge: 'bg-red-500 text-white border-red-200',
+        dot: 'bg-white',
       };
     }
 
@@ -208,8 +208,6 @@ export default function HealthStatusSum({
         }}
       />
 
-      {/* Overlay */}
-
       {/* Content */}
       <div className="relative z-10">
         <CardHeader className="pb-3">
@@ -224,7 +222,7 @@ export default function HealthStatusSum({
 
                 <div className="text-xs text-gray-600 flex items-center gap-2 mt-1">
                   <span
-                    className={`px-2 py-0.5 rounded-full border ${status.badge}`}
+                    className={`px-2 py-1 rounded-full border ${status.badge}`}
                   >
                     <span
                       className={`inline-block h-2 w-2 rounded-full mr-1 ${status.dot}`}
@@ -243,7 +241,7 @@ export default function HealthStatusSum({
             </CardTitle>
 
             <Button
-              variant="ghost"
+              className='bg-[#ffffff] text-black hover:bg-[#d04f51]'
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
@@ -259,7 +257,7 @@ export default function HealthStatusSum({
           {loading ? (
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Loading summary...
+              Loading health status...
             </div>
           ) : error ? (
             <div className="text-sm text-red-600">{error}</div>
@@ -278,7 +276,7 @@ export default function HealthStatusSum({
 
               <div className="grid grid-cols-3 gap-3">
                 <MetricCard
-                  icon={Activity}
+                  icon={Sparkles}
                   title="BMI"
                   value={bmi ? bmi.toFixed(1) : '-'}
                 />
@@ -290,7 +288,7 @@ export default function HealthStatusSum({
                 />
 
                 <MetricCard
-                  icon={Sparkles}
+                  icon={Activity}
                   title="Heart Rate"
                   value={hr ? `${hr.toFixed(0)} bpm` : '-'}
                 />
