@@ -25,7 +25,6 @@ type DashboardTopBarProps = {
 function DashboardTopBar({ info, stats }: DashboardTopBarProps) {
     const [me, setMe] = useState<UserResponseDto | null>(null);
 
-    // from /public/images/reproductive/repro1.png
     const topbannerImageUrl = "/images/reproductive/repro1.png";
 
     useEffect(() => {
@@ -67,13 +66,11 @@ function DashboardTopBar({ info, stats }: DashboardTopBarProps) {
         "
             />
 
-            {/* LEFT: Name + Patient ID (keep current location) */}
             <div className="relative z-10">
                 <h1 className="text-xl md:text-2xl font-bold mb-1">Hi! {fullname}</h1>
                 <div className="text-sm opacity-90">Patient ID: RP-2025-001</div>
             </div>
 
-            {/* CENTER: Cycle + stats (center of banner) */}
             <div
                 className="
           absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
