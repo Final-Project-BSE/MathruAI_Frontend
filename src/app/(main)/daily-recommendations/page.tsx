@@ -1,13 +1,13 @@
-// src/app/(main)/daily-recommendations/page.tsx
-
 import React from 'react';
 import DailyRecommendationDashboard from './components/DailyRecommendationDashboard';
+import Container from '@/components/shared/container';
+
 
 const DailyRecommendationsPage = () => {
   return (
-    <div>
+      <Container title="Daily Recommendation">
       <DailyRecommendationDashboard />
-    </div>
+    </Container>
   );
 };
 

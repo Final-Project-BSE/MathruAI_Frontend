@@ -1,11 +1,12 @@
 import React from 'react';
 import MaternalHealthDashboard from './components/MaternalHealthDashboard';
+import Container from '@/components/shared/container';
 
 const HealthMonitorPage = () => {
     return (
-      <div>
+      <Container title="Health Monitoring">
         <MaternalHealthDashboard />
-      </div>
+      </Container>
     );
 };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useRef } from "react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { ChatSidebar, ChatSidebarRef } from "@/components/chat-sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 interface ChatContextType {
@@ -32,10 +32,6 @@ export default function ChatbotLayout({
     await sidebarRef.current?.refreshChatHistory();
   };
 
-  const handleNewChat = () => {
-    setActiveSessionId(null);
-  };
-
   return (
     <ChatContext.Provider
       value={{
@@ -49,13 +45,8 @@ export default function ChatbotLayout({
           ref={sidebarRef}
           activeSessionId={activeSessionId}
           onSessionSelect={setActiveSessionId}
-          onNewChat={handleNewChat}
         />
-        <main className="w-full">
-          <SidebarTrigger />
-           <AppSidebar/>
-          {children}
-        </main>
+        <main className="w-full">{children}</main>
       </SidebarProvider>
     </ChatContext.Provider>
   );

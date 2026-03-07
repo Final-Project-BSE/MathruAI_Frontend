@@ -5,10 +5,7 @@ interface PatientProfileSummaryProps {
   patientProfile: Record<string, any>;
 }
 
-const PatientProfileSummary: React.FC<PatientProfileSummaryProps> = ({
-  patientProfile
-}) => {
-  // Helper function to get icon based on key name
+const PatientProfileSummary: React.FC<PatientProfileSummaryProps> = ({ patientProfile }) => {
   const getIconForField = (key: string) => {
     const keyLower = key.toLowerCase();
     if (keyLower.includes('age') || keyLower.includes('date')) {
@@ -23,26 +20,18 @@ const PatientProfileSummary: React.FC<PatientProfileSummaryProps> = ({
     return <User className="h-4 w-4 text-purple-600" />;
   };
 
-  // Helper function to format the key for display
   const formatKey = (key: string): string => {
     return key
       .replace(/_/g, ' ')
       .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   };
 
-  // Helper function to format the value for display
   const formatValue = (value: any): string => {
-    if (Array.isArray(value)) {
-      return value.join(', ');
-    }
-    if (typeof value === 'boolean') {
-      return value ? 'Yes' : 'No';
-    }
-    if (typeof value === 'object' && value !== null) {
-      return JSON.stringify(value);
-    }
+    if (Array.isArray(value)) return value.join(', ');
+    if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+    if (typeof value === 'object' && value !== null) return JSON.stringify(value);
     return String(value);
   };
 
@@ -51,12 +40,10 @@ const PatientProfileSummary: React.FC<PatientProfileSummaryProps> = ({
   }
 
   return (
-    <div className="bg-purple-50 p-6 rounded-lg border-2 border-purple-200">
+    <div className="bg-purple-50 p-6 mt-10 rounded-lg border-2 border-purple-200">
       <div className="flex items-center space-x-2 mb-4">
         <User className="h-5 w-5 text-purple-600" />
-        <h3 className="text-lg font-semibold text-gray-800">
-          Patient Profile Summary
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-800">Patient Profile Summary</h3>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
