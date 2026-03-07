@@ -16,6 +16,8 @@ import { UpdateDataPopup } from "@/components/update-data-popup"
 import DashboardTopBar from "./components/DashboardTopBar"
 import { useCycleStats } from "@/hooks/useCycleStats";
 import HealthStatusSum from "./components/HealthStatusSum"
+import TopBarFeatures from "./components/TopBarFeatures"
+import DashboardFeatures from "./components/DashboardFeatures"
 
 
 export default function ReproductivePage() {
@@ -37,6 +39,7 @@ export default function ReproductivePage() {
   return (
     <Container title="Reproductive Planning Dashboard">
       <div className="bg-[#fed2cc] min-h-screen p-4 md:p-6">
+        <TopBarFeatures />
         <DashboardTopBar
           info={{ title: "Reproductive Planning Dashboard", subtitle: "Current Cycle Day", ultsubtitle: "Your cycle is looking healthy!" }}
           stats={stats}
@@ -100,45 +103,7 @@ export default function ReproductivePage() {
                 <p className="text-xs text-gray-600">Learn about fertility-boosting foods and supplements...</p>
               </div>
             </CardContent>
-          </Card>
-
-          {/* Upcoming Reminders */}
-          <Card className="bg-white/90 backdrop-blur">
-            <CardHeader>
-              <CardTitle className="text-pink-600 flex items-center gap-2 text-sm md:text-base">
-                Upcoming Reminders
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between items-center p-2 bg-green-50 rounded">
-                <div>
-                  <div className="font-medium text-sm">July 22</div>
-                  <div className="text-xs text-gray-600">Gynecologist Visit</div>
-                </div>
-                <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
-                  Booked
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center p-2 bg-yellow-50 rounded">
-                <div>
-                  <div className="font-medium text-sm">July 25</div>
-                  <div className="text-xs text-gray-600">Midwife Consultation</div>
-                </div>
-                <Badge variant="secondary" className="bg-yellow-100 text-yellow-700 text-xs">
-                  Pending
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center p-2 bg-red-50 rounded">
-                <div>
-                  <div className="font-medium text-sm">Aug 1</div>
-                  <div className="text-xs text-gray-600">Blood Test</div>
-                </div>
-                <Badge variant="secondary" className="bg-red-100 text-red-700 text-xs">
-                  Urgent
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
+          </Card>              
 
           {/* Midwife Connectivity */}
           <Card className="bg-white/90 backdrop-blur">
@@ -173,6 +138,7 @@ export default function ReproductivePage() {
             </CardContent>
           </Card>
         </div>
+        <DashboardFeatures />
       </div>
       <UpdateDataPopup
         isOpen={isPopupOpen}
