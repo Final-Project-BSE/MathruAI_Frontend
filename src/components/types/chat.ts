@@ -1,5 +1,3 @@
-// types/chat.ts
-
 export interface ChatSession {
   session_id: number
   session_name: string | null

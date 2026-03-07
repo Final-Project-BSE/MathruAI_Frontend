@@ -8,6 +8,7 @@ import { StatsGrid, type CycleStats } from "./components/StatsGrid";
 import { CycleCalendar, type CycleDay } from "./components/CycleCalendar";
 import { CycleInsights } from "./components/CycleInsights";
 import Container from "@/components/shared/container"
+import { calcStats, deriveLastPeriod } from "@/lib/cycleTrackerStats";
 
 import {
   calculateFertility,
@@ -22,17 +23,11 @@ function formatDateForApi(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-function deriveLastPeriod(nextPeriodISO: string, len: number) {
-  const d = new Date(nextPeriodISO);
-  d.setDate(d.getDate() - len);
-  return d;
-}
-
 function buildCalendarDays(params: {
   year: number;
-  month: number; // 0-based
+  month: number;
   fertilityData: FertilityResponseDto;
-  lastPeriodDate: string; // optional
+  lastPeriodDate: string;
   cycleLength: number;
 }): CycleDay[] {
   const { year, month, fertilityData, lastPeriodDate, cycleLength } = params;
@@ -82,39 +77,6 @@ function buildCalendarDays(params: {
   return days;
 }
 
-function calcStats(params: {
-  fertilityData: FertilityResponseDto;
-  lastPeriodDate: string;
-  cycleLength: number;
-}): CycleStats {
-  const { fertilityData, lastPeriodDate, cycleLength } = params;
-
-  const today = new Date();
-
-  const lastPeriod = lastPeriodDate
-    ? new Date(`${lastPeriodDate}T00:00:00`) // avoid timezone shift
-    : deriveLastPeriod(fertilityData.nextPeriodDate, cycleLength);
-
-  const nextPeriod = new Date(fertilityData.nextPeriodDate);
-  const fertileEnd = new Date(fertilityData.fertileWindowEnd);
-
-  const currentDay =
-    Math.floor((today.getTime() - lastPeriod.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-
-  const daysToNextPeriod = Math.ceil((nextPeriod.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  const daysToFertileEnd = Math.max(
-    0,
-    Math.ceil((fertileEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-  );
-
-  return {
-    currentDay: Math.max(0, currentDay),
-    cycleLength,
-    nextPeriod: Math.max(0, daysToNextPeriod),
-    fertile: daysToFertileEnd,
-  };
-}
-
 export default function CycleTrackerPage() {
   const [token, setToken] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -131,7 +93,6 @@ export default function CycleTrackerPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [calendarDays, setCalendarDays] = useState<CycleDay[]>([]);
 
-  // Load local persisted inputs
   useEffect(() => {
     const savedLast = localStorage.getItem("ct_lastPeriodDate");
     const savedLen = localStorage.getItem("ct_cycleLength");
@@ -139,7 +100,6 @@ export default function CycleTrackerPage() {
     if (savedLen) setCycleLength(Number(savedLen));
   }, []);
 
-  // Auth + load latest from backend
   useEffect(() => {
     const initialize = async () => {
       try {
@@ -170,7 +130,6 @@ export default function CycleTrackerPage() {
     initialize();
   }, []);
 
-  // Build calendar when month/data changes
   useEffect(() => {
     if (!fertilityData) return;
 

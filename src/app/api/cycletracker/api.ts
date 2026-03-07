@@ -1,4 +1,3 @@
-// src/lib/api.ts
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 export const FERTILITY_API = `${API_BASE_URL}/api/fertility`;
 
@@ -11,7 +10,7 @@ export interface FertilityResponseDto {
 }
 
 export interface CalculateFertilityRequest {
-  lastPeriodDate: string; // YYYY-MM-DD
+  lastPeriodDate: string;
   averageCycleLength: number;
 }
 
@@ -44,7 +43,6 @@ export async function getLatestFertility(token: string): Promise<FertilityRespon
       },
     });
   } catch {
-    // If there's no existing record, treat it as "no data" rather than an app error
     return null;
   }
 }

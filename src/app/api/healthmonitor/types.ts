@@ -1,5 +1,3 @@
-// types.ts - Shared TypeScript type definitions
-
 export interface VitalsState {
   Age: string;
   SystolicBP: string;

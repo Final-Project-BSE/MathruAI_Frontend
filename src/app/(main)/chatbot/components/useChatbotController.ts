@@ -11,7 +11,7 @@ import type { Message, SystemStats } from "../../../api/chatbot/types";
 const WELCOME_MESSAGE: Message = {
   id: "1",
   content:
-    "Hello! I'm your pregnancy advisor assistant. I'm here to help answer your questions about pregnancy, provide guidance, and support you through this wonderful journey. How can I assist you today?",
+    "Hello! I'm your pregnancy advisor assistant. I'm here to help answer your questions about pregnancy, provide guidance and support you through this wonderful journey. How can I assist you today?",
   isUser: false,
   timestamp: new Date(),
   status: "sent",

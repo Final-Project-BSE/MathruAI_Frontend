@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Heart, Loader2, AlertTriangle } from 'lucide-react';
+import { Heart, AlertTriangle } from 'lucide-react';
 
-// Import components
 import DashboardHeader from './DashboardHeader';
 import ErrorAlert from './ErrorAlert';
 import SuccessAlert from './SuccessAlert';
@@ -14,31 +13,32 @@ import RecommendationCard from './RecommendationCard';
 import HistorySection from './HistorySection';
 import SettingsModal from './SettingsModal';
 
-// Import types
-import type { UserData, RecommendationData, HistoryItem } from '../../../api/dailyrecommendation/types';
+import type {
+  UserData,
+  RecommendationData,
+  HistoryItem,
+  ChecklistItem,
+} from '../../../api/dailyrecommendation/types';
 
-// Import APIs (axios)
 import apis from '../../../api/dailyrecommendation/api';
 import { LoadingState } from '@/components/common/LoadingState';
 
 const DailyRecommendationDashboard = () => {
-  // Auth state
   const [token, setToken] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
 
-  // Data state
   const [userData, setUserData] = useState<UserData | null>(null);
   const [recommendation, setRecommendation] = useState<RecommendationData | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
-  // UI state
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [showHistory, setShowHistory] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+
+  const [activePanel, setActivePanel] = useState<'checklist' | 'history'>('checklist');
 
   useEffect(() => {
     const initialize = async () => {
@@ -46,69 +46,44 @@ const DailyRecommendationDashboard = () => {
         const { getSession } = await import('@/lib/authentication');
         const session = await getSession();
 
-        if (!session?.user?.token) {
-          console.warn('⚠️ No session found — please log in first.');
+        const jwt = session?.user?.token;
+
+        if (!jwt) {
           setError('Please log in to access the daily recommendations dashboard.');
           setIsAuthenticated(false);
           setLoadingData(false);
           return;
         }
 
-        const jwt = session.user.token;
         setToken(jwt);
         setIsAuthenticated(true);
-        console.log('✅ JWT token loaded for Daily Recommendation Dashboard');
 
-        // Decode JWT to extract user information
+        let uid: number | null = null;
         try {
-          const tokenParts = jwt.split('.');
-          if (tokenParts.length !== 3) throw new Error('Invalid JWT token format');
-
-          const payload = JSON.parse(atob(tokenParts[1]));
-          console.log('Decoded JWT payload:', payload);
-
-          // Try multiple possible field names for user ID
-          let uid = payload.user_id || payload.userId || payload.id || payload.uid;
-
-          // Fallback: fetch /auth/me if no uid found in token
-          if (!uid && payload.sub) {
-            console.warn('No user_id in JWT token, will try /auth/me');
-            try {
-              const me = await apis.me(jwt);
-              uid = me.user_id || me.id;
-            } catch (fetchError) {
-              console.error('Could not fetch user info from backend:', fetchError);
-            }
+          const me = await apis.me(jwt);
+          const raw = (me.user_id ?? me.id) as any;
+          if (raw !== undefined && raw !== null) {
+            const parsed = typeof raw === 'number' ? raw : parseInt(String(raw), 10);
+            if (!Number.isNaN(parsed)) uid = parsed;
           }
-
-          if (!uid) {
-            throw new Error(
-              'No user ID found in JWT token. Please ensure your authentication token includes user_id.'
-            );
-          }
-
-          const parsedUserId = typeof uid === 'number' ? uid : parseInt(uid.toString(), 10);
-          if (Number.isNaN(parsedUserId)) throw new Error('Invalid user ID format in token');
-
-          setUserId(parsedUserId);
-          console.log('User ID extracted:', parsedUserId);
-
-          await loadAllData(jwt, parsedUserId);
-        } catch (decodeError) {
-          console.error('Failed to decode JWT or extract user ID:', decodeError);
-          setError(
-            `Authentication error: ${
-              decodeError instanceof Error ? decodeError.message : 'Failed to extract user information'
-            }`
-          );
-          setIsAuthenticated(false);
-        } finally {
-          setLoadingData(false);
+        } catch {
+          uid = null;
         }
-      } catch (e) {
-        console.error('Failed to get session:', e);
+
+        if (!uid) {
+          setError('Authenticated, but could not resolve your user ID. Please log in again.');
+          setIsAuthenticated(false);
+          setLoadingData(false);
+          return;
+        }
+
+        setUserId(uid);
+        await loadAllData(jwt, uid);
+        setError(null);
+      } catch {
         setError('Authentication error. Please log in again.');
         setIsAuthenticated(false);
+      } finally {
         setLoadingData(false);
       }
     };
@@ -116,18 +91,24 @@ const DailyRecommendationDashboard = () => {
     initialize();
   }, []);
 
-  // Load all data
+  useEffect(() => {
+    if (activePanel === 'history' && token && userId) {
+      loadHistory(token, userId);
+    }
+  }, [activePanel, token, userId]);
+
   const loadAllData = async (jwtToken: string, uid: number) => {
     setLoadingData(true);
     try {
-      await Promise.all([loadUserData(jwtToken, uid), loadRecommendation(jwtToken, uid), loadHistory(jwtToken, uid)]);
+      await Promise.all([
+        loadUserData(jwtToken, uid),
+        loadRecommendation(jwtToken, uid),
+        loadHistory(jwtToken, uid),
+      ]);
       setError(null);
     } catch (err) {
-      console.error('Error loading data:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load data';
-      if (!errorMessage.includes('No data')) {
-        setError(errorMessage);
-      }
+      if (!String(errorMessage).includes('No data')) setError(errorMessage);
     } finally {
       setLoadingData(false);
     }
@@ -135,18 +116,14 @@ const DailyRecommendationDashboard = () => {
 
   const loadUserData = async (jwtToken: string, uid: number) => {
     const data = await apis.getUser(jwtToken, uid);
-    console.log('User data loaded:', data);
     setUserData(data);
   };
 
   const loadRecommendation = async (jwtToken: string, uid: number) => {
     try {
       const rec = await apis.getTodayRecommendation(jwtToken, uid);
-      if (rec) console.log('Recommendation loaded:', rec);
       setRecommendation(rec);
-    } catch (err) {
-      console.error('Error loading recommendation:', err);
-      // recommendation might not exist yet
+    } catch {
       setRecommendation(null);
     }
   };
@@ -154,11 +131,18 @@ const DailyRecommendationDashboard = () => {
   const loadHistory = async (jwtToken: string, uid: number) => {
     try {
       const items = await apis.getHistory(jwtToken, uid, 7);
-      console.log('History loaded:', items);
-      setHistory(items);
-    } catch (err) {
-      console.error('Error loading history:', err);
-      // history might be empty
+
+      const seen = new Set<string>();
+      const deduped = items.filter((it) => {
+        if (!it.date) return true;
+        if (seen.has(it.date)) return false;
+        seen.add(it.date);
+        return true;
+      });
+
+      setHistory(deduped);
+    } catch {
+      // ignore
     }
   };
 
@@ -176,15 +160,28 @@ const DailyRecommendationDashboard = () => {
       setRecommendation(rec);
       setSuccess('Recommendation refreshed successfully!');
       setTimeout(() => setSuccess(null), 3000);
-
       await loadHistory(token, userId);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to refresh recommendation';
-      setError(errorMessage);
-      console.error('Refresh error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to refresh recommendation');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSaveChecklist = async (payload: { date: string; items: ChecklistItem[] }) => {
+    if (!token || !userId) return;
+
+    await apis.saveChecklist(token, userId, payload);
+
+    // keep UI consistent immediately
+    setRecommendation((prev) => {
+      if (!prev) return prev;
+      if (prev.date !== payload.date) return prev;
+      return { ...prev, checklist: payload.items };
+    });
+
+    // OPTIONAL: refresh history so it shows updated completion immediately
+    await loadHistory(token, userId);
   };
 
   const handleUpdateSettings = async (pregnancyWeek: number, preferences: string) => {
@@ -202,29 +199,19 @@ const DailyRecommendationDashboard = () => {
         preferences,
         regenerate_recommendation: true,
       };
-
-      console.log('PUT request to:', `/pregnancy/user/${userId}/data`);
-      console.log('Payload:', payload);
-
       const data = await apis.updateUserSettings(token, userId, payload);
-      console.log('Response:', data);
 
-      // Update local userData
       if (userData) {
-        setUserData({
-          ...userData,
-          pregnancy_week: pregnancyWeek,
-          preferences,
-        });
+        setUserData({ ...userData, pregnancy_week: pregnancyWeek, preferences });
       }
 
-      // If backend returns new recommendation
       if (data?.new_recommendation) {
         setRecommendation({
           user_id: userId,
           date: new Date().toISOString().split('T')[0],
           recommendation: data.new_recommendation,
           regenerated: true,
+          checklist: [],
         });
       }
 
@@ -234,31 +221,22 @@ const DailyRecommendationDashboard = () => {
 
       await loadAllData(token, userId);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update settings';
-      setError(errorMessage);
-      console.error('Update settings error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update settings');
     } finally {
       setLoading(false);
     }
   };
 
   const handleLogout = async () => {
-    try {
-      setToken(null);
-      setUserId(null);
-      setIsAuthenticated(false);
-      setUserData(null);
-      setRecommendation(null);
-      setHistory([]);
-
-      window.location.href = '/login';
-    } catch (err) {
-      console.error('Logout error:', err);
-      setError('Failed to logout');
-    }
+    setToken(null);
+    setUserId(null);
+    setIsAuthenticated(false);
+    setUserData(null);
+    setRecommendation(null);
+    setHistory([]);
+    window.location.href = '/login';
   };
 
-  // Loading screen
   if (loadingData) {
     return (
       <div>
@@ -267,10 +245,9 @@ const DailyRecommendationDashboard = () => {
     );
   }
 
-  // Not authenticated screen
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 flex items-center justify-center p-8">
+      <div className="min-h-screen bg-[#d5abc3] flex items-center justify-center p-8">
         <Card className="max-w-md w-full shadow-lg">
           <CardHeader>
             <CardTitle className="text-center flex items-center justify-center">
@@ -292,16 +269,14 @@ const DailyRecommendationDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 p-8">
+    <div className="min-h-screen bg-[#fcd4cd] p-8">
       <div className="max-w-7xl mx-auto">
         <DashboardHeader
           userName={userData?.name || 'User'}
           pregnancyWeek={userData?.pregnancy_week || 0}
           onRefresh={handleRefresh}
-          onHistoryToggle={() => setShowHistory(!showHistory)}
           onLogout={handleLogout}
           loading={loading}
-          showHistory={showHistory}
         />
 
         <ErrorAlert error={error} onDismiss={() => setError(null)} />
@@ -313,22 +288,62 @@ const DailyRecommendationDashboard = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <RecommendationCard
-              recommendation={recommendation}
-              onRefresh={handleRefresh}
-              onSettingsClick={() => setShowSettings(true)}
-              loading={loading}
-              preferences={userData?.preferences}
-            />
-          </div>
+        {/* Segmented toggle (like your screenshot) */}
+        <div className="mb-4">
+          <div className="w-full rounded-full bg-gray-200 p-1 flex">
+            <button
+              type="button"
+              onClick={() => setActivePanel('checklist')}
+              className={[
+                'flex-1 rounded-full px-4 py-2 text-sm font-medium transition',
+                activePanel === 'checklist'
+                  ? 'bg-white shadow text-gray-900'
+                  : 'text-gray-500 hover:text-gray-700',
+              ].join(' ')}
+            >
+              Checklist
+            </button>
 
-          {showHistory && (
-            <div className="lg:col-span-1">
+            <button
+              type="button"
+              onClick={() => setActivePanel('history')}
+              className={[
+                'flex-1 rounded-full px-4 py-2 text-sm font-medium transition',
+                activePanel === 'history'
+                  ? 'bg-white shadow text-gray-900'
+                  : 'text-gray-500 hover:text-gray-700',
+              ].join(' ')}
+            >
+              History
+            </button>
+          </div>
+        </div>
+
+        {/* Sliding panels */}
+        <div className="overflow-hidden">
+          <div
+            className={`flex w-[200%] transition-transform duration-500 ease-in-out ${activePanel === 'checklist' ? 'translate-x-0' : '-translate-x-1/2'
+              }`}
+          >
+            {/* Panel 1: Checklist */}
+            <div className="w-1/2 pr-4">
+              <RecommendationCard
+                recommendation={recommendation}
+                onRefresh={handleRefresh}
+                onSettingsClick={() => setShowSettings(true)}
+                loading={loading}
+                preferences={userData?.preferences}
+                userId={userId}
+                token={token}
+                onSaveChecklist={handleSaveChecklist}
+              />
+            </div>
+
+            {/* Panel 2: History */}
+            <div className="w-1/2 pl-4">
               <HistorySection history={history} loading={false} />
             </div>
-          )}
+          </div>
         </div>
 
         {showSettings && userData && (

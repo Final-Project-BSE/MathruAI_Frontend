@@ -64,7 +64,6 @@ const MaternalHealthDashboard = () => {
     };
 
     initialize();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadSavedData = async (jwtToken: string) => {
@@ -84,8 +83,6 @@ const MaternalHealthDashboard = () => {
 
       setError(null);
     } catch (err: any) {
-      // optional: show or hide load error
-      // setError(err?.message || 'Failed to load previous data');
     } finally {
       setLoadingData(false);
     }

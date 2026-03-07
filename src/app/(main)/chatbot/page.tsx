@@ -1,4 +1,3 @@
-// ChatBotPage.tsx
 "use client";
 
 import Container from "@/components/shared/container";

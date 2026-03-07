@@ -8,7 +8,7 @@ const Container = ({
   title: string;
 }) => {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#fed2cc]">
       <SiteHeader title={title} />
       <main className="">{children}</main>
     </div>
