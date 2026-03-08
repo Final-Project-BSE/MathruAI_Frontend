@@ -58,16 +58,16 @@ const data = {
       url: "/chatbot",
     },
     {
-      title: "Notifications",
-      url: "/notifications",
+      title: "Health Records",
+      url: "/healthrecords",
     },
     {
       title: "Announcements",
       url: "/announcement",
     },
     {
-      title: "Settings",
-      url: "/settings",
+      title: "Analytics",
+      url: "/analytics",
     },
     // {
     //   title: "Upgrade Stage",

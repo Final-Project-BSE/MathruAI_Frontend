@@ -27,7 +27,7 @@ export default function ChatInput({
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 md:left-[16rem] md:right-[2rem] bg-white border-t border-pink-100 p-4 z-50">
+    <div className=" bg-white border-t border-pink-100 p-4 z-50">
       <form onSubmit={onSubmit} className="flex gap-3">
         <div className="flex-1 relative">
           <input
@@ -40,15 +40,15 @@ export default function ChatInput({
                 : "Please wait, connecting..."
             }
             disabled={isLoading || !isConnected}
-            className="w-full px-4 py-3 pr-12 border border-pink-200 rounded-full focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed placeholder-gray-400 bg-pink-50/30"
+            className="w-full px-4 py-3 pr-12 border border-[#fab0a7] rounded-full focus:outline-none focus:ring-2 focus:ring-[#d04f51] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed placeholder-gray-400 bg-pink-50/30"
           />
-          <MessageCircle className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-pink-400" />
+          <MessageCircle className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#d04f51]" />
         </div>
 
         <button
           type="submit"
           disabled={isLoading || !inputMessage.trim() || !isConnected}
-          className="px-6 py-3 bg-gradient-to-r from-pink-300 to-pink-400 text-white rounded-full hover:from-pink-400 hover:to-pink-500 disabled:opacity-100 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:scale-105"
+          className="px-6 py-3 bg-[#d04f51] text-white rounded-full hover:[#d04f51] disabled:opacity-100 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:scale-105"
         >
           {isLoading ? (
             <Loader2 className="h-5 w-5 animate-spin" />
@@ -65,7 +65,7 @@ export default function ChatInput({
             key={index}
             onClick={() => onTipClick(tip)}
             disabled={isLoading || !isConnected}
-            className="px-3 py-1 text-xs bg-pink-100 hover:bg-pink-200 text-pink-700 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-1 text-xs bg-pink-100 hover:bg-pink-200 text-[#d04f51] rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             type="button"
           >
             {tip}

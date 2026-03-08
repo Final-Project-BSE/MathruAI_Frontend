@@ -74,6 +74,30 @@ const apis = {
     return res.data;
   },
 
+  updateChat: async (
+    sessionId: number,
+    token: string,
+    payload: { session_name: string }
+  ) => {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/chatbot/chats/${sessionId}/`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to update chat title");
+    }
+
+    return response.json();
+  },
+
   async chat(
     token: string,
     payload: {

@@ -24,12 +24,14 @@ export const ROUTE_ACCESS: Record<string, UserRole[]> = {
 
   '/cycle-tracker': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
   '/health-monitoring': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
-  '/daily-recommendations': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
+  '/daily-recommendations': [ROLES.PREGNANT_MOTHER, ROLES.MIDWIFE],
   '/midwife-connection': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
   '/chatbot': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
   '/notifications': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
   '/announcement': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
   '/settings': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
+  '/healthrecords': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
+  '/analytics': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
 
 };
 

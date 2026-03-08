@@ -37,7 +37,7 @@ export default function ChatMessages({ messages }: ChatMessagesProps) {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 pb-44 space-y-4 bg-gradient-to-b from-white/50 to-pink-50/30">
+    <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 bg-[#fed2cc]">
       {messages.map((message) => (
         <div
           key={message.id}
@@ -48,20 +48,20 @@ export default function ChatMessages({ messages }: ChatMessagesProps) {
           <div
             className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${
               message.isUser
-                ? "bg-gradient-to-r from-pink-400 to-pink-400 text-white rounded-br-sm"
+                ? "bg-[#d04f51] text-white rounded-br-sm"
                 : "bg-white text-gray-800 rounded-bl-sm border border-pink-100"
             }`}
           >
-            <div className="whitespace-pre-wrap leading-relaxed">
+            <div className="whitespace-pre-wrap leading-relaxed text-sm">
               {message.content || (message.status === "sending" && "Thinking...")}
             </div>
             <div
-              className={`flex items-center justify-between mt-2 pt-2 border-t ${
+              className={`flex items-center justify-between mt-1 pt-2 border-t ${
                 message.isUser ? "border-white/20" : "border-gray-100"
               }`}
             >
               <span
-                className={`text-xs ${
+                className={`text-[9px] ${
                   message.isUser ? "text-white/70" : "text-gray-500"
                 }`}
               >
