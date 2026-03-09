@@ -4,7 +4,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronRight, Sparkles, HeartPulse, Activity, Clock3 } from 'lucide-react';
+import {
+  Loader2,
+  ChevronRight,
+  Sparkles,
+  HeartPulse,
+  Activity,
+  Clock3,
+} from 'lucide-react';
 
 import apis from '../../../../api/healthmonitor/api';
 import type { PredictionResult } from '../../../../api/healthmonitor/types';
@@ -37,17 +44,67 @@ function formatTimeAgo(dateLike?: string | number | Date | null) {
   return `${days} day${days > 1 ? 's' : ''} ago`;
 }
 
+function getRiskStyles(riskLevel?: string | null) {
+  if (!riskLevel) {
+    return {
+      label: 'No assessment yet',
+      badge: 'bg-gray-100 text-gray-700 border-gray-200',
+      dot: 'bg-gray-400',
+      progressColor: '#9CA3AF', // gray
+    };
+  }
+
+  const r = riskLevel.toLowerCase();
+
+  if (r.includes('low')) {
+    return {
+      label: 'Good Health Status',
+      badge: 'bg-green-700 text-white border-green-200',
+      dot: 'bg-white',
+      progressColor: '#16A34A', // green
+    };
+  }
+
+  if (r.includes('mid') || r.includes('medium') || r.includes('moderate')) {
+    return {
+      label: 'Needs Attention',
+      badge: 'bg-yellow-50 text-yellow-800 border-yellow-200',
+      dot: 'bg-yellow-500',
+      progressColor: '#F59E0B', // amber
+    };
+  }
+
+  if (r.includes('high')) {
+    return {
+      label: 'High Risk',
+      badge: 'bg-red-500 text-white border-red-200',
+      dot: 'bg-white',
+      progressColor: '#EF4444', // red
+    };
+  }
+
+  return {
+    label: riskLevel,
+    badge: 'bg-gray-100 text-gray-700 border-gray-200',
+    dot: 'bg-gray-400',
+    progressColor: '#9CA3AF',
+  };
+}
+
 function CircularProgress({
   value,
   label,
   sublabel,
+  color,
 }: {
   value: number;
   label: string;
   sublabel?: string;
+  color: string;
 }) {
   const pct = clamp(value) * 100;
-  const ring = `conic-gradient(from 180deg, rgba(236,72,153,0.95) ${pct}%, rgba(255,255,255,0.35) 0)`;
+
+  const ring = `conic-gradient(from 180deg, ${color} ${pct}%, rgba(255,255,255,0.35) 0)`;
 
   return (
     <div className="flex items-center gap-3">
@@ -55,14 +112,13 @@ function CircularProgress({
         className="relative h-14 w-14 rounded-full p-[2px] shadow-sm"
         style={{ background: ring }}
       >
-        <div className="h-full w-full rounded-full bg-white flex items-center justify-center">
+        <div className="flex h-full w-full items-center justify-center rounded-full bg-white">
           <div className="text-sm font-bold text-gray-900">{pct.toFixed(0)}%</div>
         </div>
       </div>
 
       <div>
-        <div className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-pink-600" />
+        <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
           {label}
         </div>
         {sublabel && <div className="text-xs text-gray-600">{sublabel}</div>}
@@ -72,23 +128,17 @@ function CircularProgress({
 }
 
 function MetricCard({
-  icon: Icon,
   title,
   value,
 }: {
-  icon: React.ElementType;
   title: string;
   value: string;
 }) {
   return (
-    <div className="rounded-2xl bg-white/70 backdrop-blur border border-white/60 p-4 shadow-sm">
+    <div className="rounded-2xl border border-white/60 bg-white/70 p-4 shadow-sm backdrop-blur">
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl bg-pink-50 border border-pink-100 flex items-center justify-center">
-          <Icon className="h-5 w-5 text-pink-600" />
-        </div>
-
         <div>
-          <div className="text-xs text-gray-600 font-medium">{title}</div>
+          <div className="text-xs font-medium text-gray-600">{title}</div>
           <div className="text-lg font-bold text-gray-900">{value}</div>
         </div>
       </div>
@@ -97,7 +147,7 @@ function MetricCard({
 }
 
 export default function HealthStatusSum({
-  href = '/dashboard/reproductive/health-monitoring',
+  href = '/health-monitoring',
 }: Props) {
   const router = useRouter();
 
@@ -144,50 +194,10 @@ export default function HealthStatusSum({
   const riskLevel = latest?.risk_assessment?.risk_level ?? null;
   const confidence =
     typeof latest?.risk_assessment?.confidence === 'number'
-      ? latest!.risk_assessment!.confidence
+      ? latest.risk_assessment.confidence
       : null;
 
-  const status = useMemo(() => {
-    if (!riskLevel) {
-      return {
-        label: 'No assessment yet',
-        badge: 'bg-gray-100 text-gray-700 border-gray-200',
-        dot: 'bg-gray-400',
-      };
-    }
-
-    const r = riskLevel.toLowerCase();
-
-    if (r.includes('low')) {
-      return {
-        label: 'Good Health Status',
-        badge: 'bg-green-700 text-white border-green-200',
-        dot: 'bg-white',
-      };
-    }
-
-    if (r.includes('mid') || r.includes('medium') || r.includes('moderate')) {
-      return {
-        label: 'Needs Attention',
-        badge: 'bg-yellow-50 text-yellow-800 border-yellow-200',
-        dot: 'bg-yellow-500',
-      };
-    }
-
-    if (r.includes('high')) {
-      return {
-        label: 'High Risk',
-        badge: 'bg-red-500 text-white border-red-200',
-        dot: 'bg-white',
-      };
-    }
-
-    return {
-      label: riskLevel,
-      badge: 'bg-gray-100 text-gray-700 border-gray-200',
-      dot: 'bg-gray-400',
-    };
-  }, [riskLevel]);
+  const status = useMemo(() => getRiskStyles(riskLevel), [riskLevel]);
 
   const updatedAgo = formatTimeAgo(
     (latest as any)?.updated_at || (latest as any)?.created_at || null
@@ -198,7 +208,7 @@ export default function HealthStatusSum({
       role="button"
       tabIndex={0}
       onClick={() => router.push(href)}
-      className="group relative overflow-hidden cursor-pointer rounded-3xl shadow-lg hover:shadow-xl transition-all"
+      className="group relative cursor-pointer overflow-hidden rounded-3xl shadow-lg transition-all hover:shadow-xl"
     >
       {/* Background Image */}
       <div
@@ -213,19 +223,17 @@ export default function HealthStatusSum({
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <CardTitle className="flex items-center gap-2">
-              <div className="h-10 w-10 rounded-xl bg-pink-50 flex items-center justify-center">
-                <HeartPulse className="h-5 w-5 text-pink-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-50">
+                <HeartPulse className="h-5 w-5 text-[#d04f51]" />
               </div>
 
               <div>
                 <div className="font-bold">Health Status Summary</div>
 
-                <div className="text-xs text-gray-600 flex items-center gap-2 mt-1">
-                  <span
-                    className={`px-2 py-1 rounded-full border ${status.badge}`}
-                  >
+                <div className="mt-1 flex items-center gap-2 text-xs text-gray-600">
+                  <span className={`rounded-full border px-2 py-1 ${status.badge}`}>
                     <span
-                      className={`inline-block h-2 w-2 rounded-full mr-1 ${status.dot}`}
+                      className={`mr-1 inline-block h-2 w-2 rounded-full ${status.dot}`}
                     />
                     {status.label}
                   </span>
@@ -241,7 +249,7 @@ export default function HealthStatusSum({
             </CardTitle>
 
             <Button
-              className='bg-[#ffffff] text-black hover:bg-[#d04f51]'
+              className="bg-[#ffffff] text-black hover:bg-[#d04f51] hover:text-white"
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
@@ -272,23 +280,21 @@ export default function HealthStatusSum({
                 value={confidence ?? 0}
                 label="Risk Confidence"
                 sublabel={riskLevel ? `Assessment: ${riskLevel}` : undefined}
+                color={status.progressColor}
               />
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <MetricCard
-                  icon={Sparkles}
                   title="BMI"
                   value={bmi ? bmi.toFixed(1) : '-'}
                 />
 
                 <MetricCard
-                  icon={HeartPulse}
                   title="Blood Pressure"
                   value={sys && dia ? `${sys}/${dia}` : '-'}
                 />
 
                 <MetricCard
-                  icon={Activity}
                   title="Heart Rate"
                   value={hr ? `${hr.toFixed(0)} bpm` : '-'}
                 />

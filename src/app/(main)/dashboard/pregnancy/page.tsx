@@ -11,6 +11,7 @@ import DashboardTopBar from "./components/DashboardTopBar";
 import HealthStatusSum from "./components/HealthStatusSum";
 import DashboardFeatures from "./components/DashboardFeatures";
 import { usePregnancyStats } from "@/hooks/usePregnancyStatus";
+import TodaysRecommendation from "./components/TodaysRecommendation";
 
 export default function PregnancyPage() {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -46,124 +47,6 @@ export default function PregnancyPage() {
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <HealthStatusSum />
-
-          <Card className="border-[#d04f51]/20 bg-white shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base font-semibold text-[#d04f51]">
-                Health Announcements
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="border-l-4 border-[#d04f51] pl-4">
-                <h4 className="text-sm font-medium text-gray-900">
-                  How Sleep Affects Your Fertility
-                </h4>
-                <p className="text-xs text-gray-600">
-                  Quality sleep plays a crucial role in reproductive health and
-                  overall hormone balance.
-                </p>
-              </div>
-              <div className="border-l-4 border-[#d04f51] pl-4">
-                <h4 className="text-sm font-medium text-gray-900">
-                  Nutrition Tips for Conception
-                </h4>
-                <p className="text-xs text-gray-600">
-                  Learn about foods, hydration, and daily habits that support a
-                  healthier pregnancy journey.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-[#d04f51]/20 bg-white shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base font-semibold text-[#d04f51]">
-                Midwife Connectivity
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10 md:h-12 md:w-12">
-                    <AvatarFallback className="bg-[#d04f51] text-white">
-                      SM
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">
-                      Sarah Mitchell, CNM
-                    </div>
-                    <div className="text-xs text-gray-600">
-                      Online • Last seen 2 min ago
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    className="flex-1 bg-[#d04f51] text-xs text-white hover:bg-[#b84345]"
-                  >
-                    Send Data
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1 border-[#d04f51] text-xs text-[#d04f51] hover:bg-[#d04f51]/5"
-                  >
-                    Ask Question
-                  </Button>
-                </div>
-
-                <div className="rounded-lg bg-[#d04f51]/10 p-3">
-                  <div className="text-xs font-medium text-[#d04f51]">
-                    Auto-Alert: Health data automatically shared with care team
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-[#d04f51]/20 bg-white shadow-sm lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-base font-semibold text-[#d04f51]">
-                Today Recommendation
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-xl border border-[#d04f51]/20 bg-[#d04f51]/5 p-4">
-                  <h4 className="mb-2 text-sm font-semibold text-[#d04f51]">
-                    Hydration Goal
-                  </h4>
-                  <p className="text-sm text-gray-700">
-                    Drink 8–10 glasses of water today to support circulation,
-                    digestion, and amniotic fluid balance.
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-[#d04f51]/20 bg-[#d04f51]/5 p-4">
-                  <h4 className="mb-2 text-sm font-semibold text-[#d04f51]">
-                    Gentle Activity
-                  </h4>
-                  <p className="text-sm text-gray-700">
-                    Take a 20-minute walk or do light stretching to reduce
-                    stiffness and improve mood.
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-[#d04f51]/20 bg-[#d04f51]/5 p-4">
-                  <h4 className="mb-2 text-sm font-semibold text-[#d04f51]">
-                    Rest Reminder
-                  </h4>
-                  <p className="text-sm text-gray-700">
-                    Aim for consistent sleep tonight and take breaks during the
-                    day if fatigue rises.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           <Card className="border-[#d04f51]/20 bg-white shadow-sm">
             <CardHeader>
@@ -212,6 +95,98 @@ export default function PregnancyPage() {
 
                 <div className="rounded-lg bg-[#d04f51]/10 p-3 text-xs text-[#d04f51]">
                   Estimated days left: <span className="font-semibold">{stats?.daysLeft ?? "—"}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <TodaysRecommendation href="/daily-recommendations" />
+
+          <Card className="border-[#d04f51]/20 bg-white shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base font-semibold text-[#d04f51]">
+                Kick Counter
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <div className="text-3xl font-bold text-[#d04f51]">
+                    {kickCount}
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    Kicks tracked today
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    className="bg-[#d04f51] text-white hover:bg-[#b84345]"
+                    onClick={() => setKickCount((prev) => prev + 1)}
+                  >
+                    Add Kick
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="border-[#d04f51] text-[#d04f51] hover:bg-[#d04f51]/5"
+                    onClick={() => setKickCount(0)}
+                  >
+                    Reset
+                  </Button>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-lg bg-[#d04f51]/10 p-3 text-xs text-[#d04f51]">
+                Tip: Try counting kicks during the time of day when your baby is
+                usually most active.
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-[#d04f51]/20 bg-white shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base font-semibold text-[#d04f51]">
+                Midwife Connectivity
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10 md:h-12 md:w-12">
+                    <AvatarFallback className="bg-[#d04f51] text-white">
+                      SM
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">
+                      Sarah Mitchell, CNM
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      Online • Last seen 2 min ago
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="flex-1 bg-[#d04f51] text-xs text-white hover:bg-[#b84345]"
+                  >
+                    Send Data
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 border-[#d04f51] text-xs text-[#d04f51] hover:bg-[#d04f51]/5"
+                  >
+                    Ask Question
+                  </Button>
+                </div>
+
+                <div className="rounded-lg bg-[#d04f51]/10 p-3">
+                  <div className="text-xs font-medium text-[#d04f51]">
+                    Auto-Alert: Health data automatically shared with care team
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -310,43 +285,30 @@ export default function PregnancyPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-[#d04f51]/20 bg-white shadow-sm">
+           <Card className="border-[#d04f51]/20 bg-white shadow-sm">
             <CardHeader>
               <CardTitle className="text-base font-semibold text-[#d04f51]">
-                Kick Counter
+                Health Announcements
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <div className="text-3xl font-bold text-[#d04f51]">
-                    {kickCount}
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    Kicks tracked today
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    className="bg-[#d04f51] text-white hover:bg-[#b84345]"
-                    onClick={() => setKickCount((prev) => prev + 1)}
-                  >
-                    Add Kick
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-[#d04f51] text-[#d04f51] hover:bg-[#d04f51]/5"
-                    onClick={() => setKickCount(0)}
-                  >
-                    Reset
-                  </Button>
-                </div>
+            <CardContent className="space-y-4">
+              <div className="border-l-4 border-[#d04f51] pl-4">
+                <h4 className="text-sm font-medium text-gray-900">
+                  How Sleep Affects Your Fertility
+                </h4>
+                <p className="text-xs text-gray-600">
+                  Quality sleep plays a crucial role in reproductive health and
+                  overall hormone balance.
+                </p>
               </div>
-
-              <div className="mt-4 rounded-lg bg-[#d04f51]/10 p-3 text-xs text-[#d04f51]">
-                Tip: Try counting kicks during the time of day when your baby is
-                usually most active.
+              <div className="border-l-4 border-[#d04f51] pl-4">
+                <h4 className="text-sm font-medium text-gray-900">
+                  Nutrition Tips for Conception
+                </h4>
+                <p className="text-xs text-gray-600">
+                  Learn about foods, hydration, and daily habits that support a
+                  healthier pregnancy journey.
+                </p>
               </div>
             </CardContent>
           </Card>
