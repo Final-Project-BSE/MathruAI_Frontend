@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { UploadedFile } from "./RecordFormModal";
+import { UploadedFile } from "@/components/health-records/RecordFormModal";
 
 export interface HealthRecord {
   id: string;
