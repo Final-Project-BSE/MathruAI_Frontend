@@ -59,7 +59,7 @@ const data = {
     },
     {
       title: "Health Records",
-      url: "/healthrecords",
+      url: "/health-records",
     },
     {
       title: "Announcements",

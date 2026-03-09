@@ -30,7 +30,7 @@ export const ROUTE_ACCESS: Record<string, UserRole[]> = {
   '/notifications': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
   '/announcement': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
   '/settings': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
-  '/healthrecords': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
+  '/health-records': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
   '/analytics': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
 
 };
