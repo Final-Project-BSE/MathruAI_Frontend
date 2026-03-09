@@ -61,6 +61,14 @@ const data = {
       title: "Health Records",
       url: "/health-records",
     },
+     {
+      title: "Timeline & Milestone",
+      url: "/timeline-milestone",
+    },
+    {
+      title: "Nutrition & Wellness",
+      url: "/nutrition-wellness",
+    },
     {
       title: "Announcements",
       url: "/announcement",
@@ -69,10 +77,6 @@ const data = {
       title: "Analytics",
       url: "/analytics",
     },
-    // {
-    //   title: "Upgrade Stage",
-    //   url: "/upgrade-stage",
-    // },
   ],
 };
 
