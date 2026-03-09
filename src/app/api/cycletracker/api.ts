@@ -2,6 +2,11 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost
 export const FERTILITY_API = `${API_BASE_URL}/api/fertility`;
 
 export interface FertilityResponseDto {
+  ovulation: string | number | Date;
+  fertileStart: string | number | Date;
+  fertileEnd: string | number | Date;
+  nextPeriod: string | number | Date;
+  pregnancyTest: string | number | Date;
   fertileWindowStart: string;
   fertileWindowEnd: string;
   ovulationDate: string;

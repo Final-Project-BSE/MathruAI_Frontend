@@ -38,20 +38,18 @@ export function CycleCalendar(props: Props) {
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold">Calendar</CardTitle>
-
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={onPrevMonth}>
               <ChevronLeft className="w-4 h-4" />
             </Button>
-
             <span className="text-sm font-medium">{displayMonth}</span>
-
             <Button variant="ghost" size="sm" onClick={onNextMonth}>
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
+        {/* Weekdays */}
         <div className="grid grid-cols-7 gap-1 mt-4">
           {["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"].map((d) => (
             <div key={d} className="text-center text-xs font-medium text-gray-500 p-2">
@@ -64,7 +62,7 @@ export function CycleCalendar(props: Props) {
       <CardContent>
         <div className="grid grid-cols-7 gap-1">
           {[...Array(leadingEmptyDays)].map((_, i) => (
-            <div key={`empty-${i}`} className="p-3"></div>
+            <div key={i} className="p-3"></div>
           ))}
 
           {days.map((day) => (
@@ -77,6 +75,7 @@ export function CycleCalendar(props: Props) {
           ))}
         </div>
 
+        {/* Legend */}
         <div className="flex items-center justify-center gap-6 mt-6 text-xs flex-wrap">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-red-100 rounded border"></div>
