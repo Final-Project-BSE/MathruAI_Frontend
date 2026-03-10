@@ -7,12 +7,12 @@ import {
   Pencil,
   Trash2,
   FileText,
-  Image as ImageIcon,
   Files,
+  Eye
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { UploadedFile } from "@/components/health-records/RecordFormModal";
+import { getFileUrl } from "@/app/api/health-records/api";
 
 export interface HealthRecord {
   id: string;
@@ -30,11 +30,15 @@ interface RecordCardProps {
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  try {
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  } catch (e) {
+    return dateStr;
+  }
 }
 
 export default function RecordCard({
@@ -51,34 +55,21 @@ export default function RecordCard({
     <Card className="bg-white/90 backdrop-blur rounded-2xl shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 group overflow-hidden">
       <CardContent className="p-0">
         {/* Preview area */}
-        {firstImage ? (
-          <div className="relative w-full h-36 overflow-hidden">
-            <Image
-              src={firstImage.data}
-              alt={record.name}
-              fill
-              className="object-cover"
-            />
-            {/* File count badge */}
-            {totalFiles > 1 && (
-              <span className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
-                <Files className="h-3 w-3" />
-                {totalFiles}
+        <div className="w-full h-24 bg-gradient-to-br from-pink-50 to-rose-100 flex flex-col items-center justify-center border-b border-pink-100 gap-1.5">
+          {totalFiles > 0 ? (
+            <>
+              <Files className="h-8 w-8 text-pink-300" />
+              <span className="text-xs text-pink-600 font-medium">
+                {totalFiles} file{totalFiles > 1 ? "s" : ""} attached
               </span>
-            )}
-          </div>
-        ) : pdfCount > 0 ? (
-          <div className="w-full h-24 bg-red-50 flex flex-col items-center justify-center gap-1.5 border-b border-red-100">
-            <FileText className="h-8 w-8 text-red-400" />
-            <span className="text-xs text-red-500 font-medium">
-              {pdfCount} PDF{pdfCount > 1 ? "s" : ""} attached
-            </span>
-          </div>
-        ) : (
-          <div className="w-full h-24 bg-gradient-to-br from-pink-50 to-rose-100 flex items-center justify-center border-b border-pink-100">
-            <ImageIcon className="h-8 w-8 text-pink-200" />
-          </div>
-        )}
+            </>
+          ) : (
+            <>
+              <FileText className="h-8 w-8 text-pink-200" />
+              <span className="text-xs text-pink-400 font-medium">No files</span>
+            </>
+          )}
+        </div>
 
         {/* Info */}
         <Link
@@ -107,6 +98,29 @@ export default function RecordCard({
 
         {/* Action buttons */}
         <div className="px-4 pb-4 flex gap-2 border-t border-gray-100 pt-3">
+          {totalFiles > 0 && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={async () => {
+                try {
+                  const { getSession } = await import("@/lib/authentication");
+                  const session = await getSession();
+                  const token = session?.user?.token;
+                  if (token && record.files?.[0]) {
+                    const { downloadSecureFile } = await import("@/app/api/health-records/api");
+                    await downloadSecureFile(token, record.files[0].data, record.files[0].name || "record_file");
+                  }
+                } catch (err) {
+                  console.error("Failed to download file:", err);
+                }
+              }}
+              className="flex-1 rounded-xl text-xs gap-1.5 hover:bg-blue-50 hover:text-blue-600 text-gray-600"
+            >
+              <Eye className="h-3.5 w-3.5" />
+              Download
+            </Button>
+          )}
           <Button
             size="sm"
             variant="ghost"
