@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Container from "@/components/shared/container";
 import { Button } from "@/components/ui/button";
@@ -32,67 +32,41 @@ const CATEGORY_META: Record<string, { name: string; icon: string }> = {
     "others": { name: "Others", icon: "📋" },
 };
 
-// Dummy records for Single Record View
-const ALL_RECORDS: Record<string, {
-    id: string; categoryId: string; name: string;
-    date: string; description?: string; files?: UploadedFile[];
-}[]> = {
-    "medical-checkups": [
-        { id: "mc-1", categoryId: "medical-checkups", name: "Routine Prenatal Checkup", date: "2025-12-05", description: "Blood pressure and weight check. Fetal heart rate normal." },
-        { id: "mc-2", categoryId: "medical-checkups", name: "Physical Exam", date: "2025-08-10", description: "General health assessment. No major concerns." },
-        { id: "mc-3", categoryId: "medical-checkups", name: "Dental Checkup", date: "2025-05-15", description: "Routine cleaning. No cavities." },
-    ],
-    "lab-test-results": [
-        { id: "lab-1", categoryId: "lab-test-results", name: "Complete Blood Count", date: "2025-12-10", description: "All values within normal range." },
-        { id: "lab-2", categoryId: "lab-test-results", name: "Glucose Tolerance Test", date: "2025-09-15", description: "Negative for gestational diabetes." },
-        { id: "lab-3", categoryId: "lab-test-results", name: "Iron & Ferritin Check", date: "2025-06-20", description: "Iron levels healthy." },
-        { id: "lab-4", categoryId: "lab-test-results", name: "Thyroid Function Test", date: "2025-03-05", description: "TSH levels stable." },
-        { id: "lab-5", categoryId: "lab-test-results", name: "Urinalysis", date: "2025-01-10", description: "Clear, no signs of infection." },
-    ],
-    "ultrasound-scans": [
-        { id: "us-1", categoryId: "ultrasound-scans", name: "12-Week Ultrasound", date: "2025-12-01", description: "Healthy growth. Heartbeat strong." },
-        { id: "us-2", categoryId: "ultrasound-scans", name: "Anatomy Scan (20 wks)", date: "2025-10-08", description: "Fetal anatomy normal." },
-    ],
-    "medications-supplements": [
-        { id: "ms-1", categoryId: "medications-supplements", name: "Prenatal Vitamins", date: "2025-11-01", description: "Daily multivitamin with folic acid." },
-        { id: "ms-2", categoryId: "medications-supplements", name: "Iron Supplement", date: "2025-08-12", description: "Prescribed due to mild deficiency." },
-        { id: "ms-3", categoryId: "medications-supplements", name: "Vitamin D Drops", date: "2025-05-20", description: "Daily 1000 IU." },
-        { id: "ms-4", categoryId: "medications-supplements", name: "Calcium Tablet", date: "2025-02-15", description: "Daily 500 mg." },
-    ],
-    "vaccinations": [
-        { id: "v-1", categoryId: "vaccinations", name: "Flu Vaccine 2025", date: "2025-10-01", description: "Annual vaccination completed." },
-        { id: "v-2", categoryId: "vaccinations", name: "Tdap Booster", date: "2025-04-18", description: "Boost immunity during pregnancy." },
-        { id: "v-3", categoryId: "vaccinations", name: "COVID-19 Booster", date: "2025-01-22", description: "Updated booster received." },
-        { id: "v-4", categoryId: "vaccinations", name: "Hepatitis B (Dose 3)", date: "2024-08-05", description: "Final dose in the series." },
-        { id: "v-5", categoryId: "vaccinations", name: "MMR Vaccine", date: "2024-03-14", description: "Pre-conception immunity check." },
-        { id: "v-6", categoryId: "vaccinations", name: "HPV Vaccine (Dose 2)", date: "2023-11-10", description: "Completing HPV series." },
-    ],
-    "personal-health-notes": [
-        { id: "pn-1", categoryId: "personal-health-notes", name: "Dietary Changes", date: "2025-11-15", description: "Increased protein and fibre intake." },
-        { id: "pn-2", categoryId: "personal-health-notes", name: "Morning Sickness Log", date: "2025-09-30", description: "Symptoms easing by week 14." },
-        { id: "pn-3", categoryId: "personal-health-notes", name: "Activity Tracker", date: "2025-07-20", description: "Daily walking targets met." },
-    ],
-    "others": [
-        { id: "o-1", categoryId: "others", name: "Hospital Tour Notes", date: "2025-08-25", description: "Location of triage and maternity ward noted." },
-    ],
-};
+import healthRecordsApi, { getFileUrl, downloadSecureFile, updateRecord } from "@/app/api/health-records/api";
+import { useSecureFile } from "@/hooks/useSecureFile";
 
-function formatDate(dateStr: string) {
-    return new Date(dateStr).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+function SecureImage({ fileUrl, alt, className }: { fileUrl: string, alt: string, className?: string }) {
+    const { objectUrl, loading } = useSecureFile(fileUrl);
+    if (loading) return <div className={`flex items-center justify-center bg-gray-100 animate-pulse ${className}`} />;
+    if (!objectUrl) return <div className={`flex items-center justify-center bg-gray-100 text-gray-400 text-xs ${className}`}>Failed to load</div>;
+    return <img src={objectUrl} alt={alt} className={className} />;
 }
 
+function formatDate(dateStr: string) {
+    if (!dateStr) return "N/A";
+    try {
+        return new Date(dateStr).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+    } catch {
+        return dateStr;
+    }
+}
 function humanSize(bytes: number) {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function downloadFile(file: UploadedFile) {
-    const a = document.createElement("a");
-    a.href = file.data;
-    a.download = file.name;
-    a.click();
-}
+const handleDownload = async (file: UploadedFile) => {
+    try {
+        const { getSession } = await import("@/lib/authentication");
+        const session = await getSession();
+        if (session?.user?.token) {
+            await downloadSecureFile(session.user.token, file.data, file.name);
+        }
+    } catch (e) {
+        console.error(e);
+    }
+};
 
 export default function SingleRecordPage() {
     const params = useParams();
@@ -102,24 +76,122 @@ export default function SingleRecordPage() {
 
     const catMeta = CATEGORY_META[categoryId] ?? { name: "Records", icon: "📋" };
 
-    const initial = (ALL_RECORDS[categoryId] ?? []).find((r) => r.id === recordId) ?? {
-        id: recordId,
-        categoryId,
-        name: "Unknown Record",
-        date: new Date().toISOString().split("T")[0],
-        description: "No details available.",
-        files: [],
-    };
+    const [record, setRecord] = useState<{
+        id: string; categoryId: string; name: string;
+        date: string; description?: string; files?: UploadedFile[];
+    } | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const [record, setRecord] = useState(initial);
     const [editOpen, setEditOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
-    const [lightboxImg, setLightboxImg] = useState<string | null>(null);
+    const [lightboxFile, setLightboxFile] = useState<UploadedFile | null>(null);
+
+    useEffect(() => {
+        const fetchRecordDetails = async () => {
+            try {
+                setLoading(true);
+                const { getSession } = await import("@/lib/authentication");
+                const session = await getSession();
+                const token = session?.user?.token;
+
+                if (!token) {
+                    setError("Unauthorized. Please login.");
+                    return;
+                }
+
+                const data = await healthRecordsApi.getRecordDetails(token, recordId);
+
+                setRecord({
+                    id: data.id,
+                    categoryId: categoryId,
+                    name: data.name,
+                    date: data.date,
+                    description: data.description,
+                    files: data.files?.map(f => ({
+                        id: f.id,
+                        name: f.fileName,
+                        type: f.fileType,
+                        size: f.fileSize,
+                        data: f.fileUrl
+                    })) || []
+                });
+            } catch (err) {
+                console.error("Failed to fetch record details:", err);
+                setError("Failed to load record details.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchRecordDetails();
+    }, [recordId, categoryId]);
+
+    if (loading) {
+        return (
+            <Container title="Loading...">
+                <div className="bg-[#fed2cc] min-h-screen p-4 md:p-6 flex items-center justify-center">
+                    <p className="text-pink-600 font-medium animate-pulse">Loading record details...</p>
+                </div>
+            </Container>
+        );
+    }
+
+    if (error || !record) {
+        return (
+            <Container title="Error">
+                <div className="bg-[#fed2cc] min-h-screen p-4 md:p-6 flex flex-col items-center justify-center gap-4">
+                    <p className="text-red-600 font-medium bg-red-50 p-4 rounded-xl shadow-sm border border-red-100">{error || "Record not found"}</p>
+                    <Button variant="outline" onClick={() => router.push(`/health-records/${categoryId}`)} className="rounded-xl">
+                        <ChevronLeft className="h-4 w-4 mr-2" /> Back to Category
+                    </Button>
+                </div>
+            </Container>
+        );
+    }
 
     const imageFiles = (record.files ?? []).filter((f) => f.type.startsWith("image/"));
     const docFiles = (record.files ?? []).filter((f) => !f.type.startsWith("image/"));
 
-    const handleEdit = (data: RecordFormData) => setRecord((prev) => ({ ...prev, ...data }));
+    const handleEdit = async (data: RecordFormData) => {
+        try {
+            const { getSession } = await import("@/lib/authentication");
+            const session = await getSession();
+            const token = session?.user?.token;
+            if (!token || !record) return;
+
+            const newFileObjects = data.files
+                ?.map(f => f.file)
+                .filter((f): f is File => f instanceof File) ?? [];
+
+            await updateRecord(token, record.id, {
+                name: data.name,
+                date: data.date,
+                description: data.description,
+                files: newFileObjects
+            });
+
+            // Re-fetch the updated record from backend
+            const updated = await healthRecordsApi.getRecordDetails(token, record.id);
+            setRecord({
+                id: updated.id,
+                categoryId: categoryId,
+                name: updated.name,
+                date: updated.date,
+                description: updated.description,
+                files: updated.files?.map(f => ({
+                    id: f.id,
+                    name: f.fileName,
+                    type: f.fileType,
+                    size: f.fileSize,
+                    data: f.fileUrl
+                })) || []
+            });
+            setEditOpen(false);
+        } catch (err) {
+            console.error("Failed to update record:", err);
+            alert("Failed to update record. Please try again.");
+        }
+    };
     const handleDelete = () => router.push(`/health-records/${categoryId}`);
 
     return (
@@ -139,7 +211,7 @@ export default function SingleRecordPage() {
                         {catMeta.name}
                     </button>
                     <span className="text-gray-400">/</span>
-                    <span className="text-gray-700 font-medium truncate max-w-[160px]">{record.name}</span>
+                    <span className="text-gray-700 font-medium truncate max-w-[160px]">{record?.name}</span>
                 </div>
 
                 <div className="max-w-3xl mx-auto space-y-4">
@@ -147,7 +219,7 @@ export default function SingleRecordPage() {
                         <CardContent className="p-5 md:p-7 space-y-5">
                             <div className="flex items-start justify-between gap-3">
                                 <div>
-                                    <h1 className="text-xl md:text-2xl font-bold text-gray-900">{record.name}</h1>
+                                    <h1 className="text-xl md:text-2xl font-bold text-gray-900">{record?.name}</h1>
                                     <Badge className="mt-1.5 bg-pink-100 text-pink-700 hover:bg-pink-100 rounded-full text-xs font-medium">
                                         {catMeta.icon} {catMeta.name}
                                     </Badge>
@@ -170,18 +242,18 @@ export default function SingleRecordPage() {
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-500 font-medium">Date</p>
-                                    <p className="text-sm font-semibold text-gray-800">{formatDate(record.date)}</p>
+                                    <p className="text-sm font-semibold text-gray-800">{formatDate(record?.date || "")}</p>
                                 </div>
                             </div>
 
-                            {record.description && (
+                            {record?.description && (
                                 <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-xl">
                                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-100 mt-0.5 shrink-0">
                                         <AlignLeft className="h-5 w-5 text-purple-600" />
                                     </div>
                                     <div>
                                         <p className="text-xs text-gray-500 font-medium mb-1">Description</p>
-                                        <p className="text-sm text-gray-700 leading-relaxed">{record.description}</p>
+                                        <p className="text-sm text-gray-700 leading-relaxed">{record?.description}</p>
                                     </div>
                                 </div>
                             )}
@@ -200,10 +272,10 @@ export default function SingleRecordPage() {
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                     {imageFiles.map((f, i) => (
                                         <div key={i} className="group relative rounded-xl overflow-hidden aspect-square bg-gray-100 cursor-pointer"
-                                            onClick={() => setLightboxImg(f.data)}>
-                                            <Image src={f.data} alt={f.name} fill className="object-cover" />
+                                            onClick={() => setLightboxFile(f)}>
+                                            <SecureImage fileUrl={f.data} alt={f.name} className="absolute inset-0 w-full h-full object-cover" />
                                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
-                                                <button onClick={(e) => { e.stopPropagation(); downloadFile(f); }}
+                                                <button onClick={(e) => { e.stopPropagation(); handleDownload(f); }}
                                                     className="bg-white/90 hover:bg-white text-gray-800 rounded-full p-2 shadow transition">
                                                     <Download className="h-4 w-4" />
                                                 </button>
@@ -234,7 +306,7 @@ export default function SingleRecordPage() {
                                                 <p className="text-sm font-medium text-gray-800 truncate">{f.name}</p>
                                                 <p className="text-xs text-gray-400">{humanSize(f.size)}</p>
                                             </div>
-                                            <Button size="sm" onClick={() => downloadFile(f)}
+                                            <Button size="sm" onClick={() => handleDownload(f)}
                                                 className="rounded-xl bg-red-500 hover:bg-red-600 text-white gap-1.5 text-xs shrink-0">
                                                 <Download className="h-3.5 w-3.5" />Download
                                             </Button>
@@ -245,7 +317,7 @@ export default function SingleRecordPage() {
                         </Card>
                     )}
 
-                    {(record.files ?? []).length === 0 && (
+                    {(record?.files ?? []).length === 0 && (
                         <Card className="bg-white/90 backdrop-blur rounded-2xl shadow-sm">
                             <CardContent className="p-6 flex flex-col items-center justify-center gap-2 text-center">
                                 <Paperclip className="h-8 w-8 text-pink-200" />
@@ -261,13 +333,12 @@ export default function SingleRecordPage() {
                 </div>
             </div>
 
-            {lightboxImg && (
-                <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setLightboxImg(null)}>
+            {lightboxFile && (
+                <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setLightboxFile(null)}>
                     <div className="relative max-w-4xl w-full max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-                        <img src={lightboxImg} alt="Preview" className="w-full h-auto max-h-[85vh] object-contain rounded-2xl" />
+                        <SecureImage fileUrl={lightboxFile.data} alt="Preview" className="w-full h-auto max-h-[85vh] object-contain rounded-2xl" />
                         <button onClick={() => {
-                            const file = imageFiles.find((f) => f.data === lightboxImg);
-                            if (file) downloadFile(file);
+                            handleDownload(lightboxFile);
                         }} className="absolute bottom-3 right-3 bg-pink-500 hover:bg-pink-600 text-white rounded-xl px-4 py-2 text-sm flex items-center gap-2 shadow">
                             <Download className="h-4 w-4" />Download
                         </button>
@@ -276,7 +347,7 @@ export default function SingleRecordPage() {
             )}
 
             <RecordFormModal isOpen={editOpen} onClose={() => setEditOpen(false)} onSubmit={handleEdit} initialData={record} />
-            <DeleteConfirmModal isOpen={deleteOpen} onClose={() => setDeleteOpen(false)} onConfirm={handleDelete} itemName={record.name} itemType="Record" />
+            <DeleteConfirmModal isOpen={deleteOpen} onClose={() => setDeleteOpen(false)} onConfirm={handleDelete} itemName={record?.name || ""} itemType="Record" />
         </Container>
     );
 }

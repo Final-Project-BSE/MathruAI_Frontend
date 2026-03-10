@@ -12,13 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { UploadCloud, X, FileText, Image } from "lucide-react";
+import { UploadCloud, X, FileText } from "lucide-react";
 
 export interface UploadedFile {
     name: string;
     type: string;   // MIME type e.g. "image/jpeg" or "application/pdf"
-    data: string;   // base64 data URL
+    data: string;   // base64 data URL for preview
     size: number;   // bytes
+    file?: File;    // Original file object for uploading
 }
 
 export interface RecordFormData {
@@ -76,7 +77,13 @@ export default function RecordFormModal({
             reader.onload = () => {
                 setFiles((prev) => [
                     ...prev,
-                    { name: file.name, type: file.type, data: reader.result as string, size: file.size },
+                    {
+                        name: file.name,
+                        type: file.type,
+                        data: reader.result as string,
+                        size: file.size,
+                        file: file // Store the original file object
+                    },
                 ]);
             };
             reader.readAsDataURL(file);
@@ -105,7 +112,6 @@ export default function RecordFormModal({
         if (!date) newErrors.date = "Date is required.";
         if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
         onSubmit({ name: name.trim(), date, description: description.trim() || undefined, files });
-        onClose();
     };
 
     return (
@@ -200,7 +206,7 @@ export default function RecordFormModal({
                                         <li key={i} className="flex items-center gap-3 bg-gray-50 rounded-xl px-3 py-2">
                                             {isImg ? (
                                                 <div className="relative h-10 w-10 rounded-lg overflow-hidden shrink-0">
-                                                    <Image src={f.data} alt={f.name} className="object-cover" />
+                                                    <img src={f.data} alt={f.name} className="absolute inset-0 w-full h-full object-cover" />
                                                 </div>
                                             ) : (
                                                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 shrink-0">

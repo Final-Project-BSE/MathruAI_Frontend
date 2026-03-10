@@ -1,24 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Container from "@/components/shared/container";
-import { FolderHeart } from "lucide-react";
+import { FolderHeart, Loader2 } from "lucide-react";
 import TopBarFeatures from "@/components/common/TopBarFeatures";
 import CategoryCard, { Category } from "@/components/health-records/CategoryCard";
-
-// ─── Fixed Categories ────────────────────────────────────────────────────────
-const FIXED_CATEGORIES: Category[] = [
-    { id: "medical-checkups", name: "Medical Checkups", icon: "🩺", color: "bg-blue-100", recordCount: 3 },
-    { id: "lab-test-results", name: "Lab Test Results", icon: "🔬", color: "bg-red-100", recordCount: 5 },
-    { id: "ultrasound-scans", name: "Ultrasound & Scans", icon: "🩻", color: "bg-sky-100", recordCount: 2 },
-    { id: "medications-supplements", name: "Medications & Supplements", icon: "💊", color: "bg-purple-100", recordCount: 4 },
-    { id: "vaccinations", name: "Vaccinations", icon: "💉", color: "bg-green-100", recordCount: 6 },
-    { id: "personal-health-notes", name: "Personal Health Notes", icon: "📝", color: "bg-amber-100", recordCount: 3 },
-    { id: "others", name: "Others", icon: "📋", color: "bg-gray-100", recordCount: 1 },
-];
+import { getCategories } from "@/app/api/health-records/api";
+import { HealthCategoryResponseDto } from "@/app/api/health-records/types";
 
 export default function HealthRecordsCategoriesPage() {
-    const [categories] = useState<Category[]>(FIXED_CATEGORIES);
+    const [categories, setCategories] = useState<HealthCategoryResponseDto[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetch = async () => {
+            try {
+                setLoading(true);
+                const { getSession } = await import("@/lib/authentication");
+                const session = await getSession();
+                console.log("Health Records Session:", session ? "Found" : "Not Found");
+                const token = session?.user?.token;
+
+                if (!token) {
+                    setError("Unauthorized. Please login.");
+                    return;
+                }
+
+                const data = await getCategories(token);
+                setCategories(data);
+            } catch (err: any) {
+                console.error("Failed to fetch categories:", err);
+                const errorMsg = err.response?.data?.message || err.message || "Failed to load health record categories.";
+                setError(`${errorMsg} (Status: ${err.response?.status || 'Unknown'})`);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetch();
+    }, []);
+
+    // Map backend categories to Category UI interface if needed, 
+    // but better to update CategoryCard to accept HealthCategoryResponseDto
+    // or map it here for simplicity of component reuse.
+    const mappedCategories: Category[] = categories.map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        recordCount: cat.recordCount,
+        icon: cat.icon,
+        color: cat.colorClass, // This maps "bg-blue-100" etc
+        slug: cat.slug
+    }));
 
     return (
         <Container title="Health Records">
@@ -38,30 +70,43 @@ export default function HealthRecordsCategoriesPage() {
                     </div>
                 </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-                    <div className="bg-white/90 backdrop-blur rounded-2xl p-4 shadow-sm">
-                        <p className="text-xs text-gray-500 mb-0.5">Total Categories</p>
-                        <p className="text-2xl font-bold text-pink-600">{categories.length}</p>
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-24">
+                        <Loader2 className="h-10 w-10 text-pink-500 animate-spin mb-4" />
+                        <p className="text-gray-600 font-medium">Loading categories...</p>
                     </div>
-                    <div className="bg-white/90 backdrop-blur rounded-2xl p-4 shadow-sm">
-                        <p className="text-xs text-gray-500 mb-0.5">Total Records</p>
-                        <p className="text-2xl font-bold text-pink-600">
-                            {categories.reduce((s, c) => s + c.recordCount, 0)}
-                        </p>
+                ) : error ? (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
+                        {error}
                     </div>
-                    <div className="bg-white/90 backdrop-blur rounded-2xl p-4 shadow-sm col-span-2 sm:col-span-1">
-                        <p className="text-xs text-gray-500 mb-0.5">Last Updated</p>
-                        <p className="text-base font-semibold text-gray-700">Today</p>
-                    </div>
-                </div>
+                ) : (
+                    <>
+                        {/* Stats */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+                            <div className="bg-white/90 backdrop-blur rounded-2xl p-4 shadow-sm">
+                                <p className="text-xs text-gray-500 mb-0.5">Total Categories</p>
+                                <p className="text-2xl font-bold text-pink-600">{mappedCategories.length}</p>
+                            </div>
+                            <div className="bg-white/90 backdrop-blur rounded-2xl p-4 shadow-sm">
+                                <p className="text-xs text-gray-500 mb-0.5">Total Records</p>
+                                <p className="text-2xl font-bold text-pink-600">
+                                    {mappedCategories.reduce((s, c) => s + c.recordCount, 0)}
+                                </p>
+                            </div>
+                            <div className="bg-white/90 backdrop-blur rounded-2xl p-4 shadow-sm col-span-2 sm:col-span-1">
+                                <p className="text-xs text-gray-500 mb-0.5">Last Updated</p>
+                                <p className="text-base font-semibold text-gray-700">Today</p>
+                            </div>
+                        </div>
 
-                {/* Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {categories.map((cat) => (
-                        <CategoryCard key={cat.id} category={cat} />
-                    ))}
-                </div>
+                        {/* Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            {mappedCategories.map((cat) => (
+                                <CategoryCard key={cat.id} category={cat} />
+                            ))}
+                        </div>
+                    </>
+                )}
             </div>
         </Container>
     );

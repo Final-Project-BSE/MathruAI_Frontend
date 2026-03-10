@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Container from "@/components/shared/container";
 import { Button } from "@/components/ui/button";
-import { Plus, ChevronLeft, ClipboardList } from "lucide-react";
+import { Plus, ChevronLeft, ClipboardList, Loader2 } from "lucide-react";
 import TopBarFeatures from "@/components/common/TopBarFeatures";
 import RecordCard, { HealthRecord } from "@/components/health-records/RecordCard";
 import RecordFormModal, { RecordFormData } from "@/components/health-records/RecordFormModal";
 import DeleteConfirmModal from "@/components/health-records/DeleteConfirmModal";
+import healthRecordsApi, { updateRecord } from "@/app/api/health-records/api";
+
 
 const CATEGORY_META: Record<string, { name: string; icon: string }> = {
     "medical-checkups": { name: "Medical Checkups", icon: "🩺" },
@@ -20,81 +22,132 @@ const CATEGORY_META: Record<string, { name: string; icon: string }> = {
     "others": { name: "Others", icon: "📋" },
 };
 
-// Dummy records updated for Records Page
-const DUMMY_RECORDS: Record<string, HealthRecord[]> = {
-    "medical-checkups": [
-        { id: "mc-1", categoryId: "medical-checkups", name: "Routine Prenatal Checkup", date: "2025-12-05", description: "Blood pressure and weight check. Fetal heart rate normal." },
-        { id: "mc-2", categoryId: "medical-checkups", name: "Physical Exam", date: "2025-08-10", description: "General health assessment. No major concerns." },
-        { id: "mc-3", categoryId: "medical-checkups", name: "Dental Checkup", date: "2025-05-15", description: "Routine cleaning. No cavities." },
-    ],
-    "lab-test-results": [
-        { id: "lab-1", categoryId: "lab-test-results", name: "Complete Blood Count", date: "2025-12-10", description: "All values within normal range." },
-        { id: "lab-2", categoryId: "lab-test-results", name: "Glucose Tolerance Test", date: "2025-09-15", description: "Negative for gestational diabetes." },
-        { id: "lab-3", categoryId: "lab-test-results", name: "Iron & Ferritin Check", date: "2025-06-20", description: "Iron levels healthy." },
-        { id: "lab-4", categoryId: "lab-test-results", name: "Thyroid Function Test", date: "2025-03-05", description: "TSH levels stable." },
-        { id: "lab-5", categoryId: "lab-test-results", name: "Urinalysis", date: "2025-01-10", description: "Clear, no signs of infection." },
-    ],
-    "ultrasound-scans": [
-        { id: "us-1", categoryId: "ultrasound-scans", name: "12-Week Ultrasound", date: "2025-12-01", description: "Healthy growth. Heartbeat strong." },
-        { id: "us-2", categoryId: "ultrasound-scans", name: "Anatomy Scan (20 wks)", date: "2025-10-08", description: "Fetal anatomy normal." },
-    ],
-    "medications-supplements": [
-        { id: "ms-1", categoryId: "medications-supplements", name: "Prenatal Vitamins", date: "2025-11-01", description: "Daily multivitamin with folic acid." },
-        { id: "ms-2", categoryId: "medications-supplements", name: "Iron Supplement", date: "2025-08-12", description: "Prescribed due to mild deficiency." },
-        { id: "ms-3", categoryId: "medications-supplements", name: "Vitamin D Drops", date: "2025-05-20", description: "Daily 1000 IU." },
-        { id: "ms-4", categoryId: "medications-supplements", name: "Calcium Tablet", date: "2025-02-15", description: "Daily 500 mg." },
-    ],
-    "vaccinations": [
-        { id: "v-1", categoryId: "vaccinations", name: "Flu Vaccine 2025", date: "2025-10-01", description: "Annual vaccination completed." },
-        { id: "v-2", categoryId: "vaccinations", name: "Tdap Booster", date: "2025-04-18", description: "Boost immunity during pregnancy." },
-        { id: "v-3", categoryId: "vaccinations", name: "COVID-19 Booster", date: "2025-01-22", description: "Updated booster received." },
-        { id: "v-4", categoryId: "vaccinations", name: "Hepatitis B (Dose 3)", date: "2024-08-05", description: "Final dose in the series." },
-        { id: "v-5", categoryId: "vaccinations", name: "MMR Vaccine", date: "2024-03-14", description: "Pre-conception immunity check." },
-        { id: "v-6", categoryId: "vaccinations", name: "HPV Vaccine (Dose 2)", date: "2023-11-10", description: "Completing HPV series." },
-    ],
-    "personal-health-notes": [
-        { id: "pn-1", categoryId: "personal-health-notes", name: "Dietary Changes", date: "2025-11-15", description: "Increased protein and fibre intake." },
-        { id: "pn-2", categoryId: "personal-health-notes", name: "Morning Sickness Log", date: "2025-09-30", description: "Symptoms easing by week 14." },
-        { id: "pn-3", categoryId: "personal-health-notes", name: "Activity Tracker", date: "2025-07-20", description: "Daily walking targets met." },
-    ],
-    "others": [
-        { id: "o-1", categoryId: "others", name: "Hospital Tour Notes", date: "2025-08-25", description: "Location of triage and maternity ward noted." },
-    ],
-};
-
-let _uid = 400;
-const uid = () => String(++_uid);
-
 export default function RecordsPage() {
     const params = useParams();
     const router = useRouter();
     const categoryId = params?.categoryId as string;
-    const meta = CATEGORY_META[categoryId] ?? { name: "Records", icon: "📋" };
 
-    const [records, setRecords] = useState<HealthRecord[]>(DUMMY_RECORDS[categoryId] ?? []);
+    const [records, setRecords] = useState<HealthRecord[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [formOpen, setFormOpen] = useState(false);
     const [editTarget, setEditTarget] = useState<HealthRecord | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<HealthRecord | null>(null);
+    const [categoryInfo, setCategoryInfo] = useState({ name: "Records", icon: "📋" });
+
+    const fetchRecords = useCallback(async () => {
+        try {
+            setLoading(true);
+            const { getSession } = await import("@/lib/authentication");
+            const session = await getSession();
+            const token = session?.user?.token;
+
+            if (!token) {
+                setError("Unauthorized. Please login.");
+                return;
+            }
+
+            const data = await healthRecordsApi.getRecordsByCategory(token, categoryId);
+
+            // Map backend DTO to Frontend UI interface
+            const mapped: HealthRecord[] = data.map(r => ({
+                id: r.id,
+                categoryId: r.categoryId,
+                name: r.name,
+                date: r.date,
+                description: r.description,
+                files: r.files.map(f => ({
+                    id: f.id,
+                    name: f.fileName,
+                    type: f.fileType,
+                    size: f.fileSize,
+                    data: f.fileUrl // In the UI, 'data' is used for the URL/base64
+                }))
+            }));
+
+            setRecords(mapped);
+
+            if (data.length > 0) {
+                setCategoryInfo({
+                    name: data[0].categoryName,
+                    icon: CATEGORY_META[categoryId]?.icon ?? "📋"
+                });
+            } else {
+                // Fallback to meta if empty
+                setCategoryInfo(CATEGORY_META[categoryId] ?? { name: "Records", icon: "📋" });
+            }
+        } catch (err) {
+            console.error("Failed to fetch records:", err);
+            setError("Failed to load health records.");
+            setCategoryInfo(CATEGORY_META[categoryId] ?? { name: "Records", icon: "📋" });
+        } finally {
+            setLoading(false);
+        }
+    }, [categoryId]);
+
+    useEffect(() => {
+        fetchRecords();
+    }, [fetchRecords]);
 
     const handleAdd = () => { setEditTarget(null); setFormOpen(true); };
     const handleEdit = (rec: HealthRecord) => { setEditTarget(rec); setFormOpen(true); };
 
-    const handleFormSubmit = (data: RecordFormData) => {
-        if (editTarget) {
-            setRecords((prev) => prev.map((r) => r.id === editTarget.id ? { ...r, ...data } : r));
-        } else {
-            setRecords((prev) => [...prev, { id: uid(), categoryId, ...data }]);
+    const handleFormSubmit = async (data: RecordFormData) => {
+        try {
+            const { getSession } = await import("@/lib/authentication");
+            const session = await getSession();
+            const token = session?.user?.token;
+
+            if (!token) return;
+
+            // Only send newly selected File objects (existing server files are preserved)
+            const newFileObjects = data.files
+                ?.map(f => f.file)
+                .filter((f): f is File => f instanceof File) ?? [];
+
+            if (editTarget) {
+                await updateRecord(token, editTarget.id, {
+                    name: data.name,
+                    date: data.date,
+                    description: data.description,
+                    files: newFileObjects
+                });
+            } else {
+                await healthRecordsApi.createRecord(token, categoryId, {
+                    name: data.name,
+                    date: data.date,
+                    description: data.description,
+                    files: newFileObjects
+                });
+            }
+            await fetchRecords();
+            setFormOpen(false);
+        } catch (err) {
+            console.error("Failed to save record:", err);
+            alert("Failed to save record. Please try again.");
         }
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (!deleteTarget) return;
-        setRecords((prev) => prev.filter((r) => r.id !== deleteTarget.id));
-        setDeleteTarget(null);
+        try {
+            const { getSession } = await import("@/lib/authentication");
+            const session = await getSession();
+            const token = session?.user?.token;
+
+            if (!token) return;
+
+            await healthRecordsApi.deleteRecord(token, deleteTarget.id);
+            setRecords((prev) => prev.filter((r) => r.id !== deleteTarget.id));
+            setDeleteTarget(null);
+        } catch (err) {
+            console.error("Failed to delete record:", err);
+            alert("Failed to delete record.");
+        }
     };
 
     return (
-        <Container title={meta.name}>
+        <Container title={categoryInfo.name}>
             <div className="bg-[#fed2cc] min-h-screen p-4 md:p-6">
                 <TopBarFeatures />
 
@@ -110,8 +163,8 @@ export default function RecordsPage() {
                         </button>
                         <span className="text-gray-400">/</span>
                         <div className="flex items-center gap-2">
-                            <span className="text-xl">{meta.icon}</span>
-                            <h1 className="text-xl md:text-2xl font-bold text-gray-900">{meta.name}</h1>
+                            <span className="text-xl">{categoryInfo.icon}</span>
+                            <h1 className="text-xl md:text-2xl font-bold text-gray-900">{categoryInfo.name}</h1>
                         </div>
                     </div>
                     <Button
@@ -124,35 +177,48 @@ export default function RecordsPage() {
                     </Button>
                 </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                    <div className="bg-white/90 backdrop-blur rounded-2xl p-4 shadow-sm">
-                        <p className="text-xs text-gray-500 mb-0.5">Total Records</p>
-                        <p className="text-2xl font-bold text-pink-600">{records.length}</p>
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-24">
+                        <Loader2 className="h-10 w-10 text-pink-500 animate-spin mb-4" />
+                        <p className="text-gray-600 font-medium">Loading records...</p>
                     </div>
-                    <div className="bg-white/90 backdrop-blur rounded-2xl p-4 shadow-sm">
-                        <p className="text-xs text-gray-500 mb-0.5">Latest</p>
-                        <p className="text-base font-semibold text-gray-700 truncate">
-                            {records.length > 0
-                                ? [...records].sort((a, b) => b.date.localeCompare(a.date))[0].name
-                                : "—"}
-                        </p>
-                    </div>
-                </div>
-
-                {/* Grid */}
-                {records.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-24 text-center">
-                        <ClipboardList className="h-14 w-14 text-pink-300 mb-4" />
-                        <p className="text-gray-600 font-medium">No records yet</p>
-                        <p className="text-sm text-gray-400 mt-1">Click &quot;Add Record&quot; to add your first record.</p>
+                ) : error ? (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
+                        {error}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {records.map((rec) => (
-                            <RecordCard key={rec.id} record={rec} onEdit={handleEdit} onDelete={setDeleteTarget} />
-                        ))}
-                    </div>
+                    <>
+                        {/* Stats */}
+                        <div className="grid grid-cols-2 gap-3 mb-6">
+                            <div className="bg-white/90 backdrop-blur rounded-2xl p-4 shadow-sm">
+                                <p className="text-xs text-gray-500 mb-0.5">Total Records</p>
+                                <p className="text-2xl font-bold text-pink-600">{records.length}</p>
+                            </div>
+                            <div className="bg-white/90 backdrop-blur rounded-2xl p-4 shadow-sm">
+                                <p className="text-xs text-gray-500 mb-0.5">Latest</p>
+                                <p className="text-base font-semibold text-gray-700 truncate">
+                                    {records.length > 0
+                                        ? [...records].sort((a, b) => b.date.localeCompare(a.date))[0].name
+                                        : "—"}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Grid */}
+                        {records.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-24 text-center">
+                                <ClipboardList className="h-14 w-14 text-pink-300 mb-4" />
+                                <p className="text-gray-600 font-medium">No records yet</p>
+                                <p className="text-sm text-gray-400 mt-1">Click &quot;Add Record&quot; to add your first record.</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                {records.map((rec) => (
+                                    <RecordCard key={rec.id} record={rec} onEdit={handleEdit} onDelete={setDeleteTarget} />
+                                ))}
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 
