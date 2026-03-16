@@ -186,10 +186,10 @@ const getAppointmentStatusColor = (status: string) => {
 
 export default function MidwifeConnection() {
   return (
-    <div className="w-full max-w-full space-y-6 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-pink-100 to-pink-200 w-full max-w-full space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-800">Midwife Connection</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">Midwife Connection</h1>
       </div>
 
       {/* Main Content Grid */}

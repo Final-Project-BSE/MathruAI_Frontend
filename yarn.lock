@@ -2928,7 +2928,11 @@ jiti@^2.4.2:
 
 jose@^6.1.1:
   version "6.1.1"
+<<<<<<< HEAD
+  resolved "https://registry.npmjs.org/jose/-/jose-6.1.1.tgz"
+=======
   resolved "https://registry.yarnpkg.com/jose/-/jose-6.1.1.tgz#2be48f5171ca8cb231e313da8572c05c48c68eb6"
+>>>>>>> a4fe718c2b2128a9bb977fa820ac35522cbaa4fd
   integrity sha512-GWSqjfOPf4cWOkBzw5THBjtGPhXKqYnfRBzh4Ni+ArTrQQ9unvmsA3oFLqaYKoKe5sjWmGu5wVKg9Ft1i+LQfg==
 
 "js-tokens@^3.0.0 || ^4.0.0":

@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { MidwifeAppSidebar } from "@/components/midwife/midwife-app-sidebar";
+import { ClientFloatingChatbot } from "@/components/ClientFloatingChatbot";
 
 
 const geistSans = Geist({
@@ -27,7 +28,8 @@ export default async function RootLayout({ children }: Props) {
       >
         <SidebarProvider>
           <MidwifeAppSidebar/>
-            {children}
+          {children}
+          <ClientFloatingChatbot />
         </SidebarProvider> 
       </body>
     </html>
