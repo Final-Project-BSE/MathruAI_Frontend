@@ -15,7 +15,7 @@ export const ROLE_DASHBOARDS: Record<UserRole, string> = {
   [ROLES.MIDWIFE]: '/dashboard/admin',
 };
 
-// Define which roles can access which routes
+// about which roles can access which routes
 export const ROUTE_ACCESS: Record<string, UserRole[]> = {
   '/dashboard/reproductive': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
   '/dashboard/pregnancy': [ROLES.PREGNANT_MOTHER, ROLES.MIDWIFE],
@@ -31,8 +31,8 @@ export const ROUTE_ACCESS: Record<string, UserRole[]> = {
   '/announcement': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.PREGNANT_MOTHER, ROLES.MIDWIFE],
   '/settings': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.PREGNANT_MOTHER, ROLES.MIDWIFE],
   '/healthrecords': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.PREGNANT_MOTHER, ROLES.MIDWIFE],
-  '/timeline-milestone': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.PREGNANT_MOTHER, ROLES.MIDWIFE],
-  '/nutrition-wellness': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.PREGNANT_MOTHER, ROLES.MIDWIFE],
+  '/timeline-milestone': [ROLES.PREGNANT_MOTHER, ROLES.MIDWIFE],
+  '/nutrition-wellness': [ROLES.PREGNANT_MOTHER, ROLES.MIDWIFE],
   '/analytics': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.PREGNANT_MOTHER, ROLES.MIDWIFE],
 
 };
