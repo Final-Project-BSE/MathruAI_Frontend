@@ -15,6 +15,7 @@ import PatientProfileSummary from './PatientProfileSummary';
 import apis, { VitalsPayload } from '../../../api/healthmonitor/api';
 import type { PredictionResult, VitalsState } from '../../../api/healthmonitor/types';
 import { LoadingState } from '@/components/common/LoadingState';
+import TopBarFeatures from '@/components/common/TopBarFeatures';
 
 const MaternalHealthDashboard = () => {
   const [loading, setLoading] = useState(false);
@@ -196,7 +197,7 @@ const MaternalHealthDashboard = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 to-pink-200 flex items-center justify-center p-8">
+      <div className="min-h-screen bg-[#fed2cc] flex items-center justify-center p-8">
         <Card className="max-w-md w-full shadow-lg">
           <CardHeader>
             <CardTitle className="text-center flex items-center justify-center">
@@ -218,8 +219,9 @@ const MaternalHealthDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-100 to-pink-200 p-8">
+    <div className="min-h-screen bg-[#fed2cc] p-8">
       <div className="max-w-7xl mx-auto">
+        <TopBarFeatures />
         <DashboardHeader
           onRefresh={handleRefresh}
           onDelete={handleDelete}
@@ -232,8 +234,8 @@ const MaternalHealthDashboard = () => {
 
         <StatsCards vitals={vitals} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 items-stretch">
+          <div className="lg:col-span-1 h-full">
             <VitalsForm
               vitals={vitals}
               onVitalChange={handleVitalChange}
@@ -244,7 +246,7 @@ const MaternalHealthDashboard = () => {
             />
           </div>
 
-          <div className="lg:col-span-2">
+            <div className="lg:col-span-2 h-full">
             <RiskAssessmentComponent
               predictionResult={predictionResult}
               currentPredictionId={currentPredictionId}

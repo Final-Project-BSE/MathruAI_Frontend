@@ -3,8 +3,17 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sparkles, RefreshCw, User, Settings, CheckCircle2 } from 'lucide-react';
-import type { RecommendationData, ChecklistItem } from '../../../api/dailyrecommendation/types';
+import {
+  Sparkles,
+  RefreshCw,
+  User,
+  Settings,
+  CheckCircle2,
+} from 'lucide-react';
+import type {
+  RecommendationData,
+  ChecklistItem,
+} from '../../../api/dailyrecommendation/types';
 
 interface RecommendationCardProps {
   recommendation: RecommendationData | null;
@@ -14,10 +23,12 @@ interface RecommendationCardProps {
   preferences?: string;
   userId: number | null;
   token: string | null;
-  onSaveChecklist: (payload: { date: string; items: ChecklistItem[] }) => Promise<void>;
+  onSaveChecklist: (payload: {
+    date: string;
+    items: ChecklistItem[];
+  }) => Promise<void>;
 }
 
-// --- helpers ---
 function toISODate(d = new Date()): string {
   return d.toISOString().split('T')[0];
 }
@@ -51,17 +62,16 @@ function parseRecommendationToItems(text: string): string[] {
       .map((l) => l.replace(/^\d+[\).\s]+/, '').trim())
       .filter(Boolean)
       .filter((l) => !isLikelyIntro(l));
+
     if (cleaned.length >= 2) return cleaned;
   }
 
-  const sentences = raw
+  return raw
     .replace(/\s+/g, ' ')
     .split(/(?<=[.!?])\s+/)
     .map((s) => s.trim())
     .filter(Boolean)
     .filter((s) => !isLikelyIntro(s));
-
-  return sentences.length ? sentences : [];
 }
 
 function hashText(s: string): string {
@@ -104,13 +114,12 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
 
   const storageKey = useMemo(() => {
     if (!userId) return null;
-    // storage key changes when recommendation text changes (same date regenerate)
     return `dailyrec:${userId}:${recDate}:${recTextSig}`;
   }, [userId, recDate, recTextSig]);
 
   const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const saveTimer = useRef<number | null>(null);
 
-  // ✅ 1) Hydrate from backend (recommendation.checklist) when recommendation changes
   useEffect(() => {
     if (!recommendation || !userId) return;
 
@@ -119,7 +128,6 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
       serverMap[it.id] = !!it.completed;
     });
 
-    // if server has nothing but local has something, use local as fallback
     if (Object.keys(serverMap).length === 0 && storageKey) {
       try {
         const raw = localStorage.getItem(storageKey);
@@ -131,14 +139,13 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
           }
         }
       } catch {
-        // ignore
+        // ignore local storage parse issues
       }
     }
 
     setChecked(serverMap);
-  }, [recommendation?.date, recommendation?.recommendation, userId, storageKey]);
+  }, [recommendation?.date, recommendation?.recommendation, userId, storageKey, recommendation]);
 
-  // ✅ 2) Remove checked values that no longer exist
   useEffect(() => {
     setChecked((prev) => {
       const allowed = new Set(itemIds);
@@ -148,7 +155,15 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
       }
       return next;
     });
-  }, [itemIds.join('|')]);
+  }, [itemIds]);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimer.current) {
+        window.clearTimeout(saveTimer.current);
+      }
+    };
+  }, []);
 
   const completedCount = useMemo(() => {
     return itemIds.reduce((acc, id) => acc + (checked[id] ? 1 : 0), 0);
@@ -156,118 +171,149 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
 
   const allDone = itemIds.length > 0 && completedCount === itemIds.length;
 
-  const toggleItem = async (id: string) => {
+  const saveNow = async (nextChecked: Record<string, boolean>) => {
+    if (!recommendation || !userId || !token || !items.length) return;
+
+    if (storageKey) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(nextChecked));
+      } catch {
+        // ignore local storage write issues
+      }
+    }
+
+    const payloadItems: ChecklistItem[] = items.map((text, idx) => {
+      const id = itemIds[idx];
+      return {
+        id,
+        text,
+        completed: !!nextChecked[id],
+      };
+    });
+
+    try {
+      await onSaveChecklist({ date: recDate, items: payloadItems });
+    } catch {
+      // optionally add toast handling later
+    }
+  };
+
+  const scheduleSave = (nextChecked: Record<string, boolean>) => {
+    if (saveTimer.current) {
+      window.clearTimeout(saveTimer.current);
+    }
+
+    saveTimer.current = window.setTimeout(() => {
+      void saveNow(nextChecked);
+    }, 250);
+  };
+
+  const toggleItem = (id: string) => {
     setChecked((prev) => {
       const next = { ...prev, [id]: !prev[id] };
-      void saveNow(next);
+      scheduleSave(next);
       return next;
     });
   };
 
   const markAllDone = () => {
     const next: Record<string, boolean> = {};
-    itemIds.forEach((id) => (next[id] = true));
+    itemIds.forEach((id) => {
+      next[id] = true;
+    });
     setChecked(next);
-    void saveNow(next);
+    scheduleSave(next);
   };
 
   const resetChecklist = () => {
     const next: Record<string, boolean> = {};
     setChecked(next);
-    void saveNow(next);
+    scheduleSave(next);
   };
-  // ✅ 3) Debounced save to backend + localstorage
-  const saveTimer = useRef<number | null>(null);
-
-  const saveNow = async (nextChecked: Record<string, boolean>) => {
-    if (!recommendation || !userId || !token) return;
-    if (!items.length) return;
-
-    // localstorage backup (optional)
-    if (storageKey) {
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(nextChecked));
-      } catch {
-        // ignore
-      }
-    }
-
-    const payloadItems: ChecklistItem[] = items.map((text, idx) => {
-      const id = itemIds[idx];
-      return { id, text, completed: !!nextChecked[id] };
-    });
-
-    try {
-      await onSaveChecklist({ date: recDate, items: payloadItems });
-    } catch {
-      // optional: show toast/error
-    }
-  };
-
 
   return (
-    <Card className="shadow-md bg-white border-2 border-purple-100">
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold flex items-center justify-between">
-          <div className="flex items-center">
-            <Sparkles className="h-5 w-5 mr-2 text-purple-500" />
-            Today's Recommendation
+    <Card className="border border-[#d04f51]/15 bg-white shadow-sm">
+      <CardHeader className="border-b border-[#d04f51]/10 pb-4">
+        <CardTitle className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
+            <div>
+              <h3 className="text-base font-semibold text-gray-900">
+                Today&apos;s Recommendation
+              </h3>
+              <p className="text-xs text-gray-500">{todayPretty}</p>
+            </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               onClick={onSettingsClick}
               variant="outline"
               size="sm"
-              className="border-blue-300 hover:bg-blue-50"
+              className="border-[#d04f51]/25 bg-white text-[#d04f51] hover:bg-[#d04f51]/5"
             >
-              <Settings className="h-4 w-4" /> Update Your Data
+              <Settings className="mr-2 h-4 w-4" />
+              Update Your Data
             </Button>
 
             <Button
               onClick={onRefresh}
               variant="outline"
               size="sm"
-              className="border-purple-300 hover:bg-purple-50"
+              className="border-[#d04f51]/25 bg-white text-red-500 hover:bg-red-200"
               disabled={loading}
               title="Regenerate / Refresh"
             >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`}
+              />
             </Button>
           </div>
         </CardTitle>
       </CardHeader>
 
-      <CardContent>
-        <p className="text-sm text-gray-500 mb-4">{todayPretty}</p>
-
+      <CardContent className="pt-6">
         {!recommendation ? (
-          <div className="h-48 bg-gray-50 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-200">
-            <div className="text-center">
-              <Sparkles className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-500 font-medium">No recommendation yet</p>
-              <p className="text-sm text-gray-400 mt-2">Click refresh to get your daily recommendation</p>
+          <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-[#d04f51]/20 bg-[#d04f51]/5 px-6 text-center">
+            <div>
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm">
+                <Sparkles className="h-7 w-7 text-[#d04f51]/60" />
+              </div>
+              <p className="text-sm font-semibold text-gray-800">
+                No recommendation available yet
+              </p>
+              <p className="mt-2 text-sm text-gray-500">
+                Refresh to generate today&apos;s personalized guidance.
+              </p>
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between bg-white rounded-xl border border-purple-100 p-4">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className={`w-5 h-5 ${allDone ? 'text-green-600' : 'text-purple-600'}`} />
+          <div className="space-y-5">
+            <div className="flex flex-col gap-3 rounded-2xl border border-[#d04f51]/15 bg-[#d04f51]/5 p-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white">
+                  <CheckCircle2
+                    className={`h-5 w-5 ${
+                      allDone ? 'text-green-600' : 'text-green-600'
+                    }`}
+                  />
+                </div>
+
                 <div>
-                  <p className="text-sm font-semibold text-gray-800">
+                  <p className="text-sm font-semibold text-gray-900">
                     {completedCount}/{itemIds.length} completed
                   </p>
-                  <p className="text-xs text-gray-500">Saved for {recDate} (user {userId})</p>
+                  <p className="text-xs text-gray-500">
+                    Checklist saved for {recDate}
+                  </p>
                 </div>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   onClick={markAllDone}
                   variant="outline"
                   size="sm"
-                  className="border-green-300 hover:bg-green-50"
+                  className="border-[#d04f51]/25 bg-white text-green-600 hover:bg-green-200"
                   disabled={itemIds.length === 0}
                 >
                   Mark all done
@@ -276,7 +322,7 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
                   onClick={resetChecklist}
                   variant="outline"
                   size="sm"
-                  className="border-gray-300 hover:bg-gray-50"
+                  className="border-gray-200 bg-white text-red-700 hover:bg-red-200"
                   disabled={itemIds.length === 0}
                 >
                   Reset
@@ -284,27 +330,38 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 rounded-xl p-6 border border-purple-100">
+            <div className="rounded-2xl border border-[#d04f51]/15 bg-white p-5">
               {items.length === 0 ? (
-                <p className="text-gray-700">{recommendation.recommendation}</p>
+                <p className="text-sm leading-7 text-gray-700">
+                  {recommendation.recommendation}
+                </p>
               ) : (
                 <ul className="space-y-3">
                   {items.map((item, idx) => {
                     const id = itemIds[idx];
                     const done = !!checked[id];
+
                     return (
                       <li
                         key={id}
-                        className={`flex items-start gap-3 p-3 rounded-lg border transition-all ${done ? 'bg-green-50 border-green-200' : 'bg-white/70 border-purple-100 hover:bg-white'
-                          }`}
+                        className={`flex items-start gap-3 rounded-xl border p-4 transition ${
+                          done
+                            ? 'border-[#d04f51]/20 bg-[#d04f51]/5'
+                            : 'border-[#d04f51]/10 bg-white hover:bg-[#d04f51]/[0.03]'
+                        }`}
                       >
                         <input
                           type="checkbox"
-                          className="mt-1 h-5 w-5 accent-green-600"
                           checked={done}
-                          onChange={() => void toggleItem(id)}
+                          onChange={() => toggleItem(id)}
+                          className="mt-1 h-5 w-5 accent-green-600"
                         />
-                        <span className={`text-gray-800 leading-relaxed ${done ? 'line-through opacity-70' : ''}`}>
+
+                        <span
+                          className={`text-sm leading-6 text-gray-800 ${
+                            done ? 'opacity-70 line-through' : ''
+                          }`}
+                        >
                           {item}
                         </span>
                       </li>
@@ -315,11 +372,18 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
             </div>
 
             {preferences && (
-              <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
-                <User className="w-5 h-5 text-purple-600 flex-shrink-0" />
+              <div className="flex items-start gap-3 rounded-2xl border border-[#d04f51]/15 bg-[#d04f51]/5 p-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white">
+                  <User className="h-5 w-5 text-[#d04f51]" />
+                </div>
+
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Personalized for you</p>
-                  <p className="text-xs text-gray-600 mt-0.5">{preferences}</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    Personalized for you
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-gray-600">
+                    {preferences}
+                  </p>
                 </div>
               </div>
             )}

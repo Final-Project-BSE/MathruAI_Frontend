@@ -53,7 +53,7 @@ const VitalsForm: React.FC<VitalsFormProps> = ({
   };
 
   return (
-    <Card className="shadow-md bg-white">
+    <Card className="h-full bg-white shadow-md">
       <CardHeader>
         <CardTitle className="text-lg font-semibold flex items-center">
           <Activity className="h-5 w-5 mr-2 text-pink-500" />
@@ -131,7 +131,7 @@ const VitalsForm: React.FC<VitalsFormProps> = ({
               type="button"
               variant="ghost"
               size="sm"
-              className="h-6 text-xs text-pink-600 hover:text-pink-700 hover:bg-pink-50"
+              className="h-6 text-xs text-[#d04f51] hover:text-[#d04f51] hover:bg-pink-50"
               onClick={() => setUseBMICalculator(!useBMICalculator)}
             >
               {useBMICalculator ? 'Enter BMI directly' : 'Calculate from weight/height'}
@@ -173,7 +173,7 @@ const VitalsForm: React.FC<VitalsFormProps> = ({
 
               <div className="bg-pink-50 border border-pink-200 rounded p-2">
                 <p className="text-xs text-gray-600">Calculated BMI:</p>
-                <p className="text-lg font-semibold text-pink-600">{vitals.BMI || '-'}</p>
+                <p className="text-lg font-semibold text-[#d04f51]">{vitals.BMI || '-'}</p>
               </div>
             </div>
           ) : (
@@ -260,7 +260,7 @@ const VitalsForm: React.FC<VitalsFormProps> = ({
         </div>
 
         <Button
-          className="w-full bg-pink-500 hover:bg-pink-600 text-white font-medium"
+          className="w-full bg-[#d04f51] hover:bg-[#e04f51] text-white font-medium"
           onClick={onSubmit}
           disabled={loading}
         >
