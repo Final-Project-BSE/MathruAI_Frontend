@@ -35,7 +35,7 @@ export function CalculatorCard(props: Props) {
 
   return (
     <div className="flex justify-center items-center  p-4 ">
-      <Card className="bg-white/90 backdrop-blur-sm w-full max-w-md h-[350px] overflow-y-auto p-6 rounded-lg shadow-lg">
+      <Card className="bg-white/90 backdrop-blur-sm w-full max-w-md h-[450px] overflow-y-auto p-6 rounded-lg shadow-lg">
         <CardHeader>
           <CardTitle className="text-center">Calculate Your Fertility Window</CardTitle>
         </CardHeader>
