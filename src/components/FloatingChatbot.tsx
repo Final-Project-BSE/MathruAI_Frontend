@@ -235,7 +235,7 @@ export function FloatingChatbot() {
       {!isOpen && (
         <Button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg bg-pink-600 hover:bg-pink-700 text-white z-50 transition-transform hover:scale-110"
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg bg-[#d04f51] text-white z-50 transition-transform hover:scale-110 hover:bg-[#f04f51]"
           size="icon"
         >
           <MessageCircle className="h-6 w-6" />
@@ -246,14 +246,14 @@ export function FloatingChatbot() {
       {isOpen && (
         <Card
           className={cn(
-            "fixed bottom-6 right-6 shadow-2xl border-2 border-pink-200 z-50 flex flex-col transition-all duration-300",
+            "fixed bottom-6 right-6 shadow-2xl border-2 z-50 flex flex-col transition-all duration-300",
             isMinimized ? "w-80 h-14" : "w-96 h-[600px]"
           )}
         >
           {/* Header - Sticky */}
           <div 
             className={cn(
-              "bg-gradient-to-r from-pink-600 to-pink-500 text-white flex items-center justify-between sticky top-0 z-10 shrink-0",
+              "bg-[#d04f51] text-white flex items-center justify-between sticky top-0 z-10 shrink-0",
               isMinimized ? "p-2 cursor-pointer" : "p-4"
             )}
             onClick={isMinimized ? () => setIsMinimized(false) : undefined}
@@ -363,7 +363,7 @@ export function FloatingChatbot() {
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Type your message..."
-                    className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 max-h-24"
+                    className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#d04f51] max-h-24"
                     rows={1}
                     disabled={isLoading}
                   />
@@ -371,7 +371,7 @@ export function FloatingChatbot() {
                     onClick={sendMessage}
                     disabled={!inputValue.trim() || isLoading}
                     size="icon"
-                    className="bg-pink-600 hover:bg-pink-700 text-white h-9 w-9 flex-shrink-0"
+                    className="bg-[#d04f51] hover:bg-[#d04f51] text-white h-9 w-9 flex-shrink-0"
                   >
                     <Send className="h-4 w-4" />
                   </Button>
@@ -379,7 +379,7 @@ export function FloatingChatbot() {
                 <div className="mt-2 flex justify-center">
                   <button
                     onClick={handleNewChat}
-                    className="text-xs text-pink-600 hover:text-pink-700 hover:underline"
+                    className="text-xs text-[#d04f51] hover:text-[#d04f51] hover:underline"
                   >
                     Start New Conversation
                   </button>

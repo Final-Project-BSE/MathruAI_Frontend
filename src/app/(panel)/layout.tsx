@@ -27,7 +27,7 @@ export default async function RootLayout({ children }: Props) {
         suppressHydrationWarning
       >
         <SidebarProvider>
-          <MidwifeAppSidebar/>
+          {/* <MidwifeAppSidebar/> */}
           {children}
           <ClientFloatingChatbot />
         </SidebarProvider> 

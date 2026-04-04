@@ -1,5 +1,4 @@
 
-// components/auth/ProtectedFeature.tsx
 interface ProtectedFeatureProps {
   allowedRoles: string[];
   children: React.ReactNode;
