@@ -4,7 +4,7 @@ import "./ai-assistant-card.css";
 
 export default function AIAssistantCard() {
   return (
-    <section className="w-full rounded-[20px] border border-white/10 bg-[#0b0b0f] p-3 shadow-[0_18px_50px_rgba(0,0,0,0.42)] sm:rounded-[24px] sm:p-4">
+    <section className="w-full rounded-[20px] border border-white/10 bg-[#0b0b0f] p-4 shadow-[0_18px_50px_rgba(0,0,0,0.42)] sm:rounded-[24px] sm:p-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-white">
           <Sparkles className="h-3.5 w-3.5 text-orange-400" />
@@ -36,7 +36,7 @@ export default function AIAssistantCard() {
           <div className="orb-particle orb-particle-3" />
         </div>
 
-        <div className="assistant-status mb-4">
+        <div className="assistant-status mb-4 mt-4">
           <span className="status-dot" />
           <span className="thinking-dots" aria-hidden="true">
             <span />

@@ -1,3 +1,5 @@
+import { Megaphone, MegaphoneIcon, Volume2 } from "lucide-react";
+
 export default function WelcomeHeaderCard() {
   return (
     <div className="w-full px-3 sm:px-4">
@@ -35,25 +37,11 @@ export default function WelcomeHeaderCard() {
             </button>
 
             <button
-              aria-label="Open menu"
-              className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/80 text-neutral-700 shadow-sm md:flex"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                className="h-5 w-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8 7h8M8 12h8M8 17h8"
-                />
-                <rect x="4" y="4" width="16" height="16" rx="4" />
-              </svg>
-            </button>
+  aria-label="Open menu"
+  className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/80 text-neutral-700 shadow-sm md:flex"
+>
+  <Volume2 className="h-5 w-5" strokeWidth={1.8} />
+</button>
           </div>
         </div>
       </div>

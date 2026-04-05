@@ -23,6 +23,8 @@ import {
 import Navbar from "./components/Navbar"
 import TopBar from "./dashboard/TopBar"
 import WelcomeHeaderCard from "./dashboard/WelcomeHeaderCard"
+import DashboardFeatures from "./dashboard/DashboardFeatures"
+import PatientMiniCards from "./dashboard/PatientMiniCards"
 
 const stats = [
   {
@@ -220,74 +222,14 @@ export default function MidwifeDashboardPage() {
           <Navbar />
           <WelcomeHeaderCard />
           <TopBar />
+          <PatientMiniCards />
+          <DashboardFeatures />
           {/* Top summary */}
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {stats.map((item) => {
-              const Icon = item.icon
-              return (
-                <Card
-                  key={item.title}
-                  className={`overflow-hidden border ${item.border} bg-gradient-to-br ${item.color} bg-[#111827] shadow-[0_0_0_1px_rgba(255,255,255,0.02)]`}
-                >
-                  <CardContent className="p-5">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-sm text-slate-400">{item.title}</p>
-                        <h3 className="mt-2 text-3xl font-semibold tracking-tight">{item.value}</h3>
-                        <p className="mt-1 text-xs text-slate-500">{item.subtitle}</p>
-                      </div>
-                      <div className="rounded-2xl border border-white/5 bg-black/20 p-3">
-                        <Icon className={`h-5 w-5 ${item.iconColor}`} />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
 
           {/* Main grid */}
           <div className="grid gap-6 xl:grid-cols-12">
             {/* Left content */}
             <div className="space-y-6 xl:col-span-8">
-              <Card className="border-white/10 bg-[#0f172a]">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <div>
-                    <CardTitle className="text-lg text-white">Population Health Snapshot</CardTitle>
-                    <p className="mt-1 text-sm text-slate-400">
-                      Quick view of the area assigned to this midwife
-                    </p>
-                  </div>
-                  <Button className="bg-emerald-500 text-black hover:bg-emerald-400">
-                    <TrendingUp className="mr-2 h-4 w-4" />
-                    View Analytics
-                  </Button>
-                </CardHeader>
-
-                <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {quickStats.map((stat, i) => (
-                    <div
-                      key={stat.label}
-                      className="rounded-2xl border border-white/8 bg-white/[0.03] p-4"
-                    >
-                      <div className="flex items-center justify-between">
-                        <p className="max-w-[80%] text-sm text-slate-400">{stat.label}</p>
-                        <span className="text-[10px] text-slate-500">#{i + 1}</span>
-                      </div>
-                      <div className="mt-4 flex items-end justify-between gap-3">
-                        <span className="text-2xl font-semibold text-white">{stat.value}</span>
-                        <div className="h-2 w-24 overflow-hidden rounded-full bg-slate-800">
-                          <div
-                            className="h-full rounded-full bg-emerald-400"
-                            style={{ width: `${Math.min(stat.value * 5, 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
               <div className="grid gap-6 lg:grid-cols-2">
                 <Card className="border-white/10 bg-[#0f172a]">
                   <CardHeader className="flex flex-row items-center justify-between pb-2">

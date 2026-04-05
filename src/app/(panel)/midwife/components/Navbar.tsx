@@ -19,6 +19,8 @@ import {
   LogOut,
 } from "lucide-react";
 import Logo from "@/components/common/Logo";
+import { logout } from "@/lib/authentication";
+import { useRouter } from "next/navigation";
 
 const navLinks = [
   { name: "Dashboard", href: "#", icon: LayoutGrid },
@@ -39,6 +41,8 @@ export default function Navbar() {
   const searchRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const profileRef = useRef<HTMLDivElement | null>(null);
+  
+  const router = useRouter();
 
   const filteredItems = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -114,12 +118,12 @@ export default function Navbar() {
     window.location.href = href;
   }
 
-  function handleLogout() {
+  const handleLogout= async () => {
     setProfileDropdownOpen(false);
     setMobileMenuOpen(false);
 
-    // replace with your real logout logic
-    console.log("Logout clicked");
+    await logout();
+    router.push("/sign-in");
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
