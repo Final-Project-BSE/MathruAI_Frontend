@@ -1,134 +1,236 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Clock, AlertTriangle, BookOpen, Settings, Users } from 'lucide-react';
+"use client";
 
-interface Announcement {
-  id: string;
-  title: string;
-  description: string;
-  priority: 'HIGH PRIORITY' | 'INFO' | 'WARNING' | 'COMPLETED';
-  timeAgo: string;
-  icon: React.ReactNode;
-}
+import React, { useEffect, useState, useCallback } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Clock,
+  AlertTriangle,
+  BookOpen,
+  Settings,
+  Users,
+  Loader2,
+  Bell,
+  Megaphone,
+} from "lucide-react";
+import { AnnouncementDto } from "@/app/api/announcement/types";
+import announcementApi from "@/app/api/announcement/api";
 
-const announcements: Announcement[] = [
-  {
-    id: '1',
-    title: 'Urgent: Contraceptive Stock Update',
-    description: 'Critical stock shortage identified for Desomt implant. Inventory will affect patient care and treatment protocols. Please coordinate through your partner clinics.',
-    priority: 'HIGH PRIORITY',
-    timeAgo: '17 hours ago',
-    icon: <AlertTriangle className="w-5 h-5" />
-  },
-  {
-    id: '2',
-    title: 'New Fertility Tracking Protocol Released',
-    description: 'Updated guidelines for fertility monitoring and patient counseling are now available in our resource library. Schedule staff at locations tracking features.',
-    priority: 'INFO',
-    timeAgo: '1 day ago',
-    icon: <BookOpen className="w-5 h-5" />
-  },
-  {
-    id: '3',
-    title: 'Mandatory Training: Sexual Health Education',
-    description: 'Required training session scheduled for next Thursday at 2:00 PM. Please confirm your attendance by Friday to secure your spot.',
-    priority: 'WARNING',
-    timeAgo: '2 days ago',
-    icon: <Users className="w-5 h-5" />
-  },
-  {
-    id: '4',
-    title: 'System Maintenance Completed Successfully',
-    description: 'Planned server maintenance has been completed. All features including cycle tracking and AI recommendations are fully operational.',
-    priority: 'COMPLETED',
-    timeAgo: '3 days ago',
-    icon: <Settings className="w-5 h-5" />
-  },
-  {
-    id: '5',
-    title: 'Q3 Patient Satisfaction Survey Results',
-    description: 'Quarterly patient satisfaction survey results are now available for review in your dashboard analytics section. Overall satisfaction: 94.2%',
-    priority: 'INFO',
-    timeAgo: '1 week ago',
-    icon: <Clock className="w-5 h-5" />
-  }
-];
-
-const getPriorityColor = (priority: string) => {
-  switch (priority) {
-    case 'HIGH PRIORITY':
-      return 'bg-red-100 text-red-700 border-red-200';
-    case 'WARNING':
-      return 'bg-orange-100 text-orange-700 border-orange-200';
-    case 'INFO':
-      return 'bg-blue-100 text-blue-700 border-blue-200';
-    case 'COMPLETED':
-      return 'bg-green-100 text-green-700 border-green-200';
+const getCategoryStyles = (category: string) => {
+  switch (category.toLowerCase()) {
+    case "urgent":
+      return {
+        badge: "bg-red-100 text-red-700 border-red-200",
+        border: "border-l-red-400",
+        icon: "bg-red-100 text-red-500",
+        glow: "hover:shadow-red-100",
+      };
+    case "warning":
+      return {
+        badge: "bg-orange-100 text-orange-700 border-orange-200",
+        border: "border-l-orange-400",
+        icon: "bg-orange-100 text-orange-500",
+        glow: "hover:shadow-orange-100",
+      };
+    case "info":
+      return {
+        badge: "bg-green-100 text-green-700 border-green-200",
+        border: "border-l-green-500",
+        icon: "bg-green-100 text-green-500",
+        glow: "hover:shadow-green-100",
+      };
+    case "health":
+      return {
+        badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
+        border: "border-l-emerald-400",
+        icon: "bg-emerald-100 text-emerald-500",
+        glow: "hover:shadow-emerald-100",
+      };
     default:
-      return 'bg-gray-100 text-gray-700 border-gray-200';
+      return {
+        badge: "bg-rose-100 text-rose-700 border-rose-200",
+        border: "border-l-rose-400",
+        icon: "bg-rose-100 text-rose-500",
+        glow: "hover:shadow-rose-100",
+      };
   }
 };
 
-const getIconColor = (priority: string) => {
-  switch (priority) {
-    case 'HIGH PRIORITY':
-      return 'text-red-500';
-    case 'WARNING':
-      return 'text-orange-500';
-    case 'INFO':
-      return 'text-blue-500';
-    case 'COMPLETED':
-      return 'text-green-500';
+const getCategoryIcon = (category: string) => {
+  switch (category.toLowerCase()) {
+    case "urgent":
+      return <AlertTriangle className="w-5 h-5" />;
+    case "warning":
+      return <Settings className="w-5 h-5" />;
+    case "info":
+      return <BookOpen className="w-5 h-5" />;
+    case "health":
+      return <Users className="w-5 h-5" />;
     default:
-      return 'text-gray-500';
+      return <Bell className="w-5 h-5" />;
+  }
+};
+
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return "";
+  try {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
+    if (diff < 60) return "Just now";
+    if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`;
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  } catch {
+    return dateStr;
   }
 };
 
 export default function Announcements() {
+  const [announcements, setAnnouncements] = useState<AnnouncementDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAnnouncements = useCallback(async (jwt: string) => {
+    try {
+      setLoading(true);
+      const data = await announcementApi.getAllActiveAnnouncements(jwt);
+      setAnnouncements(data);
+      setError(null);
+    } catch (err) {
+      setError("Failed to load announcements.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        const { getSession } = await import("@/lib/authentication");
+        const session = await getSession();
+        const jwt = session?.user?.token;
+        if (!jwt) {
+          setError("Please log in to view announcements.");
+          setLoading(false);
+          return;
+        }
+        await fetchAnnouncements(jwt);
+      } catch (err) {
+        setError("Authentication error. Please log in again.");
+        setLoading(false);
+      }
+    };
+    initialize();
+  }, [fetchAnnouncements]);
+
+  if (loading) {
+    return (
+      <div className="bg-[#fed2cc] min-h-screen flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-pink-500" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-[#fed2cc] min-h-screen p-4 md:p-6">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+          {error}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full max-w-full">
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="text-2xl font-semibold text-gray-800">
-            Announcements
-          </CardTitle>
-          <p className="text-sm text-gray-600">
-            Stay informed with the latest updates and announcements
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {announcements.map((announcement) => (
-            <Card key={announcement.id} className="border border-gray-200 hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-full ${getIconColor(announcement.priority)}`}>
-                    {announcement.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <h3 className="font-semibold text-gray-900 text-sm">
-                        {announcement.title}
-                      </h3>
-                      <Badge 
-                        variant="outline" 
-                        className={`text-xs font-medium whitespace-nowrap ${getPriorityColor(announcement.priority)}`}
+    <div className="bg-[#fed2cc] min-h-screen p-4 md:p-6">
+      {/* Header Banner */}
+      <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-r from-[#fab0a7] to-[#d04f51] p-5 text-white shadow-lg">
+        <div className="relative z-10 flex items-center gap-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur">
+            <Megaphone className="h-7 w-7 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold md:text-2xl">Announcements</h1>
+            <p className="text-sm opacity-90 mt-0.5">
+              Stay informed with the latest updates
+            </p>
+          </div>
+          <div className="ml-auto flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 backdrop-blur">
+            <Bell className="h-4 w-4" />
+            <span className="text-sm font-semibold">
+              {announcements.length} Active
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Announcements Grid */}
+      <Card className="bg-white/90 backdrop-blur shadow-md">
+        <CardContent className="p-4 md:p-6">
+          {announcements.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-pink-100 mb-4">
+                <Bell className="h-8 w-8 text-pink-400" />
+              </div>
+              <p className="text-gray-600 font-medium">
+                No announcements available
+              </p>
+              <p className="text-gray-400 text-sm mt-1">
+                Check back later for updates
+              </p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {announcements.map((announcement) => {
+              const styles = getCategoryStyles(announcement.category);
+              return (
+                <Card
+                  key={announcement.announcementId}
+                  className={`bg-white border-l-4 ${styles.border} ${styles.glow} hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5`}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
+                      {/* Icon */}
+                      <div
+                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${styles.icon}`}
                       >
-                        {announcement.priority}
-                      </Badge>
+                        {getCategoryIcon(announcement.category)}
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <h4 className="font-semibold text-sm text-gray-900 leading-snug">
+                            {announcement.title}
+                          </h4>
+                          <Badge
+                            variant="outline"
+                            className={`text-xs font-medium whitespace-nowrap shrink-0 ${styles.badge}`}
+                          >
+                            {announcement.category}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-gray-600 leading-relaxed mb-2">
+                          {announcement.content}
+                        </p>
+                        <div className="flex items-center text-xs text-gray-400">
+                          <Clock className="w-3 h-3 mr-1" />
+                          {formatDate(announcement.createdAt)}
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-sm text-gray-700 mb-3 leading-relaxed">
-                      {announcement.description}
-                    </p>
-                    <div className="flex items-center text-xs text-gray-500">
-                      <Clock className="w-3 h-3 mr-1" />
-                      {announcement.timeAgo}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
     </div>

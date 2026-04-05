@@ -14,10 +14,10 @@ import { useNavigation } from "react-day-picker"
 import { useRouter } from "next/navigation"
 import { UpdateDataPopup } from "@/components/update-data-popup"
 import DashboardTopBar from "./components/DashboardTopBar"
-import { useCycleStats } from "@/hooks/useCycleStats";
+import { useCycleStats } from "@/hooks/useCycleStats"
 import HealthStatusSum from "./components/HealthStatusSum"
-import TopBarFeatures from "./components/TopBarFeatures"
 import DashboardFeatures from "./components/DashboardFeatures"
+import TopBarFeatures from "@/components/common/TopBarFeatures"
 
 
 export default function ReproductivePage() {
