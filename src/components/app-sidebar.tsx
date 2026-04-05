@@ -74,6 +74,22 @@ const data = {
       url: "/announcement",
     },
     {
+      title: "Recovery Tracking",
+      url: "/recovery-tracking",
+    },
+    {
+      title: "Breastfeeding support",
+      url: "/breastfeeding-support",
+    },
+    {
+      title: "Three Posha",
+      url: "/three-posha",
+    },
+    {
+      title: "Birth Control",
+      url: "/birth-control",
+    },
+    {
       title: "Analytics",
       url: "/analytics",
     },
