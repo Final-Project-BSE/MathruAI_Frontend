@@ -6,7 +6,7 @@ import PatientsConsoleCard from "./PatientsConsoleCard";
 
 export default function TopBar() {
   return (
-    <main className="min-h-screen text-white">
+    <main className="text-white">
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
         <div className="grid items-stretch gap-4 py-1 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]">
           <section className="min-w-0 h-full">

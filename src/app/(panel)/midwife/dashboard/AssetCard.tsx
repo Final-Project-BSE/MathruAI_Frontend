@@ -30,7 +30,7 @@ export default function AssetCard({
             <p className="truncate text-[9px] text-white/45 sm:text-[10px]">
               {label}
             </p>
-            <h3 className="truncate text-[13px] font-medium leading-tight text-white sm:text-[14px]">
+            <h3 className="truncate text-[13px] font-medium leading-tight text-white/80 sm:text-[14px]">
               {name}
             </h3>
           </div>
@@ -43,7 +43,7 @@ export default function AssetCard({
 
       <div className="space-y-1">
         <p className="text-[9px] text-white/45 sm:text-[10px]">Count</p>
-        <div className="text-[18px] font-medium leading-none tracking-tight text-white sm:text-[20px] xl:text-[22px]">
+        <div className="text-[18px] font-medium leading-none tracking-tight text-white/80 sm:text-[20px] xl:text-[22px]">
           {rate}
         </div>
       </div>

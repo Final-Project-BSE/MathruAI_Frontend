@@ -69,7 +69,7 @@ export default function PatientsConsoleCard() {
                                         Patient Management
                                     </p>
 
-                                    <h2 className="mt-1 text-[16px] font-semibold tracking-tight text-white sm:text-[18px]">
+                                    <h2 className="mt-1 text-[16px] font-semibold tracking-tight text-white/80 sm:text-[18px]">
                                         Patients Console
                                     </h2>
                                 </div>
@@ -85,7 +85,7 @@ export default function PatientsConsoleCard() {
                                 updates from one focused view.
                             </p>
                             <div className="flex items-end gap-3">
-                                <h3 className="text-[22px] font-semibold leading-none tracking-tight text-white sm:text-[30px]">
+                                <h3 className="text-[22px] font-semibold leading-none tracking-tight text-white/80 sm:text-[30px]">
                                     1,248
                                 </h3>
                                 <div className="">
@@ -98,7 +98,7 @@ export default function PatientsConsoleCard() {
 
                             <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/[0.07]">
                                 <div className="flex h-full w-full">
-                                    <div className="h-full w-[58%] rounded-full bg-white" />
+                                    <div className="h-full w-[58%] rounded-full bg-white/80" />
                                     <div className="h-full w-[24%] bg-white/55" />
                                     <div className="h-full w-[18%] bg-white/20" />
                                 </div>
@@ -149,7 +149,7 @@ export default function PatientsConsoleCard() {
 
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center justify-between gap-2">
-                                                <p className="truncate text-[12px] font-medium text-white">
+                                                <p className="truncate text-[12px] font-medium text-white/80">
                                                     {patient.name}
                                                 </p>
                                                 <p className="shrink-0 text-[10px] text-white/40">

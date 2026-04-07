@@ -17,6 +17,8 @@ import {
   Landmark,
   Menu,
   LogOut,
+  MessageCircle,
+  MessageSquare,
 } from "lucide-react";
 import Logo from "@/components/common/Logo";
 import { logout } from "@/lib/authentication";
@@ -24,11 +26,10 @@ import { useRouter } from "next/navigation";
 
 const navLinks = [
   { name: "Dashboard", href: "#", icon: LayoutGrid },
-  { name: "Markets", href: "#", icon: BarChart3 },
-  { name: "Rewards", href: "#", icon: Activity },
-  { name: "Treasury", href: "#", icon: Landmark },
-  { name: "Transactions", href: "#", icon: FileText },
-  { name: "Wallets", href: "#", icon: Wallet },
+  { name: "Sample", href: "#", icon: BarChart3 },
+  { name: "Sample", href: "#", icon: Activity },
+  { name: "Three Posha", href: "#", icon: FileText },
+  { name: "Analytics", href: "#", icon: Wallet },
 ];
 
 export default function Navbar() {
@@ -232,7 +233,7 @@ export default function Navbar() {
               </div>
 
               <button className="inline-flex items-center gap-2 rounded-xl bg-[#d9c2ff] px-5 py-2 text-[12px] font-medium text-[#121212] shadow-[0_0_0_1px_rgba(255,255,255,0.08)] hover:brightness-105">
-                <span>Deposit</span>
+                <span>Sample</span>
                 <Lock size={12} strokeWidth={2.2} />
               </button>
             </div>
@@ -269,6 +270,13 @@ export default function Navbar() {
               <Bell size={14} />
               <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#8b5cf6] px-1 text-[8px] font-semibold text-white">
                 2
+              </span>
+            </button>
+
+            <button className="relative flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white">
+              <MessageSquare size={14} />
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#8b5cf6] px-1 text-[8px] font-semibold text-white">
+                1
               </span>
             </button>
 
