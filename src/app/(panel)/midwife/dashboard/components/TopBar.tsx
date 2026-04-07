@@ -3,6 +3,7 @@ import AssetCard from "./AssetCard";
 import { assets } from "./data";
 import AIAssistantCard from "./AIAssistantCard";
 import PatientsConsoleCard from "./PatientsConsoleCard";
+import Link from "next/link";
 
 export default function TopBar() {
   return (
@@ -18,7 +19,9 @@ export default function TopBar() {
               </div>
 
               <div className="grid min-h-0">
-                <PatientsConsoleCard />
+                <Link href="/midwife/patient-console">
+                  <PatientsConsoleCard />
+                </Link>
               </div>
             </div>
           </section>

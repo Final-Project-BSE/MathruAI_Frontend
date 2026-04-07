@@ -14,10 +14,8 @@ import {
   Wallet,
   FileText,
   Activity,
-  Landmark,
   Menu,
   LogOut,
-  MessageCircle,
   MessageSquare,
 } from "lucide-react";
 import Logo from "@/components/common/Logo";
@@ -42,36 +40,35 @@ export default function Navbar() {
   const searchRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const profileRef = useRef<HTMLDivElement | null>(null);
-  
   const router = useRouter();
 
   const filteredItems = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return navLinks;
 
-    return navLinks.filter((item) =>
-      item.name.toLowerCase().includes(q)
-    );
+    return navLinks.filter((item) => item.name.toLowerCase().includes(q));
   }, [query]);
 
   useEffect(() => {
-    if (searchOpen) {
-      const timer = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 180);
+    if (!searchOpen) return;
 
-      return () => clearTimeout(timer);
-    }
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 180);
+
+    return () => clearTimeout(timer);
   }, [searchOpen]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+
+      if (searchRef.current && !searchRef.current.contains(target)) {
         setSearchOpen(false);
         setSelectedIndex(0);
       }
 
-      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+      if (profileRef.current && !profileRef.current.contains(target)) {
         setProfileDropdownOpen(false);
       }
     }
@@ -85,8 +82,8 @@ export default function Navbar() {
   }, [query]);
 
   useEffect(() => {
-    const shouldLock = mobileMenuOpen;
-    document.body.style.overflow = shouldLock ? "hidden" : "";
+    document.body.style.overflow = mobileMenuOpen ? "hidden" : "";
+
     return () => {
       document.body.style.overflow = "";
     };
@@ -116,10 +113,10 @@ export default function Navbar() {
     setProfileDropdownOpen(false);
     setQuery("");
     setSelectedIndex(0);
-    window.location.href = href;
+    router.push(href);
   }
 
-  const handleLogout= async () => {
+  async function handleLogout() {
     setProfileDropdownOpen(false);
     setMobileMenuOpen(false);
 
@@ -133,7 +130,7 @@ export default function Navbar() {
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setSelectedIndex((prev) =>
-        prev < filteredItems.length - 1 ? prev + 1 : prev
+        prev < filteredItems.length - 1 ? prev + 1 : prev,
       );
     }
 
@@ -155,18 +152,19 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-black px-3 py-2">
-        <div className="flex w-full items-center justify-between gap-2 px-2 sm:px-3">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+      <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-black/95 px-3 py-2 backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-7xl items-center gap-3">
+          <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
             <button
+              type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white lg:hidden"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-white/80 transition hover:bg-white/[0.06] hover:text-white lg:hidden"
               aria-label="Open menu"
             >
               <Menu size={18} />
             </button>
 
-            <div className="flex h-[52px] min-w-0 items-center gap-3 border-white/10 pr-1 sm:pr-2 lg:border-r lg:px-4">
+            <div className="flex h-[52px] min-w-0 items-center gap-3 pr-1 sm:pr-2 lg:border-r lg:border-white/10 lg:px-4">
               <Link href="#" className="flex min-w-0 items-center gap-2">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white text-black">
                   <Logo />
@@ -188,7 +186,9 @@ export default function Navbar() {
                 <button
                   type="button"
                   onClick={() => setProfileDropdownOpen((prev) => !prev)}
-                  className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-2 py-1 pr-3 hover:bg-white/[0.05]"
+                  className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-2 py-1 pr-3 transition hover:bg-white/[0.05]"
+                  aria-expanded={profileDropdownOpen}
+                  aria-haspopup="menu"
                 >
                   <div className="h-7 w-7 overflow-hidden rounded-full ring-1 ring-[#f5c26b]/50">
                     <div className="flex h-full w-full items-center justify-center bg-[#2a3145] text-[10px] font-semibold text-white">
@@ -214,7 +214,7 @@ export default function Navbar() {
                 </button>
 
                 {profileDropdownOpen && (
-                  <div className="absolute left-0 top-[calc(100%+10px)] z-[999] w-40 rounded-2xl border border-white/10 bg-black shadow-[0_12px_40px_rgba(0,0,0,0.45)]">
+                  <div className="absolute left-0 top-[calc(100%+10px)] z-[999] w-40 rounded-2xl border border-white/10 bg-black p-1 shadow-[0_12px_40px_rgba(0,0,0,0.45)]">
                     <button
                       type="button"
                       onClick={handleLogout}
@@ -232,48 +232,62 @@ export default function Navbar() {
                 )}
               </div>
 
-              <button className="inline-flex items-center gap-2 rounded-xl bg-[#d9c2ff] px-5 py-2 text-[12px] font-medium text-[#121212] shadow-[0_0_0_1px_rgba(255,255,255,0.08)] hover:brightness-105">
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#d9c2ff] px-5 py-2 text-[12px] font-medium text-[#121212] shadow-[0_0_0_1px_rgba(255,255,255,0.08)] transition hover:brightness-105"
+              >
                 <span>Sample</span>
                 <Lock size={12} strokeWidth={2.2} />
               </button>
             </div>
           </div>
 
-          <nav className="hidden h-[52px] min-w-0 flex-1 items-center gap-2 overflow-hidden bg-black px-4 lg:flex">
-            {navLinks.map((item, index) => {
-              const active = index === 0;
+          <nav className="hidden min-w-0 flex-1 items-center justify-center px-2 lg:flex">
+            <div className="flex max-w-full items-center gap-2 overflow-x-auto rounded-full border border-white/10 bg-white/[0.02] px-2 py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              {navLinks.map((item, index) => {
+                const active = index === 0;
 
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`min-w-0 flex-1 truncate rounded-full px-3 py-2 text-center text-[11px] font-medium transition ${
-                    active
-                      ? "bg-white/10 text-white"
-                      : "text-white/55 hover:bg-white/5 hover:text-white"
-                  }`}
-                  title={item.name}
-                >
-                  {item.name}
-                </Link>
-              );
-            })}
+                return (
+                  <Link
+                    key={`${item.name}-${index}`}
+                    href={item.href}
+                    className={`shrink-0 rounded-full px-4 py-2 text-center text-[11px] font-medium transition ${
+                      active
+                        ? "bg-white/10 text-white"
+                        : "text-white/55 hover:bg-white/5 hover:text-white"
+                    }`}
+                    title={item.name}
+                  >
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </div>
           </nav>
 
-          <div className="flex h-[52px] shrink-0 items-center gap-2 sm:gap-3 bg-black px-1 sm:px-2 lg:px-4">
-            <button className="hidden items-center gap-2 rounded-xl bg-[#d9c2ff] px-3 py-2 text-[11px] font-medium text-[#121212] hover:brightness-105 md:inline-flex lg:hidden">
+          <div className="ml-auto flex h-[52px] shrink-0 items-center gap-2 bg-black px-1 sm:gap-3 sm:px-2 lg:px-4">
+            <button
+              type="button"
+              className="hidden items-center gap-2 rounded-xl bg-[#d9c2ff] px-3 py-2 text-[11px] font-medium text-[#121212] transition hover:brightness-105 md:inline-flex lg:hidden"
+            >
               <span>Deposit</span>
               <Lock size={12} strokeWidth={2.2} />
             </button>
 
-            <button className="relative flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white">
+            <button
+              type="button"
+              className="relative flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/80 transition hover:bg-white/[0.06] hover:text-white"
+            >
               <Bell size={14} />
               <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#8b5cf6] px-1 text-[8px] font-semibold text-white">
                 2
               </span>
             </button>
 
-            <button className="relative flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06] hover:text-white">
+            <button
+              type="button"
+              className="relative flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/80 transition hover:bg-white/[0.06] hover:text-white"
+            >
               <MessageSquare size={14} />
               <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#8b5cf6] px-1 text-[8px] font-semibold text-white">
                 1
@@ -285,7 +299,7 @@ export default function Navbar() {
                 className={`absolute right-0 top-1/2 -translate-y-1/2 overflow-hidden transition-all duration-300 ease-out ${
                   searchOpen
                     ? "w-[min(320px,calc(100vw-24px))] opacity-100"
-                    : "w-9 pointer-events-none opacity-0 sm:w-10"
+                    : "pointer-events-none w-9 opacity-0 sm:w-10"
                 }`}
               >
                 <div
@@ -294,6 +308,7 @@ export default function Navbar() {
                   }`}
                 >
                   <button
+                    type="button"
                     onClick={() => setSearchOpen(false)}
                     className="flex h-10 w-10 shrink-0 items-center justify-center text-white/75 hover:text-white"
                     aria-label="Close search"
@@ -312,8 +327,9 @@ export default function Navbar() {
 
                   {query && (
                     <button
+                      type="button"
                       onClick={() => setQuery("")}
-                      className="mr-2 flex h-6 w-6 items-center justify-center rounded-full text-white/50 hover:bg-white/10 hover:text-white"
+                      className="mr-2 flex h-6 w-6 items-center justify-center rounded-full text-white/50 transition hover:bg-white/10 hover:text-white"
                       aria-label="Clear search"
                     >
                       <X size={12} />
@@ -340,7 +356,8 @@ export default function Navbar() {
 
                         return (
                           <button
-                            key={item.name}
+                            key={`${item.name}-${index}`}
+                            type="button"
                             onClick={() => handleSelectItem(item.href)}
                             onMouseEnter={() => setSelectedIndex(index)}
                             className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition ${
@@ -374,15 +391,19 @@ export default function Navbar() {
               </div>
 
               <button
+                type="button"
                 onClick={handleSearchToggle}
-                className="relative z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/75 hover:text-white"
+                className="relative z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/75 transition hover:text-white"
                 aria-label="Toggle search"
               >
                 <Search size={14} />
               </button>
             </div>
 
-            <button className="hidden h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 text-white/80 hover:bg-white/[0.06] hover:text-white sm:flex">
+            <button
+              type="button"
+              className="hidden h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 text-white/80 transition hover:bg-white/[0.06] hover:text-white sm:flex"
+            >
               <span className="text-[10px]">Settings</span>
               <Settings size={13} />
             </button>
@@ -411,20 +432,19 @@ export default function Navbar() {
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
               <Link href="#" className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-md bg-white text-black">
-                  <span className="text-xs font-bold">∑</span>
+                  <Logo />
                 </div>
 
                 <div className="leading-tight">
-                  <p className="text-[13px] font-semibold text-white">
-                    Staikert<span className="align-top text-[9px]">®</span>
-                  </p>
-                  <p className="text-[9px] text-white/50">Top Staking Assets</p>
+                  <p className="text-[13px] font-semibold text-white">Mathru AI</p>
+                  <p className="text-[9px] text-white/50">Care You Trust</p>
                 </div>
               </Link>
 
               <button
+                type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-white/70 hover:text-white"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-white/70 transition hover:text-white"
                 aria-label="Close menu"
               >
                 <X size={18} />
@@ -432,7 +452,10 @@ export default function Navbar() {
             </div>
 
             <div className="border-b border-white/10 px-4 py-4">
-              <button className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 hover:bg-white/[0.05]">
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 transition hover:bg-white/[0.05]"
+              >
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 overflow-hidden rounded-full ring-1 ring-[#f5c26b]/50">
                     <div className="flex h-full w-full items-center justify-center bg-[#2a3145] text-[11px] font-semibold text-white">
@@ -456,7 +479,10 @@ export default function Navbar() {
                 <ChevronDown size={14} className="text-white/70" />
               </button>
 
-              <button className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#d9c2ff] px-4 py-3 text-[13px] font-medium text-[#121212] hover:brightness-105">
+              <button
+                type="button"
+                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#d9c2ff] px-4 py-3 text-[13px] font-medium text-[#121212] transition hover:brightness-105"
+              >
                 <span>Deposit</span>
                 <Lock size={13} strokeWidth={2.2} />
               </button>
@@ -470,7 +496,8 @@ export default function Navbar() {
 
                   return (
                     <button
-                      key={item.name}
+                      key={`${item.name}-${index}`}
+                      type="button"
                       onClick={() => handleSelectItem(item.href)}
                       className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition ${
                         active
@@ -497,14 +524,18 @@ export default function Navbar() {
             </div>
 
             <div className="space-y-3 border-t border-white/10 p-3">
-              <button className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-[13px] text-white/80 hover:bg-white/[0.06] hover:text-white">
+              <button
+                type="button"
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-[13px] text-white/80 transition hover:bg-white/[0.06] hover:text-white"
+              >
                 <Settings size={15} />
                 <span>Settings</span>
               </button>
 
               <button
+                type="button"
                 onClick={handleLogout}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-[13px] text-red-300 hover:bg-red-500/15 hover:text-red-200"
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-[13px] text-red-300 transition hover:bg-red-500/15 hover:text-red-200"
               >
                 <LogOut size={15} />
                 <span>Logout</span>

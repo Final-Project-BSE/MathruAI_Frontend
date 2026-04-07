@@ -26,11 +26,9 @@ export default async function RootLayout({ children }: Props) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        <SidebarProvider>
           {/* <MidwifeAppSidebar/> */}
           {children}
           <ClientFloatingChatbot />
-        </SidebarProvider> 
       </body>
     </html>
   );

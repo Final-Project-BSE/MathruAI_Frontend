@@ -9,8 +9,8 @@ export default function ManagementCards() {
       <div className="mx-auto max-w-7xl">
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <div className="grid grid-cols-1 gap-6">
-            <VaccinationCard />
             <HomeVisitCard />
+            <VaccinationCard />
           </div>
 
           <AppointmentCard />
