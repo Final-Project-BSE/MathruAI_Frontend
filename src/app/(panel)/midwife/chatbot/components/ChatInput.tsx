@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, MessageCircle, Loader2 } from "lucide-react";
+import { Send, Sparkles, Loader2 } from "lucide-react";
 
 interface ChatInputProps {
   inputMessage: string;
@@ -20,57 +20,57 @@ export default function ChatInput({
   onTipClick,
 }: ChatInputProps) {
   const tips = [
-    "What should I eat during pregnancy?",
-    "Exercise during pregnancy",
-    "Common pregnancy symptoms",
-    "Prenatal vitamins guide",
+    "How do I manage a high-risk pregnancy case?",
+    "How to document a maternity case properly",
   ];
 
   return (
-    <div className=" bg-white border-t border-pink-100 p-4 z-50">
-      <form onSubmit={onSubmit} className="flex gap-3">
-        <div className="flex-1 relative">
-          <input
-            type="text"
-            value={inputMessage}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={
-              isConnected
-                ? "Ask me anything about pregnancy..."
-                : "Please wait, connecting..."
-            }
-            disabled={isLoading || !isConnected}
-            className="w-full px-4 py-3 pr-12 border border-[#fab0a7] rounded-full focus:outline-none focus:ring-2 focus:ring-[#d04f51] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed placeholder-gray-400 bg-pink-50/30"
-          />
-          <MessageCircle className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#d04f51]" />
+    <div className="shrink-0 border-t border-white/10 bg-[#070707]/95 px-3 py-3 backdrop-blur sm:px-5 sm:py-4">
+      <div className="mx-auto w-full max-w-5xl">
+        <div className="mb-3 flex flex-wrap gap-2">
+          {tips.map((tip) => (
+            <button
+              key={tip}
+              onClick={() => onTipClick(tip)}
+              disabled={isLoading || !isConnected}
+              type="button"
+              className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-white/70 transition hover:border-white/15 hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {tip}
+            </button>
+          ))}
         </div>
 
-        <button
-          type="submit"
-          disabled={isLoading || !inputMessage.trim() || !isConnected}
-          className="px-6 py-3 bg-[#d04f51] text-white rounded-full hover:[#d04f51] disabled:opacity-100 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:scale-105"
-        >
-          {isLoading ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <Send className="h-5 w-5" />
-          )}
-          <span className="hidden sm:inline">Send</span>
-        </button>
-      </form>
+        <form onSubmit={onSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="relative min-w-0 flex-1">
+            <textarea
+              rows={1}
+              value={inputMessage}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={
+                isConnected
+                  ? "Ask anything about pregnancy..."
+                  : "Please wait, connecting..."
+              }
+              disabled={isLoading || !isConnected}
+              className="min-h-[54px] max-h-40 w-full resize-none rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 pr-12 text-sm text-white placeholder:text-white/30 outline-none transition focus:border-[#d04f51]/40 focus:bg-white/[0.06] focus:ring-2 focus:ring-[#d04f51]/20 disabled:cursor-not-allowed disabled:opacity-50"
+            />
+            <Sparkles className="pointer-events-none absolute right-4 top-4 h-4 w-4 text-white/25" />
+          </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        {tips.map((tip, index) => (
           <button
-            key={index}
-            onClick={() => onTipClick(tip)}
-            disabled={isLoading || !isConnected}
-            className="px-3 py-1 text-xs bg-pink-100 hover:bg-pink-200 text-[#d04f51] rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            type="button"
+            type="submit"
+            disabled={isLoading || !inputMessage.trim() || !isConnected}
+            className="inline-flex h-[54px] w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-[#d04f51] px-5 text-sm font-medium text-white transition hover:bg-[#ba4547] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
-            {tip}
+            {isLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Send className="h-5 w-5" />
+            )}
+            <span>Send</span>
           </button>
-        ))}
+        </form>
       </div>
     </div>
   );

@@ -1,13 +1,9 @@
 "use client";
 
-import Container from "@/components/shared/container";
-
 import ChatHeader from "./components/ChatHeader";
 import ChatMessages from "./components/ChatMessages";
 import ChatInput from "./components/ChatInput";
 import { useChatbotController } from "./components/useChatbotController";
-import { ChartContainer } from "@/components/ui/chart";
-import ChatContainer from "@/components/shared/ChatContainer";
 
 export default function ChatBotPage() {
   const {
@@ -28,8 +24,8 @@ export default function ChatBotPage() {
   };
 
   return (
-    <ChatContainer title="Pregnancy Advisor ChatBot">
-      <div className="flex h-full min-h-0 flex-col overflow-hidden">
+    <div className="flex min-h-0 flex-1 bg-black">
+      <section className="flex min-h-0 flex-1 flex-col overflow-hidden border-t border-white/10 bg-[#060606] lg:rounded-none">
         <ChatHeader
           isConnected={isConnected}
           connectionError={connectionError}
@@ -47,7 +43,7 @@ export default function ChatBotPage() {
           isConnected={isConnected}
           onTipClick={setInputMessage}
         />
-      </div>
-    </ChatContainer>
+      </section>
+    </div>
   );
 }

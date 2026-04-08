@@ -2,16 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getSession } from "@/lib/authentication";
-import { useChatContext } from "@/app/(main)/chatbot/layout";
-import apis from "../../../api/chatbot/api";
+import { useChatContext } from "@/app/(panel)/midwife/chatbot/layout";
+import apis from "../../../../api/chatbot/api";
 
-import { ChatResponse as ApiChatResponse } from "../../../api/chatbot/types";
-import type { Message, SystemStats } from "../../../api/chatbot/types";
+import { ChatResponse as ApiChatResponse } from "../../../../api/chatbot/types";
+import type { Message, SystemStats } from "../../../../api/chatbot/types";
 
 const WELCOME_MESSAGE: Message = {
-  id: "1",
+  id: "welcome_message",
   content:
-    "Hello! I'm your pregnancy advisor assistant. I'm here to help answer your questions about pregnancy, provide guidance and support you through this wonderful journey. How can I assist you today?",
+    "Hello! I’m your pregnancy assistant. Ask me about symptoms, nutrition, exercise, prenatal care, or general pregnancy guidance.",
   isUser: false,
   timestamp: new Date(),
   status: "sent",
@@ -129,10 +129,12 @@ export function useChatbotController() {
 
     const trimmedMessage = messageContent.trim();
     const sessionIdToUse = activeSessionId ?? currentSessionId;
-    const isFirstUserMessageInSession = messages.filter((m) => m.isUser).length === 0;
+    const isFirstUserMessageInSession =
+      messages.filter((m) => m.isUser).length === 0;
+    const baseId = `${Date.now()}`;
 
     const userMessage: Message = {
-      id: `${Date.now()}_user`,
+      id: `${baseId}_user`,
       content: trimmedMessage,
       isUser: true,
       timestamp: new Date(),
@@ -140,7 +142,7 @@ export function useChatbotController() {
     };
 
     const botMessage: Message = {
-      id: `${Date.now()}_bot`,
+      id: `${baseId}_bot`,
       content: "",
       isUser: false,
       timestamp: new Date(),
@@ -223,11 +225,9 @@ export function useChatbotController() {
         if (session?.user?.token) {
           const jwt = session.user.token;
           setToken(jwt);
-          console.log("✅ JWT token loaded for ChatBot");
           checkSystemHealth(jwt);
           fetchSystemStats(jwt);
         } else {
-          console.warn("⚠️ No session found — please log in first.");
           setConnectionError("Please log in to access the chatbot.");
         }
       } catch (error) {

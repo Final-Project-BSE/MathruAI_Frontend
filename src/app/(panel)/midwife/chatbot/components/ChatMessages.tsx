@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { CheckCircle, Loader2, XCircle } from "lucide-react";
+import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import type { Message } from "../../../api/chatbot/types";
+import type { Message } from "../../../../api/chatbot/types";
 
 interface ChatMessagesProps {
   messages: Message[];
@@ -12,87 +12,74 @@ interface ChatMessagesProps {
 export default function ChatMessages({ messages }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages]);
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return new Date(date).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   const getStatusIcon = (status?: string) => {
     switch (status) {
       case "sending":
-        return <Loader2 className="h-3 w-3 animate-spin text-gray-400" />;
+        return <Loader2 className="h-3.5 w-3.5 animate-spin text-white/35" />;
       case "sent":
-        return <CheckCircle className="h-3 w-3 text-green-500" />;
+        return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />;
       case "error":
-        return <XCircle className="h-3 w-3 text-red-500" />;
+        return <XCircle className="h-3.5 w-3.5 text-red-400" />;
       default:
         return null;
     }
   };
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 bg-[#fed2cc]">
-      {messages.map((message) => (
-        <div
-          key={message.id}
-          className={`flex ${
-            message.isUser ? "justify-end" : "justify-start"
-          } animate-fadeIn`}
-        >
+    <div className="min-h-0 flex-1 overflow-y-auto bg-[#030303] px-3 py-4 sm:px-5">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
+        {messages.map((message) => (
           <div
-            className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${
-              message.isUser
-                ? "bg-[#d04f51] text-white rounded-br-sm"
-                : "bg-white text-gray-800 rounded-bl-sm border border-pink-100"
+            key={message.id}
+            className={`flex w-full ${
+              message.isUser ? "justify-end" : "justify-start"
             }`}
           >
-            <div className="leading-relaxed text-sm max-w-none [&_p]:my-3 [&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1">
-              <ReactMarkdown>
-                {message.content || (message.status === "sending" ? "Thinking..." : "")}
-              </ReactMarkdown>
-            </div>
-
             <div
-              className={`flex items-center justify-between mt-1 pt-2 border-t ${
-                message.isUser ? "border-white/20" : "border-gray-100"
+              className={`w-fit max-w-[94%] rounded-3xl px-4 py-3 shadow-[0_10px_30px_rgba(0,0,0,0.22)] sm:max-w-[82%] lg:max-w-[70%] ${
+                message.isUser
+                  ? "rounded-br-lg bg-[#d04f51] text-white"
+                  : "rounded-bl-lg border border-white/10 bg-white/[0.05] text-white"
               }`}
             >
-              <span
-                className={`text-[9px] ${
-                  message.isUser ? "text-white/70" : "text-gray-500"
+              <div className="max-w-none overflow-x-auto text-xs leading-7 break-words [&_h1]:mb-3 [&_h1]:mt-4 [&_h1]:text-base [&_h1]:font-semibold [&_h2]:mb-3 [&_h2]:mt-4 [&_h2]:text-sm [&_h2]:font-semibold [&_p]:my-2 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-1 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-black/30 [&_pre]:p-3 [&_code]:break-words [&_strong]:font-semibold">
+                <ReactMarkdown>
+                  {message.content ||
+                    (message.status === "sending" ? "Thinking..." : "")}
+                </ReactMarkdown>
+              </div>
+
+              <div
+                className={`mt-3 flex items-center justify-between gap-3 border-t pt-2 ${
+                  message.isUser ? "border-white/15" : "border-white/10"
                 }`}
               >
-                {formatTime(message.timestamp)}
-              </span>
-              {getStatusIcon(message.status)}
+                <span
+                  className={`text-[10px] ${
+                    message.isUser ? "text-white/70" : "text-white/45"
+                  }`}
+                >
+                  {formatTime(message.timestamp)}
+                </span>
+                {getStatusIcon(message.status)}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
-      <div ref={messagesEndRef} />
+        ))}
 
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
-      `}</style>
+        <div ref={messagesEndRef} />
+      </div>
     </div>
   );
 }
