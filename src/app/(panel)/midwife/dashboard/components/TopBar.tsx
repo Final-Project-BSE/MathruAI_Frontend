@@ -1,11 +1,31 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import AssetCard from "./AssetCard";
 import { assets } from "./data";
 import AIAssistantCard from "./AIAssistantCard";
 import PatientsConsoleCard from "./PatientsConsoleCard";
 import Link from "next/link";
+import { getSession } from "@/lib/authentication";
 
 export default function TopBar() {
+  const [token, setToken] = useState<string>("");
+  const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const loadSession = async () => {
+      try {
+        const session = await getSession();
+        const jwt = session?.user?.token || "";
+        setToken(jwt);
+      } catch (error) {
+        console.error("Failed to load session token:", error);
+      }
+    };
+
+    loadSession();
+  }, []);
+
   return (
     <main className="text-white">
       <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
@@ -27,7 +47,17 @@ export default function TopBar() {
           </section>
 
           <aside className="h-full w-full">
-            <AIAssistantCard />
+            <AIAssistantCard
+              token={token}
+              sessionId={activeSessionId}
+              onSessionChange={setActiveSessionId}
+              onResponse={(response) => {
+                console.log("AI response:", response);
+              }}
+              onError={(message) => {
+                console.error(message);
+              }}
+            />
           </aside>
         </div>
       </div>

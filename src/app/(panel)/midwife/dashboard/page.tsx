@@ -7,7 +7,6 @@ import ManagementCards from "./components/ManagementCard"
 export default function MidwifeDashboardPage() {
   return (
       <div className="bg-[#000000] text-white">
-          <Navbar />
           <WelcomeHeaderCard />
           <TopBar />
           <ManagementCards />

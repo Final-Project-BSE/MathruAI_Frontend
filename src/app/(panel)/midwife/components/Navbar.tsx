@@ -152,7 +152,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-black/95 px-3 py-2 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-black px-3 py-2 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-7xl items-center gap-3">
           <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
             <button
