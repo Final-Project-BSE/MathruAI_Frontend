@@ -1,4 +1,6 @@
-import { Megaphone, MegaphoneIcon, Volume2 } from "lucide-react";
+import { Megaphone } from "lucide-react";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faBullhorn } from '@fortawesome/free-solid-svg-icons'
 
 export default function WelcomeHeaderCard() {
   return (
@@ -10,7 +12,7 @@ export default function WelcomeHeaderCard() {
               Let&apos;s Rock today.
             </p>
 
-            <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.03em] text-white sm:text-[26px] md:text-[30px] lg:text-[32px]">
+            <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.03em] text-white/80 sm:text-[26px] md:text-[30px] lg:text-[32px]">
               <span className="block sm:inline">Welcome Back, Masud A.</span>{" "}
               <span className="inline-block">👋</span>
             </h1>
@@ -18,11 +20,11 @@ export default function WelcomeHeaderCard() {
 
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between lg:justify-end">
             <div className="hidden items-center gap-3 md:flex">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-lg font-semibold text-[#171717] shadow-sm sm:h-12 sm:w-12 sm:text-xl">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/80 text-lg font-semibold text-[#171717] shadow-sm sm:h-12 sm:w-12 sm:text-xl">
                 19
               </div>
 
-              <div className="leading-tight text-white">
+              <div className="leading-tight text-white/80">
                 <div className="text-xs font-medium text-white/60">Tue.</div>
                 <div className="text-sm font-semibold sm:text-base">
                   December
@@ -37,11 +39,11 @@ export default function WelcomeHeaderCard() {
             </button>
 
             <button
-  aria-label="Open menu"
-  className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/80 text-neutral-700 shadow-sm md:flex"
->
-  <Volume2 className="h-5 w-5" strokeWidth={1.8} />
-</button>
+              aria-label="Open menu"
+              className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/80 text-neutral-700 shadow-sm md:flex"
+            >
+              <FontAwesomeIcon icon={faBullhorn} className="w-6 h-6" />
+            </button>
           </div>
         </div>
       </div>

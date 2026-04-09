@@ -13,7 +13,7 @@ const Logo = ({
   classLink?: string;
 }) => {
   return (
-    <Link href="/" className={classLink}>
+    // <Link href="/" className={classLink}>
       <Image
         src="/images/logo.jpeg"
         alt="Logo"
@@ -21,7 +21,7 @@ const Logo = ({
         height={400}
         className={cn("w-auto h-auto object-contain", className)}
       />
-    </Link>
+    // </Link>
   );
 };
 
