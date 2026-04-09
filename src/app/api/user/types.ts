@@ -30,6 +30,12 @@ export type UserResponseDto = {
   phoneNumber?: string;
   dateOfBirth?: string; 
   roles: Role[];
+  avatarUrl?: string;
+  profileImageUrl?: string;
+  profilePictureUrl?: string;
+  imageUrl?: string;
+  photoUrl?: string;
+  profileImage?: string;
 };
 
 export type UserUpdateRequest = {

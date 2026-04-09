@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { Bell, FileHeart, MapPinned, Menu, MessageCircle, Settings } from "lucide-react";
 import { getcuruser } from "@/app/api/user/api";
@@ -58,6 +57,19 @@ export default function TopBarFeatures({
         if (!me) return "—";
         return me.email;
     }, [me]);
+
+    const resolvedAvatar = useMemo(() => {
+        if (!me) return avatarUrl;
+        return (
+            me.avatarUrl ||
+            me.profileImageUrl ||
+            me.profilePictureUrl ||
+            me.imageUrl ||
+            me.photoUrl ||
+            me.profileImage ||
+            avatarUrl
+        );
+    }, [me, avatarUrl]);
 
     return (
         <div className="w-full mb-6">
@@ -196,19 +208,19 @@ export default function TopBarFeatures({
                 <div className="hidden h-10 w-px shrink-0 bg-neutral-200 lg:block" />
 
                 {/* Profile */}
-                <button
+                <Link
+                    href="/profile"
                     className="
                         flex min-w-0 shrink-0 items-center gap-3 rounded-full pl-1 pr-2 transition hover:bg-neutral-50
                     "
+                    aria-label="Open profile"
                 >
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-violet-200 sm:h-12 sm:w-12">
                         <div className="relative h-9 w-9 overflow-hidden rounded-full border border-white sm:h-10 sm:w-10">
-                            <Image
-                                src={avatarUrl}
+                            <img
+                                src={resolvedAvatar}
                                 alt={fullname}
-                                fill
-                                className="object-cover"
-                                sizes="40px"
+                                className="h-full w-full object-cover"
                             />
                         </div>
                     </div>
@@ -221,7 +233,7 @@ export default function TopBarFeatures({
                             {userEmail}
                         </p>
                     </div>
-                </button>
+                </Link>
             </div>
         </div>
     );

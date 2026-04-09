@@ -1,0 +1,59 @@
+import React from 'react';
+import type { ProfileResponse } from '@/app/api/profile/types';
+
+interface Props {
+  profile: ProfileResponse | null;
+}
+
+const ProfileHeader = ({ profile }: Props) => {
+  const initials = profile
+    ? `${profile.firstName?.[0] ?? ''}${profile.lastName?.[0] ?? ''}`.toUpperCase()
+    : '??';
+
+  const imageUrl =
+    profile?.avatarUrl ||
+    profile?.profileImageUrl ||
+    profile?.profilePictureUrl ||
+    profile?.imageUrl ||
+    profile?.photoUrl ||
+    profile?.profileImage ||
+    '';
+
+  return (
+    <div className="bg-gradient-to-r from-[#d04f51] to-[#fab0a7] rounded-2xl p-8 text-white shadow-lg">
+      <div className="flex items-center gap-6">
+        {/* Avatar */}
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt="Profile"
+            className="w-20 h-20 rounded-full object-cover border border-white/60 shadow-inner"
+          />
+        ) : (
+          <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-3xl font-bold shadow-inner">
+            {initials}
+          </div>
+        )}
+        {/* Info */}
+        <div>
+          <h1 className="text-2xl font-bold">
+            {profile?.firstName} {profile?.lastName}
+          </h1>
+          <p className="text-rose-100 mt-1">{profile?.email}</p>
+          <div className="flex gap-2 mt-3 flex-wrap">
+            {profile?.roles?.map((role) => (
+              <span
+                key={role}
+                className="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full"
+              >
+                {role}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProfileHeader;

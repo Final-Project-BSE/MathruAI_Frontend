@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
+import TopBarFeatures from "@/components/common/TopBarFeatures"
 
 export default function PostpartumPage() {
   return (
     <Container title="Postpartum Care Dashboard">
       <div className="bg-gradient-to-br from-pink-100 to-pink-200 min-h-screen -m-5 p-5">
+        <TopBarFeatures />
         {/* Header Section */}
         <div className="bg-gradient-to-r from-pink-300 to-pink-400 rounded-lg p-6 mb-6 text-white">
           <div className="flex justify-between items-start">
