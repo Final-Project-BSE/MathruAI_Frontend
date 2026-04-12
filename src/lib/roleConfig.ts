@@ -16,6 +16,7 @@ export const ROLE_DASHBOARDS: Record<UserRole, string> = {
 };
 
 // about which roles can access which routes
+// about which roles can access which routes
 export const ROUTE_ACCESS: Record<string, UserRole[]> = {
   '/dashboard/reproductive': [ROLES.HOPE_TO_PREGNANT_MOTHER],
   '/dashboard/pregnancy': [ROLES.PREGNANT_MOTHER],

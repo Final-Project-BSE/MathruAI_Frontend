@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Calendar, User, Shield, Smartphone } from 'lucide-react'
 
 const SettingsComponent = () => {
@@ -273,9 +274,8 @@ const SettingsComponent = () => {
             <div className="space-y-4 pt-2">
               <div>
                 <Label htmlFor="currentPassword" className="text-sm font-medium">Current Password</Label>
-                <Input
+                <PasswordInput
                   id="currentPassword"
-                  type="password"
                   placeholder="Enter current password"
                   value={passwordData.currentPassword}
                   onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
@@ -285,9 +285,8 @@ const SettingsComponent = () => {
               
               <div>
                 <Label htmlFor="newPassword" className="text-sm font-medium">New Password</Label>
-                <Input
+                <PasswordInput
                   id="newPassword"
-                  type="password"
                   placeholder="Enter new password"
                   value={passwordData.newPassword}
                   onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
@@ -297,9 +296,8 @@ const SettingsComponent = () => {
               
               <div>
                 <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirm New Password</Label>
-                <Input
+                <PasswordInput
                   id="confirmPassword"
-                  type="password"
                   placeholder="Confirm new password"
                   value={passwordData.confirmPassword}
                   onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
