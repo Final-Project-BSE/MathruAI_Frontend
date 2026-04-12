@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Brain, CheckCircle } from 'lucide-react';
+import { TrendingUp, Brain, CheckCircle2 } from 'lucide-react';
 import type { PredictionResult } from '../../../api/healthmonitor/types';
 
 interface RiskAssessmentProps {
@@ -9,106 +9,123 @@ interface RiskAssessmentProps {
   currentPredictionId: string | null;
 }
 
+type RiskTone = {
+  badgeClass: string;
+  barClass: string;
+};
+
 const RiskAssessmentComponent: React.FC<RiskAssessmentProps> = ({ predictionResult }) => {
-  const getRiskColor = (riskLevel: string | undefined): string => {
-    if (!riskLevel) return 'bg-gray-100 text-gray-800 border-gray-200';
+  const getRiskTone = (riskLevel?: string): RiskTone => {
+    if (!riskLevel) {
+      return {
+        badgeClass: 'bg-slate-100 text-slate-700 border-slate-200',
+        barClass: 'bg-slate-400',
+      };
+    }
 
     switch (riskLevel.toLowerCase()) {
       case 'low risk':
       case 'low':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return {
+          badgeClass: 'bg-green-50 text-green-700 border-green-200',
+          barClass: 'bg-green-600',
+        };
+
       case 'mid risk':
       case 'medium':
       case 'moderate':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return {
+          badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
+          barClass: 'bg-amber-500',
+        };
+
       case 'high risk':
       case 'high':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return {
+          badgeClass: 'bg-red-50 text-red-700 border-red-200',
+          barClass: 'bg-red-600',
+        };
+
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return {
+          badgeClass: 'bg-slate-100 text-slate-700 border-slate-200',
+          barClass: 'bg-slate-400',
+        };
     }
   };
 
+  const riskLevel = predictionResult?.risk_assessment?.risk_level;
+  const confidence = predictionResult?.risk_assessment?.confidence ?? 0;
+  const confidencePercent = Math.max(0, Math.min(100, confidence * 100));
+  const tone = getRiskTone(riskLevel);
+
   return (
-    <Card className="shadow-md bg-white">
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold flex items-center">
-          <TrendingUp className="h-5 w-5 mr-2 text-pink-500" />
-          Risk Assessment Results
+    <Card className="h-full border border-border bg-white shadow-sm">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
+          <TrendingUp className="h-5 w-5 text-muted-foreground" />
+          Risk Assessment
         </CardTitle>
       </CardHeader>
+
       <CardContent>
         {!predictionResult ? (
-          <div className="h-96 bg-gray-50 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-200">
-            <div className="text-center">
-              <Brain className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 font-medium">No Assessment Yet</p>
-              <p className="text-sm text-gray-400 mt-2">
-                Enter your vital signs and click &quot;Get Risk Assessment&quot;
-              </p>
-            </div>
+          <div className="flex min-h-[220px] flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 px-6 py-10 text-center">
+            <Brain className="mb-3 h-10 w-10 text-muted-foreground" />
+            <p className="text-sm font-medium text-foreground">No assessment available</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Enter vital signs to generate a risk assessment.
+            </p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-5">
             {predictionResult.risk_assessment && (
-              <div className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 rounded-lg border-2 border-pink-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-800">Risk Level Assessment</h3>
+              <div className="rounded-lg border border-border bg-background p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                      Risk level
+                    </h3>
+                    <p className="mt-1 text-base font-semibold text-foreground">
+                      Assessment result
+                    </p>
+                  </div>
+
                   <Badge
-                    className={`${getRiskColor(predictionResult.risk_assessment.risk_level)} text-lg px-4 py-2`}
+                    variant="outline"
+                    className={`${tone.badgeClass} px-3 py-1 text-sm font-medium`}
                   >
                     {predictionResult.risk_assessment.risk_level}
                   </Badge>
                 </div>
 
-                <div className="flex items-center space-x-2 mb-4">
-                  <div className="flex-1 bg-gray-200 rounded-full h-3">
+                <div className="mt-5">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Confidence</span>
+                    <span className="text-sm font-medium text-foreground">
+                      {confidencePercent.toFixed(1)}%
+                    </span>
+                  </div>
+
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                     <div
-                      className="bg-pink-500 h-3 rounded-full transition-all duration-500"
-                      style={{
-                        width: `${(predictionResult.risk_assessment.confidence * 100).toFixed(0)}%`,
-                      }}
+                      className={`h-full rounded-full transition-all duration-300 ${tone.barClass}`}
+                      style={{ width: `${confidencePercent}%` }}
                     />
                   </div>
-                  <span className="text-sm font-semibold text-gray-700">
-                    {(predictionResult.risk_assessment.confidence * 100).toFixed(1)}%
-                  </span>
                 </div>
-
-                {predictionResult.risk_assessment.all_risk_probabilities && (
-                  <div className="mt-4 space-y-2">
-                    <p className="text-sm font-medium text-gray-700">Risk Probability Breakdown:</p>
-                    {Object.entries(predictionResult.risk_assessment.all_risk_probabilities).map(
-                      ([level, prob]) => {
-                        const probValue = typeof prob === 'number' ? prob : parseFloat(String(prob));
-                        return (
-                          <div key={level} className="flex items-center space-x-2">
-                            <span className="text-xs text-gray-600 w-24">{level}:</span>
-                            <div className="flex-1 bg-gray-200 rounded-full h-2">
-                              <div
-                                className="bg-pink-300 h-2 rounded-full"
-                                style={{ width: `${(probValue * 100).toFixed(0)}%` }}
-                              />
-                            </div>
-                            <span className="text-xs font-medium text-gray-700 w-12">
-                              {(probValue * 100).toFixed(1)}%
-                            </span>
-                          </div>
-                        );
-                      }
-                    )}
-                  </div>
-                )}
               </div>
             )}
 
             {predictionResult.health_guidance && (
-              <div className="bg-blue-50 p-6 rounded-lg border-2 border-blue-200">
-                <div className="flex items-start space-x-3">
-                  <CheckCircle className="h-6 w-6 text-blue-600 mt-1 flex-shrink-0" />
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Health Guidance</h3>
-                    <p className="text-gray-700 mb-3">
+              <div className="rounded-lg border border-border bg-background p-5">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground" />
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-medium text-muted-foreground">
+                      Health guidance
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-foreground">
                       {predictionResult.health_guidance.primary_advice}
                     </p>
                   </div>

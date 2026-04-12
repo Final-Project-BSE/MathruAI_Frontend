@@ -1,4 +1,3 @@
-// components/auth/RoleGuard.tsx
 "use client";
 
 import { useEffect, useState } from "react";

@@ -20,9 +20,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   return (
     <div className="mb-8 flex justify-between items-center">
       <div>
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          Maternal Health Monitoring
-        </h1>
         <p className="text-gray-600">
           Track your vital signs and get AI powered risk assessment
         </p>

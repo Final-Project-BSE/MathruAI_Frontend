@@ -22,6 +22,9 @@ import type {
 
 import apis from '../../../api/dailyrecommendation/api';
 import { LoadingState } from '@/components/common/LoadingState';
+import TopBarFeatures from '@/components/common/TopBarFeatures';
+
+const PRIMARY = '#d04f51';
 
 const DailyRecommendationDashboard = () => {
   const [token, setToken] = useState<string | null>(null);
@@ -59,9 +62,11 @@ const DailyRecommendationDashboard = () => {
         setIsAuthenticated(true);
 
         let uid: number | null = null;
+
         try {
           const me = await apis.me(jwt);
-          const raw = (me.user_id ?? me.id) as any;
+          const raw = (me.user_id ?? me.id) as unknown;
+
           if (raw !== undefined && raw !== null) {
             const parsed = typeof raw === 'number' ? raw : parseInt(String(raw), 10);
             if (!Number.isNaN(parsed)) uid = parsed;
@@ -93,12 +98,13 @@ const DailyRecommendationDashboard = () => {
 
   useEffect(() => {
     if (activePanel === 'history' && token && userId) {
-      loadHistory(token, userId);
+      void loadHistory(token, userId);
     }
   }, [activePanel, token, userId]);
 
   const loadAllData = async (jwtToken: string, uid: number) => {
     setLoadingData(true);
+
     try {
       await Promise.all([
         loadUserData(jwtToken, uid),
@@ -107,8 +113,10 @@ const DailyRecommendationDashboard = () => {
       ]);
       setError(null);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load data';
-      if (!String(errorMessage).includes('No data')) setError(errorMessage);
+      const message = err instanceof Error ? err.message : 'Failed to load data';
+      if (!String(message).includes('No data')) {
+        setError(message);
+      }
     } finally {
       setLoadingData(false);
     }
@@ -133,22 +141,22 @@ const DailyRecommendationDashboard = () => {
       const items = await apis.getHistory(jwtToken, uid, 7);
 
       const seen = new Set<string>();
-      const deduped = items.filter((it) => {
-        if (!it.date) return true;
-        if (seen.has(it.date)) return false;
-        seen.add(it.date);
+      const deduped = items.filter((item) => {
+        if (!item.date) return true;
+        if (seen.has(item.date)) return false;
+        seen.add(item.date);
         return true;
       });
 
       setHistory(deduped);
     } catch {
-      // ignore
+      setHistory([]);
     }
   };
 
   const handleRefresh = async () => {
     if (!token || !userId) {
-      setError('Authentication required to refresh recommendation');
+      setError('Authentication required to refresh recommendation.');
       return;
     }
 
@@ -158,11 +166,11 @@ const DailyRecommendationDashboard = () => {
     try {
       const rec = await apis.refreshRecommendation(token, userId);
       setRecommendation(rec);
-      setSuccess('Recommendation refreshed successfully!');
+      setSuccess('Recommendation refreshed successfully.');
       setTimeout(() => setSuccess(null), 3000);
       await loadHistory(token, userId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to refresh recommendation');
+      setError(err instanceof Error ? err.message : 'Failed to refresh recommendation.');
     } finally {
       setLoading(false);
     }
@@ -173,20 +181,22 @@ const DailyRecommendationDashboard = () => {
 
     await apis.saveChecklist(token, userId, payload);
 
-    // keep UI consistent immediately
     setRecommendation((prev) => {
       if (!prev) return prev;
       if (prev.date !== payload.date) return prev;
-      return { ...prev, checklist: payload.items };
+
+      return {
+        ...prev,
+        checklist: payload.items,
+      };
     });
 
-    // OPTIONAL: refresh history so it shows updated completion immediately
     await loadHistory(token, userId);
   };
 
   const handleUpdateSettings = async (pregnancyWeek: number, preferences: string) => {
     if (!token || !userId) {
-      setError('Authentication required to update settings');
+      setError('Authentication required to update settings.');
       return;
     }
 
@@ -199,10 +209,15 @@ const DailyRecommendationDashboard = () => {
         preferences,
         regenerate_recommendation: true,
       };
+
       const data = await apis.updateUserSettings(token, userId, payload);
 
       if (userData) {
-        setUserData({ ...userData, pregnancy_week: pregnancyWeek, preferences });
+        setUserData({
+          ...userData,
+          pregnancy_week: pregnancyWeek,
+          preferences,
+        });
       }
 
       if (data?.new_recommendation) {
@@ -216,18 +231,18 @@ const DailyRecommendationDashboard = () => {
       }
 
       setShowSettings(false);
-      setSuccess('Settings updated and recommendation regenerated!');
+      setSuccess('Settings updated and recommendation regenerated.');
       setTimeout(() => setSuccess(null), 3000);
 
       await loadAllData(token, userId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update settings');
+      setError(err instanceof Error ? err.message : 'Failed to update settings.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     setToken(null);
     setUserId(null);
     setIsAuthenticated(false);
@@ -239,7 +254,7 @@ const DailyRecommendationDashboard = () => {
 
   if (loadingData) {
     return (
-      <div>
+      <div className="min-h-screen bg-[#fcd4cd]">
         <LoadingState />
       </div>
     );
@@ -247,19 +262,20 @@ const DailyRecommendationDashboard = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#d5abc3] flex items-center justify-center p-8">
-        <Card className="max-w-md w-full shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-center flex items-center justify-center">
-              <Heart className="h-6 w-6 mr-2 text-pink-500" />
+      <div className="min-h-screen bg-[#fcd4cd] flex items-center justify-center p-6 md:p-8">
+        <Card className="w-full max-w-md rounded-3xl border-0 bg-white shadow-[0_20px_60px_rgba(208,79,81,0.18)]">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center justify-center gap-2 text-center text-xl font-semibold text-[#d04f51]">
+              <Heart className="h-6 w-6" />
               Authentication Required
             </CardTitle>
           </CardHeader>
+
           <CardContent>
-            <Alert className="border-pink-200 bg-pink-50">
-              <AlertTriangle className="h-4 w-4 text-pink-600" />
-              <AlertDescription className="text-pink-800 ml-2">
-                Please log in to access the Daily Recommendations Dashboard
+            <Alert className="rounded-2xl border border-[#f3c7c8] bg-[#fff5f5]">
+              <AlertTriangle className="h-4 w-4 text-[#d04f51]" />
+              <AlertDescription className="ml-2 text-sm text-[#7a2d2f]">
+                Please log in to access the Daily Recommendations Dashboard.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -269,79 +285,87 @@ const DailyRecommendationDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#fcd4cd] p-8">
-      <div className="max-w-7xl mx-auto">
-        <DashboardHeader
-          userName={userData?.name || 'User'}
-          pregnancyWeek={userData?.pregnancy_week || 0}
-          onRefresh={handleRefresh}
-          onLogout={handleLogout}
-          loading={loading}
-        />
+    <div className="min-h-screen bg-[#fcd4cd] px-4 py-6 md:px-6 md:py-8 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="rounded-[32px] bg-white/40 p-4 shadow-[0_20px_70px_rgba(0,0,0,0.06)] backdrop-blur-sm md:p-6 lg:p-8">
+          <TopBarFeatures />
+          <DashboardHeader
+            userName={userData?.name || 'User'}
+            pregnancyWeek={userData?.pregnancy_week || 0}
+            onRefresh={handleRefresh}
+            onLogout={handleLogout}
+            loading={loading}
+          />
 
-        <ErrorAlert error={error} onDismiss={() => setError(null)} />
-        <SuccessAlert message={success} onDismiss={() => setSuccess(null)} />
-
-        {userData && (
-          <div className="mb-8">
-            <ProgressCard pregnancyWeek={userData.pregnancy_week} />
+          <div className="mt-6 space-y-4">
+            <ErrorAlert error={error} onDismiss={() => setError(null)} />
+            <SuccessAlert message={success} onDismiss={() => setSuccess(null)} />
           </div>
-        )}
 
-        {/* Segmented toggle (like your screenshot) */}
-        <div className="mb-4">
-          <div className="w-full rounded-full bg-gray-200 p-1 flex">
-            <button
-              type="button"
-              onClick={() => setActivePanel('checklist')}
-              className={[
-                'flex-1 rounded-full px-4 py-2 text-sm font-medium transition',
-                activePanel === 'checklist'
-                  ? 'bg-white shadow text-gray-900'
-                  : 'text-gray-500 hover:text-gray-700',
-              ].join(' ')}
-            >
-              Checklist
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActivePanel('history')}
-              className={[
-                'flex-1 rounded-full px-4 py-2 text-sm font-medium transition',
-                activePanel === 'history'
-                  ? 'bg-white shadow text-gray-900'
-                  : 'text-gray-500 hover:text-gray-700',
-              ].join(' ')}
-            >
-              History
-            </button>
-          </div>
-        </div>
-
-        {/* Sliding panels */}
-        <div className="overflow-hidden">
-          <div
-            className={`flex w-[200%] transition-transform duration-500 ease-in-out ${activePanel === 'checklist' ? 'translate-x-0' : '-translate-x-1/2'
-              }`}
-          >
-            {/* Panel 1: Checklist */}
-            <div className="w-1/2 pr-4">
-              <RecommendationCard
-                recommendation={recommendation}
-                onRefresh={handleRefresh}
-                onSettingsClick={() => setShowSettings(true)}
-                loading={loading}
-                preferences={userData?.preferences}
-                userId={userId}
-                token={token}
-                onSaveChecklist={handleSaveChecklist}
-              />
+          {userData && (
+            <div className="mt-6">
+              <div className="rounded-3xl border border-[#f3d6d7] bg-white p-4 shadow-sm md:p-5">
+                <ProgressCard pregnancyWeek={userData.pregnancy_week} />
+              </div>
             </div>
+          )}
 
-            {/* Panel 2: History */}
-            <div className="w-1/2 pl-4">
-              <HistorySection history={history} loading={false} />
+          <div className="mt-8">
+            <div className="inline-flex w-full rounded-2xl border border-[#efc6c7] bg-white p-1.5 shadow-sm md:w-auto">
+              <button
+                type="button"
+                onClick={() => setActivePanel('checklist')}
+                className={[
+                  'min-w-[140px] rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200',
+                  activePanel === 'checklist'
+                    ? 'bg-[#d04f51] text-white shadow-[0_10px_25px_rgba(208,79,81,0.28)]'
+                    : 'text-[#7a2d2f] hover:bg-[#fff5f5]',
+                ].join(' ')}
+              >
+                Checklist
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActivePanel('history')}
+                className={[
+                  'min-w-[140px] rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200',
+                  activePanel === 'history'
+                    ? 'bg-[#d04f51] text-white shadow-[0_10px_25px_rgba(208,79,81,0.28)]'
+                    : 'text-[#7a2d2f] hover:bg-[#fff5f5]',
+                ].join(' ')}
+              >
+                History
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-6 overflow-hidden">
+            <div
+              className={`flex w-[200%] transition-transform duration-500 ease-in-out ${
+                activePanel === 'checklist' ? 'translate-x-0' : '-translate-x-1/2'
+              }`}
+            >
+              <div className="w-1/2 pr-0 md:pr-3">
+                <div className="rounded-3xl border border-[#f1d2d3] bg-white p-4 shadow-sm md:p-5">
+                  <RecommendationCard
+                    recommendation={recommendation}
+                    onRefresh={handleRefresh}
+                    onSettingsClick={() => setShowSettings(true)}
+                    loading={loading}
+                    preferences={userData?.preferences}
+                    userId={userId}
+                    token={token}
+                    onSaveChecklist={handleSaveChecklist}
+                  />
+                </div>
+              </div>
+
+              <div className="w-1/2 pl-0 md:pl-3">
+                <div className="rounded-3xl border border-[#f1d2d3] bg-white p-4 shadow-sm md:p-5">
+                  <HistorySection history={history} loading={false} />
+                </div>
+              </div>
             </div>
           </div>
         </div>

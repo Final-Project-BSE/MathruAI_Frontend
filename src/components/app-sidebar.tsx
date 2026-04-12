@@ -59,20 +59,40 @@ const data = {
     },
     {
       title: "Health Records",
-      url: "/healthrecords",
+      url: "/health-records",
+    },
+     {
+      title: "Timeline & Milestone",
+      url: "/timeline-milestone",
+    },
+    {
+      title: "Nutrition & Wellness",
+      url: "/nutrition-wellness",
     },
     {
       title: "Announcements",
       url: "/announcement",
     },
     {
+      title: "Recovery Tracking",
+      url: "/recovery-tracking",
+    },
+    {
+      title: "Breastfeeding support",
+      url: "/breastfeeding-support",
+    },
+    {
+      title: "Three Posha",
+      url: "/three-posha",
+    },
+    {
+      title: "Birth Control",
+      url: "/birth-control",
+    },
+    {
       title: "Analytics",
       url: "/analytics",
     },
-    // {
-    //   title: "Upgrade Stage",
-    //   url: "/upgrade-stage",
-    // },
   ],
 };
 

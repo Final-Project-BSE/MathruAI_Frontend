@@ -19,7 +19,7 @@ const AuthLayout = async ({ children }: { children: React.ReactNode }) => {
               alt="login background"
               width={2000}
               height={2000}
-              src="/images/auth-bg.png"
+              src="/images/auth-bg1.png"
               style={{
                 // padding: "0px",
               }}
