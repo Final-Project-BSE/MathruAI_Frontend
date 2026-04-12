@@ -5,7 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Target, TrendingUp, Lightbulb, Calendar } from "lucide-react";
 import type { FertilityResponseDto } from "../../../api/cycletracker/api";
 
-export function CycleInsights({ fertilityData }: { fertilityData: FertilityResponseDto }) {
+export function CycleInsights({
+  fertilityData,
+}: {
+  fertilityData: FertilityResponseDto;
+}) {
   return (
     <Card className="bg-white/90 backdrop-blur-sm">
       <CardHeader>
@@ -20,7 +24,8 @@ export function CycleInsights({ fertilityData }: { fertilityData: FertilityRespo
           <div>
             <h4 className="font-medium text-sm">Ovulation</h4>
             <p className="text-xs text-gray-600 leading-relaxed">
-              Expected on {new Date(fertilityData.ovulationDate).toLocaleDateString()}
+              Expected on{" "}
+              {new Date(fertilityData.ovulationDate).toLocaleDateString()}
             </p>
           </div>
         </div>
@@ -32,8 +37,8 @@ export function CycleInsights({ fertilityData }: { fertilityData: FertilityRespo
           <div>
             <h4 className="font-medium text-sm">Fertile Window</h4>
             <p className="text-xs text-gray-600 leading-relaxed">
-              {new Date(fertilityData.fertileWindowStart).toLocaleDateString()} -{" "}
-              {new Date(fertilityData.fertileWindowEnd).toLocaleDateString()}
+              {new Date(fertilityData.fertileWindowStart).toLocaleDateString()}{" "}
+              - {new Date(fertilityData.fertileWindowEnd).toLocaleDateString()}
             </p>
           </div>
         </div>
@@ -45,8 +50,38 @@ export function CycleInsights({ fertilityData }: { fertilityData: FertilityRespo
           <div>
             <h4 className="font-medium text-sm">Next Period</h4>
             <p className="text-xs text-gray-600 leading-relaxed">
-              Expected around {new Date(fertilityData.nextPeriodDate).toLocaleDateString()}
+              Expected around{" "}
+              {new Date(fertilityData.nextPeriodDate).toLocaleDateString()}
             </p>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-green-100 rounded-full mt-1">
+            <TrendingUp className="w-4 h-4 text-blue-600" />
+          </div>
+          <div>
+            <h4 className="font-medium text-sm">Safe Days</h4>
+
+            <p className="text-xs text-gray-600 leading-relaxed">
+              {fertilityData.safeStart1 && fertilityData.safeEnd1 ? (
+                <>
+                  {new Date(fertilityData.safeStart1).toLocaleDateString()} -{" "}
+                  {new Date(fertilityData.safeEnd1).toLocaleDateString()}
+                  <br />
+                </>
+              ) : (
+                "N/A"
+              )}
+
+              {fertilityData.safeStart2 && fertilityData.safeEnd2 ? (
+                <>
+                  {new Date(fertilityData.safeStart2).toLocaleDateString()} -{" "}
+                  {new Date(fertilityData.safeEnd2).toLocaleDateString()}
+                </>
+              ) : null}
+            </p>
+            
           </div>
         </div>
 
@@ -57,7 +92,8 @@ export function CycleInsights({ fertilityData }: { fertilityData: FertilityRespo
           <div>
             <h4 className="font-medium text-sm">Pregnancy Test</h4>
             <p className="text-xs text-gray-600 leading-relaxed">
-              Best to test after {new Date(fertilityData.pregnancyTestDay).toLocaleDateString()}
+              Best to test after{" "}
+              {new Date(fertilityData.pregnancyTestDay).toLocaleDateString()}
             </p>
           </div>
         </div>
