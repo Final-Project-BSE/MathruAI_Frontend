@@ -1,4 +1,5 @@
 import { Inter } from "next/font/google";
+import { Toaster } from "@/components/ui/sonner";
 
 import type { Metadata } from "next";
 import "./globals.css";
@@ -26,6 +27,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         {children}
+        <Toaster position="bottom-right" richColors closeButton />
     
       </body>
     </html>

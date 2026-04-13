@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { Bell, FileHeart, MapPinned, Menu, MessageCircle, Settings } from "lucide-react";
 import { getcuruser } from "@/app/api/user/api";
 import type { UserResponseDto } from "@/app/api/user/types";
 import { useEffect, useMemo, useState } from "react";
+import ProtectedImage from "../../lib/ProtectedImage";
 
 type TopBarFeaturesProps = {
     name?: string;
@@ -26,6 +26,7 @@ export default function TopBarFeatures({
     avatarUrl = "/images/reproductive/repro2.png",
 }: TopBarFeaturesProps) {
     const [me, setMe] = useState<UserResponseDto | null>(null);
+    const [token, setToken] = useState("");
     const [selectedLanguage, setSelectedLanguage] = useState<(typeof languages)[number]>("EN");
     const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
     const [isMobileFeaturesOpen, setIsMobileFeaturesOpen] = useState(false);
@@ -36,10 +37,12 @@ export default function TopBarFeatures({
                 const { getSession } = await import("@/lib/authentication");
                 const session = await getSession();
 
-                const token = session?.user?.token;
-                if (!token) return;
+                const sessionToken = session?.user?.token;
+                if (!sessionToken) return;
 
-                const user = await getcuruser(token);
+                setToken(sessionToken);
+
+                const user = await getcuruser(sessionToken);
                 setMe(user);
             } catch (e) {
                 console.error("Failed to load current user:", e);
@@ -59,6 +62,25 @@ export default function TopBarFeatures({
         return me.email;
     }, [me]);
 
+    const resolvedAvatar = useMemo(() => {
+        if (!me) return avatarUrl;
+        return (
+            me.avatarUrl ||
+            me.profileImageUrl ||
+            me.profilePictureUrl ||
+            me.imageUrl ||
+            me.photoUrl ||
+            me.profileImage ||
+            avatarUrl
+        );
+    }, [me, avatarUrl]);
+
+    const avatarFallback = (
+        <div className="h-full w-full flex items-center justify-center bg-violet-300 text-violet-900 text-sm font-semibold">
+            {fullname?.[0] ?? "?"}
+        </div>
+    );
+
     return (
         <div className="w-full mb-6">
             <div
@@ -68,9 +90,7 @@ export default function TopBarFeatures({
                     lg:gap-4
                 "
             >
-                {/* Left side */}
                 <div className="flex min-w-0 flex-1 items-center gap-2">
-                    {/* >= 724px feature links */}
                     <div className="hidden min-[724px]:flex min-w-0 flex-wrap items-center gap-2 lg:flex-nowrap">
                         {features.map((item) => {
                             const Icon = item.icon;
@@ -92,7 +112,6 @@ export default function TopBarFeatures({
                         })}
                     </div>
 
-                    {/* < 724px mobile menu */}
                     <div className="relative min-[724px]:hidden">
                         <button
                             onClick={() => setIsMobileFeaturesOpen((prev) => !prev)}
@@ -126,7 +145,6 @@ export default function TopBarFeatures({
 
                 <div className="hidden h-10 w-px shrink-0 bg-neutral-200 lg:block" />
 
-                {/* Actions */}
                 <div className="flex shrink-0 items-center gap-2">
                     <button
                         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-700 transition hover:bg-neutral-100 sm:h-11 sm:w-11"
@@ -135,7 +153,6 @@ export default function TopBarFeatures({
                         <Bell className="h-5 w-5" />
                     </button>
 
-                    {/* Desktop / >=1350px */}
                     <div className="hidden min-[1350px]:flex items-center rounded-full border border-neutral-200 bg-neutral-50 p-1">
                         {languages.map((lang) => {
                             const isActive = selectedLanguage === lang;
@@ -156,7 +173,6 @@ export default function TopBarFeatures({
                         })}
                     </div>
 
-                    {/* <1350px */}
                     <div className="relative min-[1350px]:hidden">
                         <button
                             onClick={() => setIsLanguageMenuOpen((prev) => !prev)}
@@ -195,20 +211,22 @@ export default function TopBarFeatures({
 
                 <div className="hidden h-10 w-px shrink-0 bg-neutral-200 lg:block" />
 
-                {/* Profile */}
-                <button
+                <Link
+                    href="/profile"
                     className="
                         flex min-w-0 shrink-0 items-center gap-3 rounded-full pl-1 pr-2 transition hover:bg-neutral-50
                     "
+                    aria-label="Open profile"
                 >
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-violet-200 sm:h-12 sm:w-12">
                         <div className="relative h-9 w-9 overflow-hidden rounded-full border border-white sm:h-10 sm:w-10">
-                            <Image
-                                src={avatarUrl}
+                            <ProtectedImage
+                                src={resolvedAvatar}
+                                token={token}
                                 alt={fullname}
-                                fill
-                                className="object-cover"
-                                sizes="40px"
+                                className="h-full w-full object-cover"
+                                fallback={avatarFallback}
+                                loadingFallback={avatarFallback}
                             />
                         </div>
                     </div>
@@ -221,7 +239,7 @@ export default function TopBarFeatures({
                             {userEmail}
                         </p>
                     </div>
-                </button>
+                </Link>
             </div>
         </div>
     );

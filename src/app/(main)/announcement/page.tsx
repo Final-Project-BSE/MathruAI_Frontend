@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { AnnouncementDto } from "@/app/api/announcement/types";
 import announcementApi from "@/app/api/announcement/api";
+import TopBarFeatures from "@/components/common/TopBarFeatures";
 
 const getCategoryStyles = (category: string) => {
   switch (category.toLowerCase()) {
@@ -149,6 +150,7 @@ export default function Announcements() {
 
   return (
     <div className="bg-[#fed2cc] min-h-screen p-4 md:p-6">
+      <TopBarFeatures />
       {/* Header Banner */}
       <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-r from-[#fab0a7] to-[#d04f51] p-5 text-white shadow-lg">
         <div className="relative z-10 flex items-center gap-4">

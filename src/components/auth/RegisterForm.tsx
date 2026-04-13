@@ -24,43 +24,36 @@ import { register } from "../../actions/auth/registration";
 const formSchema = z
   .object({
     name: z
-      .string({
-        required_error: "Name is required.",
-      })
+      .string({ required_error: "Name is required." })
       .min(1, "Name is required.")
       .min(2, "Name must be at least 2 characters."),
     email: z
-      .string({
-        required_error: "Email is required.",
-      })
+      .string({ required_error: "Email is required." })
       .min(1, "Email is required.")
-      .email({
-        message: "Please enter a valid email address.",
-      }),
+      .email({ message: "Please enter a valid email address." }),
     phone: z
-      .string({
-        required_error: "Phone number is required.",
-      })
+      .string({ required_error: "Phone number is required." })
       .min(1, "Phone number is required.")
       .regex(/^[0-9+\-\s()]+$/, "Please enter a valid phone number."),
     dateofbirth: z
-      .string({
-        required_error: "Date of birth is required.",
-      })
+      .string({ required_error: "Date of birth is required." })
       .min(1, "Date of birth is required."),
+    nationalIdNumber: z
+      .string({ required_error: "National ID number is required." })
+      .min(1, "National ID number is required."),
+    address: z
+      .string({ required_error: "Address is required." })
+      .min(1, "Address is required."),
     password: z
-      .string({
-        required_error: "Password is required.",
-      })
+      .string({ required_error: "Password is required." })
       .min(8, "Password must be at least 8 characters."),
     confirmPassword: z
-      .string({
-        required_error: "Please confirm your password.",
-      })
+      .string({ required_error: "Please confirm your password." })
       .min(1, "Please confirm your password."),
-    userType: z.enum(["midwife", "reproductive_lady", "pregnant_lady", "postpartum_lady"], {
-      required_error: "Please select your role.",
-    }),
+    userType: z.enum(
+      ["midwife", "reproductive_lady", "pregnant_lady", "postpartum_lady"],
+      { required_error: "Please select your role." }
+    ),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match.",
@@ -71,6 +64,13 @@ interface SignUpProps {
   onSwitchToSignIn?: () => void;
   onClose?: () => void;
 }
+
+const roleMap: Record<string, string> = {
+  midwife: "MIDWIFE",
+  reproductive_lady: "HOPE_TO_PREGNANT_MOTHER",
+  pregnant_lady: "PREGNANT_MOTHER",
+  postpartum_lady: "POST_PREGNANT_MOTHER",
+};
 
 const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -84,6 +84,8 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
       email: "",
       phone: "",
       dateofbirth: "",
+      nationalIdNumber: "",
+      address: "",
       password: "",
       confirmPassword: "",
       userType: undefined,
@@ -96,18 +98,29 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
     setRegisterError(null);
 
     try {
-      console.log("Attempting registration for:", values.email);
+      const nameParts = values.name.trim().split(/\s+/);
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+      const mappedRole = roleMap[values.userType];
+
+      if (!mappedRole) {
+        const errorMsg = "Invalid user role selected.";
+        setRegisterError(errorMsg);
+        errorToast(errorMsg);
+        return;
+      }
 
       const res = await register({
-        name: values.name,
+        firstName,
+        lastName,
         email: values.email,
-        phone: values.phone,
-        dateofbirth: values.dateofbirth,
+        phoneNumber: values.phone,
+        dateOfBirth: values.dateofbirth,
+        nationalIdNumber: values.nationalIdNumber,
+        address: values.address,
         password: values.password,
-        userType: values.userType,
+        roles: [mappedRole],
       });
-
-      console.log("Registration response:", res);
 
       if (res.status === "FAIL") {
         const errorMsg = res.message || "Registration failed. Please try again.";
@@ -116,16 +129,13 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
         return;
       }
 
-      // Success
       successToast("Registration successful! Please sign in.");
 
-      // Switch to sign in or redirect
       if (onSwitchToSignIn) {
         onSwitchToSignIn();
       } else {
         router.push("/sign-in");
       }
-
     } catch (error) {
       const errorMsg = "An unexpected error occurred. Please try again.";
       setRegisterError(errorMsg);
@@ -208,11 +218,11 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
                 <FormControl>
                   <Input
                     {...field}
-                    type={field.value ? "date" : "text"} // keep text type if empty, show date picker when filled
+                    type={field.value ? "date" : "text"}
                     placeholder="Date Of Birth"
                     onFocus={(e) => (e.target.type = "date")}
                     onBlur={(e) => {
-                      if (!e.target.value) e.target.type = "text"; // revert to text if empty
+                      if (!e.target.value) e.target.type = "text";
                       field.onBlur();
                     }}
                     className="h-12 bg-gray-50 border-0 rounded-[8.77px] placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -224,7 +234,41 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
             )}
           />
 
+          <FormField
+            control={form.control}
+            name="nationalIdNumber"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="National ID Number"
+                    className="h-12 bg-gray-50 border-0 rounded-[8.77px] placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    disabled={form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
+          <FormField
+            control={form.control}
+            name="address"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="Address"
+                    className="h-12 bg-gray-50 border-0 rounded-[8.77px] placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    disabled={form.formState.isSubmitting}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           <FormField
             control={form.control}
@@ -243,7 +287,7 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                       disabled={form.formState.isSubmitting}
                     >
                       {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
@@ -271,17 +315,11 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
                     />
                     <button
                       type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
                       disabled={form.formState.isSubmitting}
                     >
-                      {showConfirmPassword ? (
-                        <Eye size={18} />
-                      ) : (
-                        <EyeOff size={18} />
-                      )}
+                      {showConfirmPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                     </button>
                   </div>
                 </FormControl>
@@ -299,22 +337,16 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
                   <RadioGroup
                     onValueChange={field.onChange}
                     defaultValue={field.value}
-                    className="flex gap-4"
+                    className="flex gap-4 flex-wrap"
                     disabled={form.formState.isSubmitting}
                   >
                     <div className="flex items-center space-x-2 flex-1">
-                      <RadioGroupItem
-                        value="midwife"
-                        id="midwife"
-                        className="border-gray-300"
-                      />
-                      <label
-                        htmlFor="midwife"
-                        className="text-[14px] text-[#424242] cursor-pointer"
-                      >
+                      <RadioGroupItem value="midwife" id="midwife" className="border-gray-300" />
+                      <label htmlFor="midwife" className="text-[14px] text-[#424242] cursor-pointer">
                         Midwife
                       </label>
                     </div>
+
                     <div className="flex items-center space-x-2 flex-1">
                       <RadioGroupItem
                         value="reproductive_lady"
@@ -328,6 +360,7 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
                         Hope To Pregnant
                       </label>
                     </div>
+
                     <div className="flex items-center space-x-2 flex-1">
                       <RadioGroupItem
                         value="pregnant_lady"
@@ -341,6 +374,7 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
                         Pregnant
                       </label>
                     </div>
+
                     <div className="flex items-center space-x-2 flex-1">
                       <RadioGroupItem
                         value="postpartum_lady"
