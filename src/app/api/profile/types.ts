@@ -1,4 +1,8 @@
-export type Role = 'PREGNANT_MOTHER' | 'POST_PREGNANT_MOTHER' | 'HOPE_TO_PREGNANT_MOTHER' | string;
+export type Role =
+  | 'PREGNANT_MOTHER'
+  | 'POST_PREGNANT_MOTHER'
+  | 'HOPE_TO_PREGNANT_MOTHER'
+  | string;
 
 export interface ProfileResponse {
   id: number;
@@ -6,21 +10,20 @@ export interface ProfileResponse {
   lastName: string;
   email: string;
   phoneNumber: string;
-  dateOfBirth: string; // "YYYY-MM-DD"
-  roles: Role[];
-  avatarUrl?: string;
+  dateOfBirth: string;
+  nationalIdNumber: string;
+  address: string;
   profileImageUrl?: string;
-  profilePictureUrl?: string;
-  imageUrl?: string;
-  photoUrl?: string;
-  profileImage?: string;
+  roles: Role[];
 }
 
 export interface ProfileUpdateRequest {
   firstName?: string;
   lastName?: string;
   phoneNumber?: string;
-  dateOfBirth?: string; // "YYYY-MM-DD"
+  dateOfBirth?: string;
+  nationalIdNumber?: string;
+  address?: string;
 }
 
 export interface ChangePasswordRequest {

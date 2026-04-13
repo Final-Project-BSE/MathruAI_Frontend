@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { PasswordInput } from '@/components/ui/password-input';
 import profileApi from '@/app/api/profile/api';
+import { useActionLogoutToast, errorToast } from '@/components/common/toast';
 
 interface Props {
   token: string;
@@ -12,52 +12,61 @@ interface Props {
 }
 
 const ChangeEmailCard = ({ token, userId, onUpdate }: Props) => {
-  const router = useRouter();
+  const { actionLogoutToast } = useActionLogoutToast();
+
   const [form, setForm] = useState({ newEmail: '', currentPassword: '' });
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [passwordReady, setPasswordReady] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setMessage(null);
-    
+
     if (!form.newEmail || !form.currentPassword) {
-      setMessage({ type: 'error', text: 'Please fill in all fields.' });
-      setLoading(false);
+      errorToast('Please fill in all fields.');
       return;
     }
 
+    setLoading(true);
+
     try {
-      console.log('Attempting email change for userId:', userId, 'newEmail:', form.newEmail);
       await profileApi.changeEmail(token, userId, form);
-      setMessage({ type: 'success', text: 'Email changed successfully! Please refresh the page.' });
+
       setForm({ newEmail: '', currentPassword: '' });
-      
-      // Clear local auth state and prompt re-login
-      setTimeout(() => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('userId');
-        router.push('/sign-in');
-      }, 2000);
-      
+      onUpdate();
+
+      actionLogoutToast({
+        title: 'Email Updated',
+        description: (
+          <>
+            Your email has been changed successfully.
+            <br />
+            Please log out and sign in again with your new email.
+          </>
+        ),
+        confirmText: 'Logout',
+        cancelText: 'Close',
+      });
     } catch (err: any) {
-      console.error('Email change error:', err);
       const errorMsg = err.message || 'Failed to change email';
-      
-      // Handle auth-related errors
-      if (errorMsg.includes('User Not Found') || errorMsg.includes('authentication')) {
-        setMessage({ 
-          type: 'error', 
-          text: 'Email update succeeded but session expired. Please sign in again with your new email.'
+
+      if (
+        errorMsg.includes('User Not Found') ||
+        errorMsg.toLowerCase().includes('authentication')
+      ) {
+        actionLogoutToast({
+          title: 'Session Expired',
+          description: (
+            <>
+              Your email may have been updated, but your session is no longer valid.
+              <br />
+              Please sign in again with your new email.
+            </>
+          ),
+          confirmText: 'Sign In Again',
+          cancelText: 'Close',
         });
-        setTimeout(() => {
-          localStorage.removeItem('token');
-          localStorage.removeItem('userId');
-          router.push('/sign-in');
-        }, 3000);
       } else {
-        setMessage({ type: 'error', text: errorMsg });
+        errorToast(errorMsg);
       }
     } finally {
       setLoading(false);
@@ -65,41 +74,51 @@ const ChangeEmailCard = ({ token, userId, onUpdate }: Props) => {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-      <h2 className="text-lg font-semibold text-gray-800 mb-5 flex items-center gap-2">
-        <span className="text-rose-400">📧</span> Change Email
+    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+      <h2 className="mb-5 flex items-center gap-2 text-lg font-semibold text-gray-800">
+        Change Email
       </h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
+
+      <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
         <div>
-          <label className="text-xs font-medium text-gray-500 mb-1 block">New Email</label>
+          <label className="mb-1 block text-xs font-medium text-gray-500">
+            New Email
+          </label>
           <input
             type="email"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+            name="new-email"
+            autoComplete="off"
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
             placeholder="newemail@example.com"
             value={form.newEmail}
             onChange={(e) => setForm({ ...form, newEmail: e.target.value })}
             required
           />
         </div>
+
         <div>
-          <label className="text-xs font-medium text-gray-500 mb-1 block">Confirm with Password</label>
+          <label className="mb-1 block text-xs font-medium text-gray-500">
+            Confirm with Password
+          </label>
           <PasswordInput
-            placeholder="Enter your password"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
-            value={form.currentPassword}
-            onChange={(e) => setForm({ ...form, currentPassword: e.target.value })}
-            required
-          />
+  name="confirm-password-manual"
+  placeholder="Enter your password"
+  autoComplete="new-password"
+  readOnly={!passwordReady}
+  onFocus={() => setPasswordReady(true)}
+  value={form.currentPassword}
+  onChange={(e) =>
+    setForm({ ...form, currentPassword: e.target.value })
+  }
+  className="w-full"
+  inputClassName="rounded-lg border border-gray-200 px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
+/>
         </div>
-        {message && (
-          <p className={`text-xs font-medium ${message.type === 'success' ? 'text-green-500' : 'text-red-500'}`}>
-            {message.text}
-          </p>
-        )}
+
         <button
           type="submit"
           disabled={loading || !form.newEmail || !form.currentPassword}
-          className="w-full bg-[#D04F51] hover:bg-[#BA4547] text-white font-semibold py-2 rounded-lg text-sm transition disabled:opacity-60"
+          className="w-full rounded-lg bg-[#D04F51] py-2 text-sm font-semibold text-white transition hover:bg-[#BA4547] disabled:opacity-60"
         >
           {loading ? 'Updating...' : 'Change Email'}
         </button>

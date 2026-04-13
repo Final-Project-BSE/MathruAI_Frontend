@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import profileApi from '@/app/api/profile/api';
 import type { ProfileResponse } from '@/app/api/profile/types';
+import ProtectedImage from '../../../../lib/ProtectedImage';
 
 interface Props {
   profile: ProfileResponse | null;
@@ -14,30 +15,12 @@ interface Props {
 const MAX_SIZE_MB = 5;
 const ACCEPTED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
-const resolveProfileImageUrl = (profile: ProfileResponse | null) => {
-  if (!profile) return '';
-
-  return (
-    profile.avatarUrl ||
-    profile.profileImageUrl ||
-    profile.profilePictureUrl ||
-    profile.imageUrl ||
-    profile.photoUrl ||
-    profile.profileImage ||
-    ''
-  );
-};
-
-const toPreview = (file: File) => URL.createObjectURL(file);
-
 const ProfileImageCard = ({ profile, token, userId, onUpdate }: Props) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [loading, setLoading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  const existingImage = useMemo(() => resolveProfileImageUrl(profile), [profile]);
-  const imageToShow = previewUrl || existingImage;
 
   useEffect(() => {
     return () => {
@@ -66,7 +49,7 @@ const ProfileImageCard = ({ profile, token, userId, onUpdate }: Props) => {
     }
 
     setSelectedFile(file);
-    setPreviewUrl(toPreview(file));
+    setPreviewUrl(URL.createObjectURL(file));
     setMessage(null);
   };
 
@@ -86,88 +69,103 @@ const ProfileImageCard = ({ profile, token, userId, onUpdate }: Props) => {
 
     try {
       await profileApi.uploadProfileImage(token, userId, selectedFile);
+
       setMessage({ type: 'success', text: 'Profile image updated successfully.' });
       setSelectedFile(null);
+
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
       }
       setPreviewUrl('');
+
+      setRefreshKey((prev) => prev + 1);
       onUpdate();
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Failed to upload image.' });
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to upload image.';
+      setMessage({ type: 'error', text: errorMessage });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async () => {
-    setLoading(true);
-    setMessage(null);
-
-    try {
-      await profileApi.deleteProfileImage(token, userId);
-      setMessage({ type: 'success', text: 'Profile image removed successfully.' });
-      setSelectedFile(null);
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-      setPreviewUrl('');
-      onUpdate();
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Failed to delete image.' });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fallbackAvatar = (
+    <div className="w-20 h-20 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-2xl font-bold border border-rose-200">
+      {profile?.firstName?.[0] ?? '?'}
+    </div>
+  );
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
       <h2 className="text-lg font-semibold text-gray-800 mb-5">Profile Image</h2>
 
       <div className="flex items-center gap-4 mb-4">
-        {imageToShow ? (
+        {previewUrl ? (
           <img
-            src={imageToShow}
+            src={previewUrl}
             alt="Profile preview"
             className="w-20 h-20 rounded-full object-cover border border-gray-200"
           />
         ) : (
-          <div className="w-20 h-20 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-2xl font-bold border border-rose-200">
-            {profile?.firstName?.[0] ?? '?'}
-          </div>
+          <ProtectedImage
+            key={`${profile?.profileImageUrl ?? 'no-image'}-${refreshKey}`}
+            src={profile?.profileImageUrl}
+            token={token}
+            alt="Profile image"
+            className="w-20 h-20 rounded-full object-cover border border-gray-200"
+            fallback={fallbackAvatar}
+            loadingFallback={fallbackAvatar}
+          />
         )}
-        <p className="text-xs text-gray-500">Accepted formats: JPG, PNG, WEBP (max 5MB)</p>
+
+        <div>
+          <p className="text-xs text-gray-500">
+            Accepted formats: JPG, PNG, WEBP (max 5MB)
+          </p>
+
+          {profile?.profileImageUrl && (
+            <p className="text-[11px] text-gray-400 mt-1 break-all">
+              Stored path: {profile.profileImageUrl}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="space-y-3">
-        <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleFileChange} />
+        <input
+          id="profile-image-upload"
+          type="file"
+          accept="image/jpeg,image/jpg,image/png,image/webp"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+
+        <label
+          htmlFor="profile-image-upload"
+          className="inline-block cursor-pointer bg-[#D04F51] hover:bg-[#BA4547] text-white font-semibold py-2 px-4 rounded-lg text-sm transition"
+        >
+          Choose File
+        </label>
 
         {selectedFile && (
           <p className="text-xs text-gray-500">Selected: {selectedFile.name}</p>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={handleUpload}
-            disabled={loading || !selectedFile || !token || !userId}
-            className="bg-[#D04F51] hover:bg-[#BA4547] text-white font-semibold py-2 rounded-lg text-sm transition disabled:opacity-60"
-          >
-            {loading ? 'Saving...' : 'Upload / Update'}
-          </button>
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={loading || !existingImage}
-            className="border border-red-300 text-red-600 hover:bg-red-50 font-semibold py-2 rounded-lg text-sm transition disabled:opacity-60"
-          >
-            Delete Image
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={handleUpload}
+          disabled={loading || !selectedFile || !token || !userId}
+          className="w-full bg-[#D04F51] hover:bg-[#BA4547] text-white font-semibold py-2 rounded-lg text-sm transition disabled:opacity-60"
+        >
+          {loading ? 'Uploading...' : 'Upload / Update'}
+        </button>
       </div>
 
       {message && (
-        <p className={`mt-3 text-xs font-medium ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+        <p
+          className={`mt-3 text-xs font-medium ${message.type === 'success' ? 'text-green-600' : 'text-red-600'
+            }`}
+        >
           {message.text}
         </p>
       )}

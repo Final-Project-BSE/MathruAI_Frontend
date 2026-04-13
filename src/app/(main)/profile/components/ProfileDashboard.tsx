@@ -36,7 +36,8 @@ const ProfileDashboard = () => {
   useEffect(() => {
     const init = async () => {
       try {
-        let authToken = typeof window !== 'undefined' ? localStorage.getItem('token') || '' : '';
+        let authToken =
+          typeof window !== 'undefined' ? localStorage.getItem('token') || '' : '';
 
         if (!authToken) {
           try {
@@ -44,7 +45,7 @@ const ProfileDashboard = () => {
             const session = await getSession();
             authToken = session?.user?.token || '';
           } catch {
-            // Ignore fallback errors and rely on local storage token.
+            // ignore
           }
         }
 
@@ -54,7 +55,8 @@ const ProfileDashboard = () => {
           return;
         }
 
-        let authUserId = typeof window !== 'undefined' ? Number(localStorage.getItem('userId')) : 0;
+        let authUserId =
+          typeof window !== 'undefined' ? Number(localStorage.getItem('userId')) : 0;
 
         if (!authUserId) {
           const me = await getcuruser(authToken);
@@ -76,56 +78,69 @@ const ProfileDashboard = () => {
     init();
   }, []);
 
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-[400px]">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rose-400" />
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-rose-400" />
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12">
+    <div className="mx-auto max-w-5xl space-y-6 pb-12">
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 text-sm">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
           {error}
         </div>
       )}
 
-      {/* Header */}
-      <ProfileHeader profile={profile} />
+      <ProfileHeader profile={profile} token={token} />
 
-      {/* Two column grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <ProfileImageCard
-          profile={profile}
-          token={token}
-          userId={userId}
-          onUpdate={() => fetchProfile(token, userId)}
-        />
-        <PersonalInfoCard
-          profile={profile}
-          token={token}
-          userId={userId}
-          onUpdate={() => fetchProfile(token, userId)}
-        />
+      {/* Top section */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-1">
+          <ProfileImageCard
+            profile={profile}
+            token={token}
+            userId={userId}
+            onUpdate={() => fetchProfile(token, userId)}
+          />
+        </div>
+
+        <div className="lg:col-span-2">
+          <PersonalInfoCard
+            profile={profile}
+            token={token}
+            userId={userId}
+            onUpdate={() => fetchProfile(token, userId)}
+          />
+        </div>
+      </div>
+
+      {/* Account settings */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <ChangeEmailCard
           token={token}
           userId={userId}
           onUpdate={() => fetchProfile(token, userId)}
         />
-        <ChangePasswordCard
-          token={token}
-          userId={userId}
-        />
-        <ChangeRoleCard
-          profile={profile}
-          token={token}
-          userId={userId}
-          onUpdate={() => fetchProfile(token, userId)}
-        />
+
+        <ChangePasswordCard token={token} userId={userId} />
+
+        <div className="md:col-span-2">
+          <ChangeRoleCard
+            profile={profile}
+            token={token}
+            userId={userId}
+            onUpdate={() => fetchProfile(token, userId)}
+          />
+        </div>
       </div>
 
-      {/* Delete - full width at bottom */}
-      <DeleteAccountCard token={token} userId={userId} />
+      {/* Danger zone */}
+      <div>
+        <DeleteAccountCard token={token} userId={userId} />
+      </div>
     </div>
   );
 };

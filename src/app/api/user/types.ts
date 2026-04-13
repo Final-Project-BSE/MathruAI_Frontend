@@ -1,10 +1,13 @@
-export type Role = "USER" | "ADMIN" | string;
+export type Role =
+  | 'PREGNANT_MOTHER'
+  | 'POST_PREGNANT_MOTHER'
+  | 'HOPE_TO_PREGNANT_MOTHER'
+  | string;
 
 export type AuthResponse = {
   token: string;
   email: string;
   roles: Role[];
-  // id: number;
 };
 
 export type LoginRequest = {
@@ -17,9 +20,11 @@ export type SignupRequest = {
   lastName: string;
   email: string;
   phoneNumber: string;
-  dateOfBirth: string; 
+  dateOfBirth: string;
   password: string;
   roles: Role[];
+  nationalIdNumber?: string;
+  address?: string;
 };
 
 export type UserResponseDto = {
@@ -28,14 +33,11 @@ export type UserResponseDto = {
   lastName: string;
   email: string;
   phoneNumber?: string;
-  dateOfBirth?: string; 
-  roles: Role[];
-  avatarUrl?: string;
+  dateOfBirth?: string;
+  nationalIdNumber?: string;
+  address?: string;
   profileImageUrl?: string;
-  profilePictureUrl?: string;
-  imageUrl?: string;
-  photoUrl?: string;
-  profileImage?: string;
+  roles: Role[];
 };
 
 export type UserUpdateRequest = {
@@ -43,5 +45,7 @@ export type UserUpdateRequest = {
   lastName?: string;
   phoneNumber?: string;
   dateOfBirth?: string;
+  nationalIdNumber?: string;
+  address?: string;
   roles?: Role[];
 };

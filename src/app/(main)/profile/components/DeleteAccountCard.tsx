@@ -49,7 +49,7 @@ const DeleteAccountCard = ({ token, userId }: Props) => {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-6">
       <h2 className="text-lg font-semibold text-red-600 mb-2 flex items-center gap-2">
-        <span>🗑️</span> Delete Account
+      Delete Account
       </h2>
       <p className="text-sm text-gray-500 mb-5">
         This action is <strong>permanent</strong> and cannot be undone. All your data will be removed.
@@ -58,7 +58,7 @@ const DeleteAccountCard = ({ token, userId }: Props) => {
       {!confirm ? (
         <button
           onClick={() => setConfirm(true)}
-          className="w-full border border-red-300 text-red-500 hover:bg-red-50 font-semibold py-2 rounded-lg text-sm transition"
+          className="w-full border border-red-900 text-white bg-red-600 hover:bg-red-700 font-semibold py-2 rounded-lg text-sm transition"
         >
           Delete My Account
         </button>
