@@ -7,23 +7,47 @@ import AIAssistantCard from "./AIAssistantCard";
 import PatientsConsoleCard from "./PatientsConsoleCard";
 import Link from "next/link";
 import { getSession } from "@/lib/authentication";
+import { getcuruser } from "@/app/api/user/api";
 
 export default function TopBar() {
   const [token, setToken] = useState<string>("");
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+
     const loadSession = async () => {
       try {
         const session = await getSession();
         const jwt = session?.user?.token || "";
+
+        if (!mounted) return;
         setToken(jwt);
+
+        if (!jwt) {
+          setCurrentUserId(null);
+          return;
+        }
+
+        const currentUser = await getcuruser(jwt);
+
+        if (!mounted) return;
+        setCurrentUserId(currentUser.id);
       } catch (error) {
-        console.error("Failed to load session token:", error);
+        console.error("Failed to load session/current user:", error);
+        if (mounted) {
+          setToken("");
+          setCurrentUserId(null);
+        }
       }
     };
 
-    loadSession();
+    void loadSession();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (
@@ -40,7 +64,13 @@ export default function TopBar() {
 
               <div className="grid min-h-0">
                 <Link href="/midwife/patient-console">
-                  <PatientsConsoleCard />
+                  {token && currentUserId ? (
+                    <PatientsConsoleCard token={token} userId={currentUserId} />
+                  ) : (
+                    <div className="flex min-h-[320px] items-center justify-center rounded-[20px] border border-white/10 bg-[#0b0b0f] text-sm text-white/50">
+                      Loading patient console...
+                    </div>
+                  )}
                 </Link>
               </div>
             </div>

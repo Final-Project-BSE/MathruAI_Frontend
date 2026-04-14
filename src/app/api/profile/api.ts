@@ -1,13 +1,13 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError } from "axios";
 import type {
   ProfileResponse,
   ProfileUpdateRequest,
   ChangePasswordRequest,
   ChangeEmailRequest,
   ChangeRoleRequest,
-} from './types';
+} from "./types";
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080').replace(/\/$/, '');
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080").replace(/\/$/, "");
 
 const http = axios.create({
   baseURL: API_BASE_URL,
@@ -21,11 +21,11 @@ function extractMessage(err: unknown, fallback: string) {
   const axiosErr = err as AxiosError<{ message?: string; error?: string } | string>;
   const data = axiosErr.response?.data;
 
-  if (typeof data === 'string' && data.trim()) {
+  if (typeof data === "string" && data.trim()) {
     return data;
   }
 
-  if (data && typeof data === 'object') {
+  if (data && typeof data === "object") {
     return data.message || data.error || fallback;
   }
 
@@ -38,12 +38,12 @@ const profileApi = {
       const res = await http.get<ProfileResponse>(`/api/profile/${userId}`, {
         headers: {
           ...authHeader(token),
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
       return res.data;
     } catch (err) {
-      throw new Error(extractMessage(err, 'Failed to fetch profile'));
+      throw new Error(extractMessage(err, "Failed to fetch profile"));
     }
   },
 
@@ -59,13 +59,13 @@ const profileApi = {
         {
           headers: {
             ...authHeader(token),
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         }
       );
       return res.data;
     } catch (err) {
-      throw new Error(extractMessage(err, 'Failed to update profile'));
+      throw new Error(extractMessage(err, "Failed to update profile"));
     }
   },
 
@@ -81,13 +81,13 @@ const profileApi = {
         {
           headers: {
             ...authHeader(token),
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         }
       );
       return res.data;
     } catch (err) {
-      throw new Error(extractMessage(err, 'Failed to change password'));
+      throw new Error(extractMessage(err, "Failed to change password"));
     }
   },
 
@@ -103,13 +103,13 @@ const profileApi = {
         {
           headers: {
             ...authHeader(token),
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         }
       );
       return res.data;
     } catch (err) {
-      throw new Error(extractMessage(err, 'Failed to change email'));
+      throw new Error(extractMessage(err, "Failed to change email"));
     }
   },
 
@@ -125,13 +125,13 @@ const profileApi = {
         {
           headers: {
             ...authHeader(token),
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         }
       );
       return res.data;
     } catch (err) {
-      throw new Error(extractMessage(err, 'Failed to change role'));
+      throw new Error(extractMessage(err, "Failed to change role"));
     }
   },
 
@@ -142,7 +142,7 @@ const profileApi = {
   ): Promise<ProfileResponse> {
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append("file", file);
 
       const res = await http.post<ProfileResponse>(
         `/api/profile/${userId}/upload-image`,
@@ -150,14 +150,14 @@ const profileApi = {
         {
           headers: {
             ...authHeader(token),
-            'Content-Type': 'multipart/form-data',
+            "Content-Type": "multipart/form-data",
           },
         }
       );
 
       return res.data;
     } catch (err) {
-      throw new Error(extractMessage(err, 'Failed to upload profile image'));
+      throw new Error(extractMessage(err, "Failed to upload profile image"));
     }
   },
 
@@ -166,12 +166,12 @@ const profileApi = {
       const res = await http.delete<string>(`/api/profile/${userId}`, {
         headers: {
           ...authHeader(token),
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
       return res.data;
     } catch (err) {
-      throw new Error(extractMessage(err, 'Failed to delete account'));
+      throw new Error(extractMessage(err, "Failed to delete account"));
     }
   },
 };

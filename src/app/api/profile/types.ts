@@ -1,7 +1,8 @@
 export type Role =
-  | 'PREGNANT_MOTHER'
-  | 'POST_PREGNANT_MOTHER'
-  | 'HOPE_TO_PREGNANT_MOTHER'
+  | "MIDWIFE"
+  | "PREGNANT_MOTHER"
+  | "POST_PREGNANT_MOTHER"
+  | "HOPE_TO_PREGNANT_MOTHER"
   | string;
 
 export interface ProfileResponse {
@@ -14,6 +15,14 @@ export interface ProfileResponse {
   nationalIdNumber: string;
   address: string;
   profileImageUrl?: string;
+
+  area?: string;
+  district?: string;
+  mohArea?: string;
+  latitude?: number;
+  longitude?: number;
+
+  assignedMidwifeId?: number | null;
   roles: Role[];
 }
 
@@ -24,6 +33,12 @@ export interface ProfileUpdateRequest {
   dateOfBirth?: string;
   nationalIdNumber?: string;
   address?: string;
+
+  area?: string;
+  district?: string;
+  mohArea?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface ChangePasswordRequest {
@@ -42,7 +57,7 @@ export interface ChangeRoleRequest {
 }
 
 export interface APIResponse<T> {
-  status: 'success' | 'error';
+  status: "success" | "error";
   data?: T;
   error?: string;
   message?: string;

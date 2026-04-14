@@ -1,7 +1,8 @@
 export type Role =
-  | 'PREGNANT_MOTHER'
-  | 'POST_PREGNANT_MOTHER'
-  | 'HOPE_TO_PREGNANT_MOTHER'
+  | "MIDWIFE"
+  | "PREGNANT_MOTHER"
+  | "POST_PREGNANT_MOTHER"
+  | "HOPE_TO_PREGNANT_MOTHER"
   | string;
 
 export type AuthResponse = {
@@ -25,6 +26,12 @@ export type SignupRequest = {
   roles: Role[];
   nationalIdNumber?: string;
   address?: string;
+
+  area?: string;
+  district?: string;
+  mohArea?: string;
+  latitude?: number;
+  longitude?: number;
 };
 
 export type UserResponseDto = {
@@ -37,6 +44,14 @@ export type UserResponseDto = {
   nationalIdNumber?: string;
   address?: string;
   profileImageUrl?: string;
+
+  area?: string;
+  district?: string;
+  mohArea?: string;
+  latitude?: number;
+  longitude?: number;
+
+  assignedMidwifeId?: number | null;
   roles: Role[];
 };
 
@@ -47,5 +62,12 @@ export type UserUpdateRequest = {
   dateOfBirth?: string;
   nationalIdNumber?: string;
   address?: string;
+
+  area?: string;
+  district?: string;
+  mohArea?: string;
+  latitude?: number;
+  longitude?: number;
+
   roles?: Role[];
 };

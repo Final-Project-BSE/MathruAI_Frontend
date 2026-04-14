@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React from 'react';
-import type { ProfileResponse } from '@/app/api/profile/types';
-import ProtectedImage from '../../../../lib/ProtectedImage';
+import React from "react";
+import type { ProfileResponse } from "@/app/api/profile/types";
+import ProtectedImage from "../../../../lib/ProtectedImage";
 
 interface Props {
   profile: ProfileResponse | null;
@@ -11,8 +11,8 @@ interface Props {
 
 const ProfileHeader = ({ profile, token }: Props) => {
   const initials = profile
-    ? `${profile.firstName?.[0] ?? ''}${profile.lastName?.[0] ?? ''}`.toUpperCase()
-    : '??';
+    ? `${profile.firstName?.[0] ?? ""}${profile.lastName?.[0] ?? ""}`.toUpperCase()
+    : "??";
 
   const fallbackAvatar = (
     <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-3xl font-bold shadow-inner">
@@ -41,6 +41,12 @@ const ProfileHeader = ({ profile, token }: Props) => {
           {profile?.address && (
             <p className="text-rose-100 text-sm mt-1">{profile.address}</p>
           )}
+
+          <div className="mt-2 space-y-1 text-sm text-rose-100">
+            <p>
+              District: {profile?.district || "-"} | MOH Area: {profile?.mohArea || "-"}
+            </p>
+          </div>
 
           <div className="flex gap-2 mt-3 flex-wrap">
             {profile?.roles?.map((role) => (
