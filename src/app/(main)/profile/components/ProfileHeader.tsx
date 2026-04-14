@@ -46,9 +46,6 @@ const ProfileHeader = ({ profile, token }: Props) => {
             <p>
               District: {profile?.district || "-"} | MOH Area: {profile?.mohArea || "-"}
             </p>
-            <p>
-              Lat: {profile?.latitude ?? "-"} | Lng: {profile?.longitude ?? "-"}
-            </p>
           </div>
 
           <div className="flex gap-2 mt-3 flex-wrap">

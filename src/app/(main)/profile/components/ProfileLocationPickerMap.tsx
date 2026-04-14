@@ -8,7 +8,6 @@ import {
   TileLayer,
   useMapEvents,
 } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })

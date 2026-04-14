@@ -38,12 +38,6 @@ const formSchema = z
     dateofbirth: z
       .string({ required_error: "Date of birth is required." })
       .min(1, "Date of birth is required."),
-    nationalIdNumber: z
-      .string({ required_error: "National ID number is required." })
-      .min(1, "National ID number is required."),
-    address: z
-      .string({ required_error: "Address is required." })
-      .min(1, "Address is required."),
     password: z
       .string({ required_error: "Password is required." })
       .min(8, "Password must be at least 8 characters."),
@@ -84,8 +78,6 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
       email: "",
       phone: "",
       dateofbirth: "",
-      nationalIdNumber: "",
-      address: "",
       password: "",
       confirmPassword: "",
       userType: undefined,
@@ -116,8 +108,6 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
         email: values.email,
         phoneNumber: values.phone,
         dateOfBirth: values.dateofbirth,
-        nationalIdNumber: values.nationalIdNumber,
-        address: values.address,
         password: values.password,
         roles: [mappedRole],
       });
@@ -225,42 +215,6 @@ const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
                       if (!e.target.value) e.target.type = "text";
                       field.onBlur();
                     }}
-                    className="h-12 bg-gray-50 border-0 rounded-[8.77px] placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    disabled={form.formState.isSubmitting}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="nationalIdNumber"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="National ID Number"
-                    className="h-12 bg-gray-50 border-0 rounded-[8.77px] placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    disabled={form.formState.isSubmitting}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="address"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="Address"
                     className="h-12 bg-gray-50 border-0 rounded-[8.77px] placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
                     disabled={form.formState.isSubmitting}
                   />
