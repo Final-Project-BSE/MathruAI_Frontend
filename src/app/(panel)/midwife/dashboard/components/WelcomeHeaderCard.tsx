@@ -1,6 +1,6 @@
-import { Megaphone } from "lucide-react";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBullhorn } from '@fortawesome/free-solid-svg-icons'
+import Link from "next/link";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBullhorn } from "@fortawesome/free-solid-svg-icons";
 
 export default function WelcomeHeaderCard() {
   return (
@@ -34,15 +34,18 @@ export default function WelcomeHeaderCard() {
 
             <div className="hidden h-10 w-px bg-white/15 lg:block" />
 
-            <button className="w-full rounded-full bg-[#ef8354] px-5 py-3 text-xs font-medium text-white shadow-sm transition-transform hover:scale-[1.02] active:scale-[0.98] sm:w-auto sm:px-6">
-              Show my Task
-            </button>
+            <Link
+              href="/user-assign"
+              className="w-full rounded-full bg-[#ef8354] px-5 py-3 text-center text-xs font-medium text-white shadow-sm transition-transform hover:scale-[1.02] active:scale-[0.98] sm:w-auto sm:px-6"
+            >
+              Assignment
+            </Link>
 
             <button
               aria-label="Open menu"
               className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/80 text-neutral-700 shadow-sm md:flex"
             >
-              <FontAwesomeIcon icon={faBullhorn} className="w-6 h-6" />
+              <FontAwesomeIcon icon={faBullhorn} className="h-6 w-6" />
             </button>
           </div>
         </div>

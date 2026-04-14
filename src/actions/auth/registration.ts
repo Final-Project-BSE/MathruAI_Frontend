@@ -12,6 +12,12 @@ type RegisterDataType = {
   address: string;
   password: string;
   roles: string[];
+
+  area?: string;
+  district?: string;
+  mohArea?: string;
+  latitude?: number;
+  longitude?: number;
 };
 
 type RegisterResponseDataType = {
@@ -45,6 +51,12 @@ export const register = async (
       address: data.address,
       password: data.password,
       roles: data.roles,
+
+      area: data.area,
+      district: data.district,
+      mohArea: data.mohArea,
+      latitude: data.latitude,
+      longitude: data.longitude,
     };
 
     const { data: backendResponse }: { data: BackendResponse } = await axios.post(
