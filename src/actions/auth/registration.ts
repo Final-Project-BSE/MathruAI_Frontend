@@ -3,12 +3,21 @@
 import axios from "../../../utils/axios";
 
 type RegisterDataType = {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  phone: string;
-  dateofbirth: string;
+  phoneNumber: string;
+  dateOfBirth: string;
+  nationalIdNumber: string;
+  address: string;
   password: string;
-  userType: "midwife" | "reproductive_lady" | "pregnant_lady" | "postpartum_lady";
+  roles: string[];
+
+  area?: string;
+  district?: string;
+  mohArea?: string;
+  latitude?: number;
+  longitude?: number;
 };
 
 type RegisterResponseDataType = {
@@ -20,9 +29,11 @@ type RegisterResponseDataType = {
 interface BackendResponse {
   status?: "SUCCESS" | "FAIL";
   message?: string;
+  data?: unknown;
   body?: {
     status?: "SUCCESS" | "FAIL";
     message?: string;
+    data?: unknown;
   };
 }
 
@@ -30,40 +41,29 @@ export const register = async (
   data: RegisterDataType
 ): Promise<RegisterResponseDataType> => {
   try {
-    // Split full name into first and last
-    const nameParts = data.name.trim().split(" ");
-    const firstName = nameParts[0] ?? "";
-    const lastName = nameParts.slice(1).join(" ") ?? "";
-
-    // Map frontend userType to backend roles
-    const roleMapping = {
-      midwife: "MIDWIFE",
-      reproductive_lady: "HOPE_TO_PREGNANT_MOTHER",
-      pregnant_lady: "PREGNANT_MOTHER",
-      postpartum_lady: "POST_PREGNANT_MOTHER",
-    };
-
     const requestData = {
-      firstName,
-      lastName,
+      firstName: data.firstName,
+      lastName: data.lastName,
       email: data.email,
-      phoneNumber: data.phone,
-      dateOfBirth: data.dateofbirth,
+      phoneNumber: data.phoneNumber,
+      dateOfBirth: data.dateOfBirth,
+      nationalIdNumber: data.nationalIdNumber,
+      address: data.address,
       password: data.password,
-      roles: [roleMapping[data.userType]],
+      roles: data.roles,
+
+      area: data.area,
+      district: data.district,
+      mohArea: data.mohArea,
+      latitude: data.latitude,
+      longitude: data.longitude,
     };
 
-    console.log("Sending registration request:", requestData);
-
-    // Send request
     const { data: backendResponse }: { data: BackendResponse } = await axios.post(
       "/api/auth/signup",
       requestData
     );
 
-    console.log("Raw registration response:", JSON.stringify(backendResponse, null, 2));
-
-    // Parse backend response
     const parsedResponse = backendResponse.body || backendResponse;
 
     if (!parsedResponse || parsedResponse.status !== "SUCCESS") {
@@ -80,8 +80,6 @@ export const register = async (
       data: null,
     };
   } catch (error) {
-    console.error("Registration error:", error);
-
     const message = getErrorMessage(error, "Registration failed. Please try again.");
 
     return {
@@ -95,18 +93,45 @@ export const register = async (
 function getErrorMessage(err: unknown, fallback = "An error occurred") {
   if (!err || typeof err !== "object") return fallback;
 
-  const maybe = err as { response?: { data?: { message?: string } }; message?: string };
+  const maybe = err as {
+    response?: { data?: { message?: string; error?: string } | string };
+    message?: string;
+  };
 
-  return (
-    maybe.response?.data?.message ||
-    maybe.message ||
-    (() => {
-      try {
-        const str = JSON.stringify(err);
-        return str !== "{}" ? str : fallback;
-      } catch {
-        return fallback;
-      }
-    })()
-  );
+  const responseData = maybe.response?.data;
+
+  if (typeof responseData === "string" && responseData.trim()) {
+    return responseData;
+  }
+
+  if (
+    responseData &&
+    typeof responseData === "object" &&
+    "message" in responseData &&
+    typeof responseData.message === "string" &&
+    responseData.message.length
+  ) {
+    return responseData.message;
+  }
+
+  if (
+    responseData &&
+    typeof responseData === "object" &&
+    "error" in responseData &&
+    typeof responseData.error === "string" &&
+    responseData.error.length
+  ) {
+    return responseData.error;
+  }
+
+  if (typeof maybe.message === "string" && maybe.message.length) {
+    return maybe.message;
+  }
+
+  try {
+    const str = JSON.stringify(err);
+    return str !== "{}" ? str : fallback;
+  } catch {
+    return fallback;
+  }
 }

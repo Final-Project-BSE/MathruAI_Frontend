@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { CheckCircle, Loader2, XCircle } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import type { Message } from "../../../api/chatbot/types";
 
 interface ChatMessagesProps {
@@ -52,9 +53,12 @@ export default function ChatMessages({ messages }: ChatMessagesProps) {
                 : "bg-white text-gray-800 rounded-bl-sm border border-pink-100"
             }`}
           >
-            <div className="whitespace-pre-wrap leading-relaxed text-sm">
-              {message.content || (message.status === "sending" && "Thinking...")}
+            <div className="leading-relaxed text-sm max-w-none [&_p]:my-3 [&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1">
+              <ReactMarkdown>
+                {message.content || (message.status === "sending" ? "Thinking..." : "")}
+              </ReactMarkdown>
             </div>
+
             <div
               className={`flex items-center justify-between mt-1 pt-2 border-t ${
                 message.isUser ? "border-white/20" : "border-gray-100"
