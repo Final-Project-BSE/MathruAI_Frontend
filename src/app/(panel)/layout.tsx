@@ -1,10 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
-
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { MidwifeAppSidebar } from "@/components/midwife/midwife-app-sidebar";
 import { ClientFloatingChatbot } from "@/components/ClientFloatingChatbot";
 import Navbar from "./midwife/components/Navbar";
-
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,11 +18,22 @@ type Props = {
 
 export default async function RootLayout({ children }: Props) {
   return (
-    <html lang="en" className="h-full">
-      <body>
-        <Navbar />
-          {children}
+    <html
+      lang="en"
+      className={`h-full ${geistSans.variable} ${geistMono.variable}`}
+    >
+      <body className="h-full overflow-hidden bg-black text-white">
+        <div className="flex h-dvh min-h-0 flex-col overflow-hidden">
+          <div className="shrink-0">
+            <Navbar />
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-hidden">
+            {children}
+          </div>
+
           <ClientFloatingChatbot />
+        </div>
       </body>
     </html>
   );

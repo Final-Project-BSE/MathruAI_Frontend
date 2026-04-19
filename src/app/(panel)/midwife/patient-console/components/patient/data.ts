@@ -2,7 +2,7 @@ import type { Patient } from './types';
 
 export const patients: Patient[] = [
   {
-    id: 'anna-w-farc',
+    id: '21',
     name: 'Anna W. Abarca',
     gender: 'F',
     patientId: '15321904',
