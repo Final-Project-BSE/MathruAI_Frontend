@@ -15,23 +15,33 @@ import type {
   HealthCategoryResponseDto,
   HealthRecordResponseDto,
 } from "@/app/api/midwife-patient/types";
+import type {
+  HealthMonitoringResponseDto,
+  HealthMonitoringUpsertRequestDto,
+} from "@/app/api/healthmonitor/types";
 
-import PatientHeader from "./components/PatientHeader";
 import HealthRecordsSection from "./components/HealthRecordsSection";
 import PatientSummaryCard from "./components/PatientSummaryCard";
 import FertilityCard from "./components/FertilityCard";
 import StatusAlert from "./components/StatusAlert";
 import { getRoleLabel } from "./components/lib/utils";
 import {
+  clearCachedHealthMonitoringBundle,
+  clearCachedPatientBundle,
+  getCachedHealthMonitoringBundle,
   getCachedPatientBundle,
   getCachedPatientList,
+  getFreshCachedHealthMonitoringBundle,
   prefetchPatientBundle,
   setCachedCategoryRecords,
   setCachedPatientBundle,
   setCachedPatientList,
+  setCachedHealthMonitoringBundle,
 } from "./components/lib/patientConsoleCache";
 import PatientSidebar from "../../components/PatientSidebar";
 import { filterPatients } from "./components/lib/patientConsoleShared";
+import HealthMonitoringCard from "./components/health-monitoring/HealthMonitoringCard";
+import { healthMonitoringApis } from "../../../../../api/healthmonitor/api";
 
 export default function AssignedPatientManagePage() {
   const router = useRouter();
@@ -52,9 +62,15 @@ export default function AssignedPatientManagePage() {
   const [records, setRecords] = useState<HealthRecordResponseDto[]>([]);
   const [fertility, setFertility] = useState<FertilityResponseDto | null>(null);
 
+  const [latestMonitoring, setLatestMonitoring] =
+    useState<HealthMonitoringResponseDto | null>(null);
+  const [monitoringLoading, setMonitoringLoading] = useState(false);
+  const [monitoringSaving, setMonitoringSaving] = useState(false);
+  const [monitoringDeleting, setMonitoringDeleting] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [recordsLoading, setRecordsLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -72,6 +88,17 @@ export default function AssignedPatientManagePage() {
     latitude: undefined,
     longitude: undefined,
   });
+
+  useEffect(() => {
+    if (!error && !success) return;
+
+    const timer = window.setTimeout(() => {
+      setError("");
+      setSuccess("");
+    }, 5000);
+
+    return () => window.clearTimeout(timer);
+  }, [error, success]);
 
   function hydrateFromBundle(bundle: {
     patient: AssignedPatientDetailResponseDto;
@@ -111,6 +138,69 @@ export default function AssignedPatientManagePage() {
     setLoading(false);
   }
 
+  function hydrateMonitoringFromCache(currentPatientId: number) {
+    const cached = getCachedHealthMonitoringBundle(currentPatientId);
+    if (!cached) return false;
+
+    setLatestMonitoring(cached.monitoring);
+    return true;
+  }
+
+  function persistMonitoringCache(
+    currentPatientId: number,
+    monitoring: HealthMonitoringResponseDto | null
+  ) {
+    setCachedHealthMonitoringBundle(currentPatientId, {
+      monitoring,
+    });
+  }
+
+  async function loadMonitoringData(
+    jwt: string,
+    currentMidwifeId: number,
+    currentPatientId: number,
+    options?: { preferCache?: boolean }
+  ) {
+    const preferCache = options?.preferCache ?? true;
+
+    try {
+      if (preferCache) {
+        const freshCached =
+          getFreshCachedHealthMonitoringBundle(currentPatientId);
+        if (freshCached) {
+          setLatestMonitoring(freshCached.monitoring);
+          return;
+        }
+      }
+
+      setMonitoringLoading(true);
+
+      const latest = await healthMonitoringApis.getLatest(
+        jwt,
+        currentMidwifeId,
+        currentPatientId
+      );
+
+      setLatestMonitoring(latest);
+      persistMonitoringCache(currentPatientId, latest);
+    } catch (err) {
+      setLatestMonitoring(null);
+      throw err;
+    } finally {
+      setMonitoringLoading(false);
+    }
+  }
+
+  async function reloadMonitoringDataFromServer() {
+    if (!token || !midwifeId || !patientId) return;
+
+    clearCachedHealthMonitoringBundle(patientId);
+
+    await loadMonitoringData(token, midwifeId, patientId, {
+      preferCache: false,
+    });
+  }
+
   useEffect(() => {
     if (Number.isNaN(patientId)) {
       setError("Invalid patient id.");
@@ -129,6 +219,8 @@ export default function AssignedPatientManagePage() {
     } else {
       setLoading(true);
     }
+
+    hydrateMonitoringFromCache(patientId);
   }, [patientId]);
 
   useEffect(() => {
@@ -172,18 +264,20 @@ export default function AssignedPatientManagePage() {
         setPatients(patientList);
         setCachedPatientList(patientList);
         hydrateFromBundle(freshBundle);
+
+        await loadMonitoringData(jwt, currentUser.id, patientId, {
+          preferCache: true,
+        });
       } catch (err) {
         if (!active) return;
         setError(
-          err instanceof Error ? err.message : "Failed to load patient details"
+          err instanceof Error ? err.message : "Failed to load patient details."
         );
         setLoading(false);
       }
     }
 
-    if (!Number.isNaN(patientId)) {
-      void bootstrap();
-    }
+    void bootstrap();
 
     return () => {
       active = false;
@@ -196,30 +290,29 @@ export default function AssignedPatientManagePage() {
     async function loadRecordsForCategory() {
       if (!token || !midwifeId || !patientId || !selectedCategoryId) return;
 
-      const cachedBundle = getCachedPatientBundle(patientId);
-      const cachedRecords =
-        cachedBundle?.recordsByCategory?.[selectedCategoryId] || [];
-
-      if (cachedRecords.length > 0) {
-        setRecords(cachedRecords);
-        setRecordsLoading(false);
-        return;
-      }
-
       try {
         setRecordsLoading(true);
 
-        const data = await midwifePatientApi.getPatientHealthRecordsByCategory(
-          token,
-          midwifeId,
-          patientId,
-          selectedCategoryId
-        );
+        const cachedRecords =
+          getCachedPatientBundle(patientId)?.recordsByCategory?.[
+            selectedCategoryId
+          ];
+
+        if (cachedRecords) {
+          setRecords(cachedRecords);
+        }
+
+        const nextRecords =
+          await midwifePatientApi.getPatientHealthRecordsByCategory(
+            token,
+            midwifeId,
+            patientId,
+            selectedCategoryId
+          );
 
         if (!active) return;
-
-        setRecords(data);
-        setCachedCategoryRecords(patientId, selectedCategoryId, data);
+        setRecords(nextRecords);
+        setCachedCategoryRecords(patientId, selectedCategoryId, nextRecords);
       } catch {
         if (!active) return;
         setRecords([]);
@@ -260,11 +353,11 @@ export default function AssignedPatientManagePage() {
     });
   }
 
-  async function handleSave() {
+  async function handleProfileSave() {
     if (!token || !midwifeId || !patient) return;
 
     try {
-      setSaving(true);
+      setProfileSaving(true);
       setError("");
       setSuccess("");
 
@@ -287,9 +380,89 @@ export default function AssignedPatientManagePage() {
         });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save patient profile");
+      setError(
+        err instanceof Error ? err.message : "Failed to save patient profile"
+      );
     } finally {
-      setSaving(false);
+      setProfileSaving(false);
+    }
+  }
+
+  async function handleMonitoringSave(
+    payload: HealthMonitoringUpsertRequestDto
+  ) {
+    if (!token || !midwifeId || !patientId) {
+      throw new Error("Missing authentication or patient context.");
+    }
+
+    try {
+      setMonitoringSaving(true);
+      setError("");
+      setSuccess("");
+
+      if (latestMonitoring?.id) {
+        await healthMonitoringApis.update(
+          token,
+          midwifeId,
+          patientId,
+          latestMonitoring.id,
+          payload
+        );
+        setSuccess("Health monitoring record updated successfully.");
+      } else {
+        await healthMonitoringApis.create(token, midwifeId, patientId, payload);
+        setSuccess("Health monitoring record created successfully.");
+      }
+
+      clearCachedHealthMonitoringBundle(patientId);
+      clearCachedPatientBundle(patientId);
+
+      await reloadMonitoringDataFromServer();
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Failed to save health monitoring record";
+      setError(message);
+      throw err;
+    } finally {
+      setMonitoringSaving(false);
+    }
+  }
+
+  async function handleMonitoringDelete(record: HealthMonitoringResponseDto) {
+    if (!token || !midwifeId || !patientId) {
+      throw new Error("Missing authentication or patient context.");
+    }
+
+    const previousLatest = latestMonitoring;
+
+    try {
+      setMonitoringDeleting(true);
+      setError("");
+      setSuccess("");
+
+      setLatestMonitoring(null);
+      persistMonitoringCache(patientId, null);
+
+      await healthMonitoringApis.delete(token, midwifeId, patientId, record.id);
+
+      clearCachedPatientBundle(patientId);
+      await reloadMonitoringDataFromServer();
+
+      setSuccess("Health monitoring record deleted successfully.");
+    } catch (err) {
+      setLatestMonitoring(previousLatest);
+      persistMonitoringCache(patientId, previousLatest);
+
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Failed to delete health monitoring record";
+      setError(message);
+      throw err;
+    } finally {
+      setMonitoringDeleting(false);
     }
   }
 
@@ -300,82 +473,89 @@ export default function AssignedPatientManagePage() {
       setError("");
       setSuccess("");
 
+      clearCachedPatientBundle(patientId);
+      clearCachedHealthMonitoringBundle(patientId);
+
       const freshBundle = await prefetchPatientBundle({
         token,
         midwifeId,
         patientId,
+        force: true,
       });
 
       hydrateFromBundle(freshBundle);
+
+      await loadMonitoringData(token, midwifeId, patientId, {
+        preferCache: false,
+      });
+
       setSuccess("Patient data refreshed.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to refresh data");
+      setError(
+        err instanceof Error ? err.message : "Failed to refresh patient data."
+      );
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center bg-black text-white">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
   }
 
   return (
     <div className="h-full overflow-hidden bg-black text-white">
-      <div className="mx-auto grid h-full overflow-hidden shadow-2xl md:grid-cols-[260px_minmax(0,1fr)]">
+      <div className="mx-auto grid h-full overflow-hidden md:grid-cols-[260px_minmax(0,1fr)]">
         <PatientSidebar
           patients={filteredPatients}
           loading={false}
+          error=""
           token={token}
           search={search}
           onSearchChange={setSearch}
           onPatientClick={openPatient}
           onPatientPrefetch={prefetchPatient}
-          activePatientId={patientId}
         />
 
-        <main className="min-w-0 h-full min-h-0 overflow-y-auto bg-black p-4 md:p-6">
-          {loading ? (
-            <div className="flex min-h-full items-center justify-center">
-              <div className="flex items-center gap-3 text-zinc-400">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Loading patient details...</span>
-              </div>
-            </div>
-          ) : error && !patient ? (
-            <div className="flex min-h-full items-center justify-center">
-              <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-6 text-center">
-                <div className="text-lg font-semibold text-red-300">
-                  Failed to open patient
-                </div>
-                <div className="mt-2 text-sm text-red-400">{error}</div>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <StatusAlert type="error" message={error} />
-              <StatusAlert type="success" message={success} />
+        <main className="min-h-0 overflow-y-auto bg-black p-6">
+          <div className="space-y-6">
+            {error && <StatusAlert type="error" message={error} />}
+            {success && <StatusAlert type="success" message={success} />}
 
-              <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
-                <div className="space-y-6">
-                  <PatientSummaryCard
-                    patient={patient}
-                    patientStage={patientStage}
-                    token={token}
-                    form={form}
-                    setForm={setForm}
-                    onSave={handleSave}
-                    saving={saving}
-                  />
+            <div className="grid gap-6 xl:grid-cols-2">
+              <PatientSummaryCard
+                patient={patient}
+                patientStage={patientStage}
+                token={token}
+                form={form}
+                setForm={setForm}
+                saving={profileSaving}
+                onSave={handleProfileSave}
+              />
 
-                  <HealthRecordsSection
-                    categories={categories}
-                    selectedCategoryId={selectedCategoryId}
-                    setSelectedCategoryId={setSelectedCategoryId}
-                    recordsLoading={recordsLoading}
-                    records={records}
-                  />
-                </div>
-
-                <div className="space-y-6">
-                  <FertilityCard fertility={fertility} />
-                </div>
-              </div>
+              <HealthMonitoringCard
+                patientId={patientId}
+                monitoring={latestMonitoring}
+                loading={monitoringLoading}
+                saving={monitoringSaving}
+                deleting={monitoringDeleting}
+                onSave={handleMonitoringSave}
+                onDelete={handleMonitoringDelete}
+              />
             </div>
-          )}
+
+            <FertilityCard fertility={fertility} />
+
+            <HealthRecordsSection
+              categories={categories}
+              selectedCategoryId={selectedCategoryId}
+              setSelectedCategoryId={setSelectedCategoryId}
+              recordsLoading={recordsLoading}
+              records={records}
+            />
+          </div>
         </main>
       </div>
     </div>
