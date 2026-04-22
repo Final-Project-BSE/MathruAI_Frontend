@@ -10,6 +10,7 @@ import type {
 import SearchableSelect from "./SearchableSelect";
 import Modal from "./Modal";
 import StatusBadge from "./StatusBadge";
+import { cn } from "./utils";
 
 const AreaUserMap = dynamic(() => import("./AreaUserMap"), { ssr: false });
 
@@ -51,6 +52,7 @@ type Props = {
   sendingSearchUserId: number | null;
   onSendRequestToSearchedUser: (user: UserResponseDto) => void;
   onViewUserDetails: (user: UserResponseDto, status: string) => void;
+  theme: "light" | "dark";
 };
 
 export default function SearchConnectSection({
@@ -86,12 +88,40 @@ export default function SearchConnectSection({
   sendingSearchUserId,
   onSendRequestToSearchedUser,
   onViewUserDetails,
+  theme,
 }: Props) {
+  const isLightTheme = theme === "light";
+
+  const sectionClass = cn(
+    "rounded-lg border p-5 shadow-xl",
+    isLightTheme ? "border-gray-200 bg-white" : "border-white/10 bg-zinc-950"
+  );
+
+  const headingClass = cn("mb-3 text-md font-semibold", isLightTheme ? "text-gray-900" : "text-white");
+  const labelClass = cn("mb-2 block text-xs font-medium", isLightTheme ? "text-gray-700" : "text-gray-300");
+  const mutedClass = cn("text-xs", isLightTheme ? "text-gray-600" : "text-gray-400");
+  const inputClass = cn(
+    "w-full rounded-md border px-4 py-2 text-xs outline-none",
+    isLightTheme
+      ? "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-[#d04f51]"
+      : "border-white/10 bg-black text-white placeholder:text-gray-500 focus:border-[#d04f51]"
+  );
+  const secondaryButtonClass = cn(
+    "rounded-2xl border px-4 py-1 text-sm",
+    isLightTheme
+      ? "border-gray-200 text-gray-700 hover:bg-gray-100"
+      : "border-white/10 text-gray-300 hover:bg-white/10"
+  );
+  const cardClass = cn(
+    "rounded-md border p-4",
+    isLightTheme ? "border-gray-200 bg-gray-50" : "border-white/10 bg-white/5"
+  );
+
   return (
     <>
       <div className="space-y-6">
-        <section className="rounded-lg border border-white/10 bg-zinc-950 p-5 shadow-xl">
-          <h2 className="mb-3 text-md font-semibold">
+        <section className={sectionClass}>
+          <h2 className={headingClass}>
             {isMidwife
               ? "Search Mothers by District & MOH Area"
               : isMotherSide
@@ -117,6 +147,7 @@ export default function SearchConnectSection({
                   mohArea: "",
                 }))
               }
+              theme={theme}
             />
 
             <SearchableSelect
@@ -137,6 +168,7 @@ export default function SearchConnectSection({
                   mohArea: value,
                 }))
               }
+              theme={theme}
             />
 
             <button
@@ -148,13 +180,13 @@ export default function SearchConnectSection({
             </button>
           </form>
 
-          <p className="mt-4 text-xs text-gray-400">
+          <p className={cn("mt-4", mutedClass)}>
             Search results will open in a popup box.
           </p>
         </section>
 
-        <section className="rounded-lg border border-white/10 bg-zinc-950 p-5 shadow-xl">
-          <h2 className="mb-3 text-md font-semibold">
+        <section className={sectionClass}>
+          <h2 className={headingClass}>
             {isMidwife
               ? "Map of Mothers in Selected Area"
               : isMotherSide
@@ -180,6 +212,7 @@ export default function SearchConnectSection({
                   mohArea: "",
                 }))
               }
+              theme={theme}
             />
 
             <SearchableSelect
@@ -200,6 +233,7 @@ export default function SearchConnectSection({
                   mohArea: value,
                 }))
               }
+              theme={theme}
             />
 
             <button
@@ -213,7 +247,7 @@ export default function SearchConnectSection({
 
           <div className="mt-5">
             {filteredMapUsers.length === 0 ? (
-              <p className="text-xs text-gray-400">No available mappable users found.</p>
+              <p className={mutedClass}>No available mappable users found.</p>
             ) : (
               <AreaUserMap
                 users={filteredMapUsers}
@@ -225,16 +259,16 @@ export default function SearchConnectSection({
           </div>
         </section>
 
-        <section className="rounded-lg border border-white/10 bg-zinc-950 p-5 shadow-xl">
-          <h2 className="mb-3 text-md font-semibold">Manual Connection Request</h2>
+        <section className={sectionClass}>
+          <h2 className={headingClass}>Manual Connection Request</h2>
 
           <form onSubmit={onSendRequest} className="space-y-4">
             <div>
-              <label className="mb-2 block text-xs font-medium text-gray-300">Method</label>
+              <label className={labelClass}>Method</label>
               <select
                 value={method}
                 onChange={(e) => setMethod(e.target.value as ConnectionRequestMethod)}
-                className="w-full rounded-md border border-white/10 bg-black px-4 py-1 text-xs text-white outline-none focus:border-[#d04f51]"
+                className={inputClass}
               >
                 <option value="EMAIL" className="text-xs">EMAIL</option>
                 <option value="AREA" className="text-xs">AREA</option>
@@ -243,40 +277,36 @@ export default function SearchConnectSection({
 
             {method === "EMAIL" ? (
               <div>
-                <label className="mb-2 block text-xs font-medium text-gray-300">
-                  Target Email
-                </label>
+                <label className={labelClass}>Target Email</label>
                 <input
                   type="email"
                   value={targetEmail}
                   onChange={(e) => setTargetEmail(e.target.value)}
                   placeholder="example@email.com"
-                  className="w-full rounded-md border border-white/10 bg-black px-4 py-2 text-xs text-white placeholder:text-gray-500 outline-none focus:border-[#d04f51]"
+                  className={inputClass}
                 />
               </div>
             ) : (
               <div>
-                <label className="mb-2 block text-xs font-medium text-gray-300">
-                  Target Area
-                </label>
+                <label className={labelClass}>Target Area</label>
                 <input
                   type="text"
                   value={targetArea}
                   onChange={(e) => setTargetArea(e.target.value)}
                   placeholder="Colombo"
-                  className="w-full rounded-md border border-white/10 bg-black px-4 py-1 text-xs text-white placeholder:text-gray-500 outline-none focus:border-[#d04f51]"
+                  className={inputClass}
                 />
               </div>
             )}
 
             <div>
-              <label className="mb-2 block text-xs font-medium text-gray-300">Message</label>
+              <label className={labelClass}>Message</label>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Optional message"
                 rows={4}
-                className="w-full rounded-md border border-white/10 bg-black px-4 py-1 text-xs text-white placeholder:text-gray-500 outline-none focus:border-[#d04f51]"
+                className={inputClass}
               />
             </div>
 
@@ -294,22 +324,25 @@ export default function SearchConnectSection({
         open={searchPopupOpen}
         title="Search Results"
         onClose={() => setSearchPopupOpen(false)}
+        theme={theme}
       >
         {filteredSearchResults.length === 0 ? (
-          <p className="text-xs text-gray-400">No available users to display.</p>
+          <p className={mutedClass}>No available users to display.</p>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {filteredSearchResults.map((user) => (
-              <div
-                key={user.id}
-                className="rounded-md border border-white/10 bg-white/5 p-4"
-              >
+              <div key={user.id} className={cardClass}>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-xs text-white">
+                    <p
+                      className={cn(
+                        "font-semibold text-xs",
+                        isLightTheme ? "text-gray-900" : "text-white"
+                      )}
+                    >
                       {user.firstName} {user.lastName}
                     </p>
-                    <p className="text-xs text-gray-400">{user.email}</p>
+                    <p className={mutedClass}>{user.email}</p>
                   </div>
 
                   <StatusBadge status="AVAILABLE" />
@@ -328,7 +361,7 @@ export default function SearchConnectSection({
                   <button
                     type="button"
                     onClick={() => onViewUserDetails(user, "AVAILABLE")}
-                    className="rounded-2xl border border-white/10 px-4 py-1 text-sm text-gray-300 hover:bg-white/10"
+                    className={secondaryButtonClass}
                   >
                     →
                   </button>

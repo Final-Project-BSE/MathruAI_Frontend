@@ -83,6 +83,13 @@ export const assignmentApi = {
       token
     ),
 
+  cancelRequest: (requestId: number, requesterUserId: number, token?: string) =>
+    request<ConnectionRequestResponseDto>(
+      `/api/connections/${requestId}/cancel/${requesterUserId}`,
+      "PATCH",
+      token
+    ),
+
   getSentRequests: (userId: number, token?: string) =>
     request<ConnectionRequestResponseDto[]>(
       `/api/connections/sent/${userId}`,
@@ -108,6 +115,28 @@ export const assignmentApi = {
     request<UserResponseDto>(
       `/api/connections/mother/${motherUserId}/assigned-midwife`,
       "GET",
+      token
+    ),
+
+  cancelAssignedMidwifeForMother: (
+    motherUserId: number,
+    requesterUserId: number,
+    token?: string
+  ) =>
+    request<string>(
+      `/api/connections/mother/${motherUserId}/assigned-midwife/${requesterUserId}`,
+      "DELETE",
+      token
+    ),
+
+  cancelAssignedMotherForMidwife: (
+    midwifeId: number,
+    motherUserId: number,
+    token?: string
+  ) =>
+    request<string>(
+      `/api/connections/midwife/${midwifeId}/assigned-users/${motherUserId}`,
+      "DELETE",
       token
     ),
 

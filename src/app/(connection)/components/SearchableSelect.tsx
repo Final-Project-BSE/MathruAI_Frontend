@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { cn } from "./utils";
 
 type Props = {
   label: string;
@@ -9,6 +10,7 @@ type Props = {
   placeholder?: string;
   disabled?: boolean;
   onChange: (value: string) => void;
+  theme?: "light" | "dark";
 };
 
 export default function SearchableSelect({
@@ -18,10 +20,13 @@ export default function SearchableSelect({
   placeholder,
   disabled,
   onChange,
+  theme = "dark",
 }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(value);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  const isLightTheme = theme === "light";
 
   useEffect(() => {
     setQuery(value);
@@ -49,7 +54,12 @@ export default function SearchableSelect({
 
   return (
     <div ref={wrapperRef} className="relative">
-      <label className="mb-2 block text-xs font-medium text-gray-300">
+      <label
+        className={cn(
+          "mb-2 block text-xs font-medium",
+          isLightTheme ? "text-gray-700" : "text-gray-300"
+        )}
+      >
         {label}
       </label>
 
@@ -65,11 +75,23 @@ export default function SearchableSelect({
           onChange(newValue);
           setOpen(true);
         }}
-        className="w-full rounded-md border border-white/10 bg-black px-4 py-2 text-xs text-white placeholder:text-gray-500 placeholder:text-xs outline-none focus:border-[#d04f51] disabled:cursor-not-allowed disabled:opacity-50"
+        className={cn(
+          "w-full rounded-md border px-4 py-2 text-xs outline-none disabled:cursor-not-allowed disabled:opacity-50",
+          isLightTheme
+            ? "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-[#d04f51]"
+            : "border-white/10 bg-black text-white placeholder:text-gray-500 focus:border-[#d04f51]"
+        )}
       />
 
       {open && !disabled ? (
-        <div className="absolute z-50 mt-2 max-h-60 w-full overflow-y-auto rounded-md border border-white/10 bg-zinc-950 shadow-2xl">
+        <div
+          className={cn(
+            "absolute z-50 mt-2 max-h-60 w-full overflow-y-auto rounded-md border shadow-2xl",
+            isLightTheme
+              ? "border-gray-200 bg-white"
+              : "border-white/10 bg-zinc-950"
+          )}
+        >
           {filteredOptions.length > 0 ? (
             filteredOptions.map((option) => (
               <button
@@ -80,13 +102,23 @@ export default function SearchableSelect({
                   onChange(option);
                   setOpen(false);
                 }}
-                className="block w-full border-b border-white/5 px-4 py-1 text-left text-xs text-gray-200 hover:bg-white/10"
+                className={cn(
+                  "block w-full border-b px-4 py-1 text-left text-xs",
+                  isLightTheme
+                    ? "border-gray-100 text-gray-800 hover:bg-gray-50"
+                    : "border-white/5 text-gray-200 hover:bg-white/10"
+                )}
               >
                 {option}
               </button>
             ))
           ) : (
-            <div className="px-4 py-1 text-xs text-gray-400">
+            <div
+              className={cn(
+                "px-4 py-1 text-xs",
+                isLightTheme ? "text-gray-500" : "text-gray-400"
+              )}
+            >
               No matching results
             </div>
           )}

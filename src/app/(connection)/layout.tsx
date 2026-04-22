@@ -22,7 +22,7 @@ export default async function RootLayout({ children }: Props) {
       lang="en"
       className={`h-full ${geistSans.variable} ${geistMono.variable}`}
     >
-      <body className="h-full bg-black text-white">
+      <body className="h-full text-white">
         <div className="flex h-dvh min-h-0 flex-col">
           <div className="shrink-0">
             <Navbar />

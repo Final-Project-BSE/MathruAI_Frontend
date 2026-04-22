@@ -4,6 +4,7 @@ import type {
   AssignedUserProfileUpdateRequestDto,
   UserResponseDto,
 } from "../../api/user-assign/types";
+import { cn } from "./utils";
 
 type Props = {
   assignedUsers: UserResponseDto[];
@@ -14,6 +15,7 @@ type Props = {
     React.SetStateAction<AssignedUserProfileUpdateRequestDto>
   >;
   onSubmit: (e: React.FormEvent) => void;
+  theme: "light" | "dark";
 };
 
 export default function UpdateAssignedMotherSection({
@@ -23,14 +25,41 @@ export default function UpdateAssignedMotherSection({
   updateForm,
   setUpdateForm,
   onSubmit,
+  theme,
 }: Props) {
+  const isLightTheme = theme === "light";
+
+  const inputClass = cn(
+    "w-full rounded-md border px-4 py-2 text-xs outline-none",
+    isLightTheme
+      ? "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-[#d04f51]"
+      : "border-white/10 bg-black text-white placeholder:text-gray-500 focus:border-[#d04f51]"
+  );
+
   return (
-    <section className="rounded-lg border border-white/10 bg-zinc-950 p-5 shadow-xl">
-      <h2 className="mb-4 text-md font-semibold">Update Assigned Mother Profile</h2>
+    <section
+      className={cn(
+        "rounded-lg border p-5 shadow-xl",
+        isLightTheme ? "border-gray-200 bg-white" : "border-white/10 bg-zinc-950"
+      )}
+    >
+      <h2
+        className={cn(
+          "mb-4 text-md font-semibold",
+          isLightTheme ? "text-gray-900" : "text-white"
+        )}
+      >
+        Update Assigned Mother Profile
+      </h2>
 
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
-          <label className="mb-2 block text-xs font-medium text-gray-300">
+          <label
+            className={cn(
+              "mb-2 block text-xs font-medium",
+              isLightTheme ? "text-gray-700" : "text-gray-300"
+            )}
+          >
             Select Assigned User
           </label>
           <select
@@ -38,7 +67,7 @@ export default function UpdateAssignedMotherSection({
             onChange={(e) =>
               setSelectedMotherId(e.target.value ? Number(e.target.value) : "")
             }
-            className="w-full rounded-md border border-white/10 bg-black px-4 py-2 text-xs text-white outline-none focus:border-[#d04f51]"
+            className={inputClass}
           >
             <option value="">Choose assigned user</option>
             {assignedUsers.map((user) => (
@@ -57,7 +86,7 @@ export default function UpdateAssignedMotherSection({
             onChange={(e) =>
               setUpdateForm((prev) => ({ ...prev, firstName: e.target.value }))
             }
-            className="rounded-md border border-white/10 bg-black px-4 py-2 text-xs text-white placeholder:text-gray-500 outline-none focus:border-[#d04f51]"
+            className={inputClass}
           />
           <input
             type="text"
@@ -66,7 +95,7 @@ export default function UpdateAssignedMotherSection({
             onChange={(e) =>
               setUpdateForm((prev) => ({ ...prev, lastName: e.target.value }))
             }
-            className="rounded-md border border-white/10 bg-black px-4 py-2 text-xs text-white placeholder:text-gray-500 outline-none focus:border-[#d04f51]"
+            className={inputClass}
           />
           <input
             type="text"
@@ -75,7 +104,7 @@ export default function UpdateAssignedMotherSection({
             onChange={(e) =>
               setUpdateForm((prev) => ({ ...prev, phoneNumber: e.target.value }))
             }
-            className="rounded-md border border-white/10 bg-black px-4 py-2 text-xs text-white placeholder:text-gray-500 outline-none focus:border-[#d04f51]"
+            className={inputClass}
           />
           <input
             type="text"
@@ -84,7 +113,7 @@ export default function UpdateAssignedMotherSection({
             onChange={(e) =>
               setUpdateForm((prev) => ({ ...prev, area: e.target.value }))
             }
-            className="rounded-md border border-white/10 bg-black px-4 py-2 text-xs text-white placeholder:text-gray-500 outline-none focus:border-[#d04f51]"
+            className={inputClass}
           />
           <input
             type="text"
@@ -93,7 +122,7 @@ export default function UpdateAssignedMotherSection({
             onChange={(e) =>
               setUpdateForm((prev) => ({ ...prev, district: e.target.value }))
             }
-            className="rounded-md border border-white/10 bg-black px-4 py-2 text-xs text-white placeholder:text-gray-500 outline-none focus:border-[#d04f51]"
+            className={inputClass}
           />
           <input
             type="text"
@@ -102,7 +131,7 @@ export default function UpdateAssignedMotherSection({
             onChange={(e) =>
               setUpdateForm((prev) => ({ ...prev, mohArea: e.target.value }))
             }
-            className="rounded-md border border-white/10 bg-black px-4 py-2 text-xs text-white placeholder:text-gray-500 outline-none focus:border-[#d04f51]"
+            className={inputClass}
           />
           <input
             type="number"
@@ -115,7 +144,7 @@ export default function UpdateAssignedMotherSection({
                 latitude: e.target.value === "" ? undefined : Number(e.target.value),
               }))
             }
-            className="rounded-md border border-white/10 bg-black px-4 py-2 text-xs text-white placeholder:text-gray-500 outline-none focus:border-[#d04f51]"
+            className={inputClass}
           />
           <input
             type="number"
@@ -128,7 +157,7 @@ export default function UpdateAssignedMotherSection({
                 longitude: e.target.value === "" ? undefined : Number(e.target.value),
               }))
             }
-            className="rounded-md border border-white/10 bg-black px-4 py-2 text-xs text-white placeholder:text-gray-500 outline-none focus:border-[#d04f51]"
+            className={inputClass}
           />
         </div>
 
@@ -139,7 +168,7 @@ export default function UpdateAssignedMotherSection({
             setUpdateForm((prev) => ({ ...prev, address: e.target.value }))
           }
           rows={3}
-          className="w-full rounded-md border border-white/10 bg-black px-4 py-2 text-xs text-white placeholder:text-gray-500 outline-none focus:border-[#d04f51]"
+          className={inputClass}
         />
 
         <button

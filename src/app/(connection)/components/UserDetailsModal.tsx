@@ -3,7 +3,7 @@
 import type { UserResponseDto } from "../../api/user-assign/types";
 import Modal from "./Modal";
 import StatusBadge from "./StatusBadge";
-import { getReadableRoleLabel } from "./utils";
+import { cn, getReadableRoleLabel } from "./utils";
 
 type Props = {
   user: UserResponseDto | null;
@@ -12,6 +12,7 @@ type Props = {
   onSendRequest?: (user: UserResponseDto) => void;
   sendingUserId?: number | null;
   statusLabel?: string;
+  theme: "light" | "dark";
 };
 
 export default function UserDetailsModal({
@@ -21,51 +22,87 @@ export default function UserDetailsModal({
   onSendRequest,
   sendingUserId,
   statusLabel,
+  theme,
 }: Props) {
   if (!user) return null;
 
+  const isLightTheme = theme === "light";
+
   return (
-    <Modal open={open} title="User Details" onClose={onClose}>
+    <Modal open={open} title="User Details" onClose={onClose} theme={theme}>
       <div className="space-y-4">
-        <div className="rounded-md border border-white/10 bg-white/5 p-4">
+        <div
+          className={cn(
+            "rounded-md border p-4",
+            isLightTheme
+              ? "border-gray-200 bg-gray-50"
+              : "border-white/10 bg-white/5"
+          )}
+        >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold text-white">
+              <p
+                className={cn(
+                  "text-xs font-semibold",
+                  isLightTheme ? "text-gray-900" : "text-white"
+                )}
+              >
                 {user.firstName} {user.lastName}
               </p>
-              <p className="text-xs text-gray-400">{user.email}</p>
+              <p className={cn("text-xs", isLightTheme ? "text-gray-600" : "text-gray-400")}>
+                {user.email}
+              </p>
             </div>
 
             {statusLabel ? <StatusBadge status={statusLabel} /> : null}
           </div>
 
-          <div className="mt-3 grid gap-1 text-xs text-gray-300 md:grid-cols-2">
+          <div
+            className={cn(
+              "mt-3 grid gap-1 text-xs md:grid-cols-2",
+              isLightTheme ? "text-gray-700" : "text-gray-300"
+            )}
+          >
             <p>
-              <span className="font-medium text-white">Role:</span>{" "}
+              <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
+                Role:
+              </span>{" "}
               {getReadableRoleLabel(user.roles)}
             </p>
             <p>
-              <span className="font-medium text-white">District:</span>{" "}
+              <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
+                District:
+              </span>{" "}
               {user.district || "-"}
             </p>
             <p>
-              <span className="font-medium text-white">MOH Area:</span>{" "}
+              <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
+                MOH Area:
+              </span>{" "}
               {user.mohArea || "-"}
             </p>
             <p>
-              <span className="font-medium text-white">Area:</span>{" "}
+              <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
+                Area:
+              </span>{" "}
               {user.area || "-"}
             </p>
             <p>
-              <span className="font-medium text-white">Latitude:</span>{" "}
+              <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
+                Latitude:
+              </span>{" "}
               {user.latitude ?? "-"}
             </p>
             <p>
-              <span className="font-medium text-white">Longitude:</span>{" "}
+              <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
+                Longitude:
+              </span>{" "}
               {user.longitude ?? "-"}
             </p>
             <p className="md:col-span-2">
-              <span className="font-medium text-white">Roles:</span>{" "}
+              <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
+                Roles:
+              </span>{" "}
               {user.roles.join(", ")}
             </p>
           </div>
