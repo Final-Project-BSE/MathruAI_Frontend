@@ -17,7 +17,7 @@ function toRoles(input: string[]): Role[] {
   );
 }
 
-export default async function Page() {
+export default async function PatientConnectivityAssignmentPage() {
   const session = await getSession();
 
   if (!session?.user?.token || !session?.user?.roles?.length) {
@@ -27,7 +27,15 @@ export default async function Page() {
   const token = session.user.token;
   const roles: Role[] = toRoles(session.user.roles);
 
-  if (roles.length === 0) {
+  const isMotherSide = roles.some((role) =>
+    [
+      "HOPE_TO_PREGNANT_MOTHER",
+      "PREGNANT_MOTHER",
+      "POST_PREGNANT_MOTHER",
+    ].includes(role)
+  );
+
+  if (!isMotherSide) {
     redirect("/sign-in");
   }
 

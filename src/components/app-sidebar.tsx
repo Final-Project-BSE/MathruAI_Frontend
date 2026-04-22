@@ -51,7 +51,7 @@ const data = {
     },
     {
       title: "Midwife Connection",
-      url: "/midwife-connection",
+      url: "/midwife-assign",
     },
     {
       title: "AI Assistant",

@@ -39,3 +39,57 @@ export interface APIResponse<T> {
   error?: string;
   message?: string;
 }
+
+/* =========================
+   Health Monitoring Types
+   Added without changing existing prediction contracts
+   ========================= */
+
+export interface HealthMonitoringAdviceOption {
+  advice: string;
+  confidence: number;
+}
+
+export interface HealthMonitoringUpsertRequestDto {
+  age: number;
+  systolicBP: number;
+  diastolicBP: number;
+  bs: number;
+  bodyTemp: number;
+  bmi: number;
+  heartRate: number;
+  previousComplications: number;
+  preexistingDiabetes: number;
+  gestationalDiabetes: number;
+  mentalHealth: number;
+}
+
+export interface HealthMonitoringResponseDto {
+  id: string;
+  userId: string;
+  updatedByMidwifeId?: string | number | null;
+
+  age: number;
+  systolicBP: number;
+  diastolicBP: number;
+  bs: number;
+  bodyTemp: number;
+  bmi: number;
+  heartRate: number;
+
+  previousComplications: number;
+  preexistingDiabetes: number;
+  gestationalDiabetes: number;
+  mentalHealth: number;
+
+  riskLevel: string;
+  riskConfidence: number;
+  healthAdvice: string;
+  adviceConfidence: number;
+  riskProbabilities: Record<string, number>;
+  alternativeAdvice: HealthMonitoringAdviceOption[];
+  patientProfile: Record<string, any>;
+
+  createdAt?: string;
+  updatedAt?: string;
+}
