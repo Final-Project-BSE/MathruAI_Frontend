@@ -21,7 +21,7 @@ import SearchConnectSection from "./SearchConnectSection";
 import UpdateAssignedMotherSection from "./UpdateAssignedMotherSection";
 import UserDetailsModal from "./UserDetailsModal";
 import { useAutoDismiss } from "../../../components/common/useAutoDismiss";
-import { hasMidwifeRole, hasMotherRole } from "./utils";
+import { cn, hasMidwifeRole, hasMotherRole } from "./utils";
 
 type Props = {
   userId: number;
@@ -36,6 +36,9 @@ export default function Assignment({
 }: Props): JSX.Element {
   const isMidwife = useMemo(() => hasMidwifeRole(roles), [roles]);
   const isMotherSide = useMemo(() => hasMotherRole(roles), [roles]);
+
+  const theme: "light" | "dark" = isMidwife ? "dark" : "light";
+  const isLightTheme = theme === "light";
 
   const [activeTab, setActiveTab] = useState<MainTab>("search-connect");
 
@@ -83,6 +86,7 @@ export default function Assignment({
   const [mapSearching, setMapSearching] = useState(false);
   const [loading, setLoading] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
+  const [assignmentActionLoadingId, setAssignmentActionLoadingId] = useState<number | "midwife" | null>(null);
   const [sendingSearchUserId, setSendingSearchUserId] = useState<number | null>(null);
   const [districtLoading, setDistrictLoading] = useState(false);
   const [searchMohLoading, setSearchMohLoading] = useState(false);
@@ -116,6 +120,8 @@ export default function Assignment({
       if (isMidwife) {
         const users = await assignmentApi.getAssignedUsersForMidwife(userId, token);
         setAssignedUsers(users);
+      } else {
+        setAssignedUsers([]);
       }
 
       if (isMotherSide) {
@@ -125,6 +131,8 @@ export default function Assignment({
         } catch {
           setAssignedMidwife(null);
         }
+      } else {
+        setAssignedMidwife(null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load data");
@@ -201,11 +209,22 @@ export default function Assignment({
     void loadMapMohAreas();
   }, [mapSearchForm.district, token]);
 
-  const connectedOrRequestedUserIds = useMemo(() => {
+  const pendingRequestedUserIds = useMemo(() => {
     const ids = new Set<number>();
 
-    sentRequests.forEach((req) => ids.add(req.receiverId));
-    receivedRequests.forEach((req) => ids.add(req.senderId));
+    sentRequests
+      .filter((req) => req.status === "PENDING")
+      .forEach((req) => ids.add(req.receiverId));
+
+    receivedRequests
+      .filter((req) => req.status === "PENDING")
+      .forEach((req) => ids.add(req.senderId));
+
+    return ids;
+  }, [sentRequests, receivedRequests]);
+
+  const currentlyAssignedUserIds = useMemo(() => {
+    const ids = new Set<number>();
 
     if (isMidwife) {
       assignedUsers.forEach((user) => ids.add(user.id));
@@ -216,15 +235,24 @@ export default function Assignment({
     }
 
     return ids;
-  }, [sentRequests, receivedRequests, assignedUsers, assignedMidwife, isMidwife, isMotherSide]);
+  }, [assignedUsers, assignedMidwife, isMidwife, isMotherSide]);
+
+  const hiddenUserIds = useMemo(() => {
+    const ids = new Set<number>();
+
+    pendingRequestedUserIds.forEach((id) => ids.add(id));
+    currentlyAssignedUserIds.forEach((id) => ids.add(id));
+
+    return ids;
+  }, [pendingRequestedUserIds, currentlyAssignedUserIds]);
 
   const filteredSearchResults = useMemo(() => {
-    return searchResults.filter((user) => !connectedOrRequestedUserIds.has(user.id));
-  }, [searchResults, connectedOrRequestedUserIds]);
+    return searchResults.filter((user) => !hiddenUserIds.has(user.id));
+  }, [searchResults, hiddenUserIds]);
 
   const filteredMapUsers = useMemo(() => {
-    return mapUsers.filter((user) => !connectedOrRequestedUserIds.has(user.id));
-  }, [mapUsers, connectedOrRequestedUserIds]);
+    return mapUsers.filter((user) => !hiddenUserIds.has(user.id));
+  }, [mapUsers, hiddenUserIds]);
 
   async function handleSendRequest(e: React.FormEvent) {
     e.preventDefault();
@@ -382,11 +410,72 @@ export default function Assignment({
       await assignmentApi.rejectRequest(requestId, userId, token);
       setSuccess("Request rejected successfully.");
       await loadData();
-      setSelectedRequest(null);
+
+      if (selectedRequest?.id === requestId) {
+        setSelectedRequest(null);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to reject request");
     } finally {
       setActionLoadingId(null);
+    }
+  }
+
+  async function handleCancelSentRequest(requestId: number) {
+    try {
+      setActionLoadingId(requestId);
+      setError("");
+      setSuccess("");
+
+      await assignmentApi.cancelRequest(requestId, userId, token);
+      setSuccess("Request cancelled successfully.");
+      await loadData();
+
+      if (selectedRequest?.id === requestId) {
+        setSelectedRequest(null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to cancel request");
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
+  async function handleCancelAssignedMidwife() {
+    try {
+      setAssignmentActionLoadingId("midwife");
+      setError("");
+      setSuccess("");
+
+      await assignmentApi.cancelAssignedMidwifeForMother(userId, userId, token);
+      setSuccess("Assigned midwife cancelled successfully.");
+      setAssignedMidwife(null);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to cancel assigned midwife");
+    } finally {
+      setAssignmentActionLoadingId(null);
+    }
+  }
+
+  async function handleCancelAssignedMother(motherUserId: number) {
+    try {
+      setAssignmentActionLoadingId(motherUserId);
+      setError("");
+      setSuccess("");
+
+      await assignmentApi.cancelAssignedMotherForMidwife(userId, motherUserId, token);
+      setSuccess("Assigned mother cancelled successfully.");
+      await loadData();
+
+      if (selectedUserForDetails?.id === motherUserId) {
+        setSelectedUserForDetails(null);
+        setSelectedUserStatus(undefined);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to cancel assigned mother");
+    } finally {
+      setAssignmentActionLoadingId(null);
     }
   }
 
@@ -451,18 +540,41 @@ export default function Assignment({
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div
+      className={cn(
+        "min-h-screen",
+        isLightTheme ? "bg-gray-50 text-gray-900" : "bg-black text-white"
+      )}
+    >
       <div className="mx-auto max-w-7xl p-4 md:p-6">
-        <AssignmentPageHeader />
+        <AssignmentPageHeader
+          isMidwife={isMidwife}
+          isMotherSide={isMotherSide}
+          theme={theme}
+        />
 
         {visibleError ? (
-          <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          <div
+            className={cn(
+              "mb-4 rounded-lg px-4 py-3 text-sm",
+              isLightTheme
+                ? "border border-red-200 bg-red-50 text-red-700"
+                : "border border-red-500/30 bg-red-500/10 text-red-300"
+            )}
+          >
             {visibleError}
           </div>
         ) : null}
 
         {visibleSuccess ? (
-          <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+          <div
+            className={cn(
+              "mb-4 rounded-lg px-4 py-3 text-sm",
+              isLightTheme
+                ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+            )}
+          >
             {visibleSuccess}
           </div>
         ) : null}
@@ -471,6 +583,7 @@ export default function Assignment({
           activeTab={activeTab}
           onChange={setActiveTab}
           tabs={topTabs}
+          theme={theme}
         />
 
         {activeTab === "search-connect" ? (
@@ -512,6 +625,7 @@ export default function Assignment({
               setSelectedUserForDetails(user);
               setSelectedUserStatus(status);
             }}
+            theme={theme}
           />
         ) : null}
 
@@ -525,6 +639,12 @@ export default function Assignment({
               setSelectedUserForDetails(user);
               setSelectedUserStatus(status);
             }}
+            onCancelAssignedMidwife={() => void handleCancelAssignedMidwife()}
+            onCancelAssignedMother={(motherUserId) =>
+              void handleCancelAssignedMother(motherUserId)
+            }
+            assignmentActionLoadingId={assignmentActionLoadingId}
+            theme={theme}
           />
         ) : null}
 
@@ -537,6 +657,10 @@ export default function Assignment({
               setSelectedRequest(request);
               setSelectedRequestType(type);
             }}
+            onRejectRequest={(requestId) => void handleReject(requestId)}
+            onCancelSentRequest={(requestId) => void handleCancelSentRequest(requestId)}
+            actionLoadingId={actionLoadingId}
+            theme={theme}
           />
         ) : null}
 
@@ -548,6 +672,7 @@ export default function Assignment({
             updateForm={updateForm}
             setUpdateForm={setUpdateForm}
             onSubmit={handleUpdateAssignedMother}
+            theme={theme}
           />
         ) : null}
       </div>
@@ -566,6 +691,7 @@ export default function Assignment({
         }
         sendingUserId={sendingSearchUserId}
         statusLabel={selectedUserStatus}
+        theme={theme}
       />
 
       <RequestDetailsModal
@@ -575,7 +701,9 @@ export default function Assignment({
         type={selectedRequestType}
         onApprove={(requestId) => void handleApprove(requestId)}
         onReject={(requestId) => void handleReject(requestId)}
+        onCancel={(requestId) => void handleCancelSentRequest(requestId)}
         actionLoadingId={actionLoadingId}
+        theme={theme}
       />
     </div>
   );

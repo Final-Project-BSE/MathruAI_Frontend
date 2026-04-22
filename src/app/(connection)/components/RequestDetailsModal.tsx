@@ -3,7 +3,7 @@
 import type { ConnectionRequestResponseDto } from "../../api/user-assign/types";
 import Modal from "./Modal";
 import StatusBadge from "./StatusBadge";
-import { formatDateTime } from "./utils";
+import { cn, formatDateTime } from "./utils";
 
 type Props = {
   request: ConnectionRequestResponseDto | null;
@@ -12,7 +12,9 @@ type Props = {
   type: "received" | "sent";
   onApprove?: (requestId: number) => void;
   onReject?: (requestId: number) => void;
+  onCancel?: (requestId: number) => void;
   actionLoadingId?: number | null;
+  theme: "light" | "dark";
 };
 
 export default function RequestDetailsModal({
@@ -22,9 +24,13 @@ export default function RequestDetailsModal({
   type,
   onApprove,
   onReject,
+  onCancel,
   actionLoadingId,
+  theme,
 }: Props) {
   if (!request) return null;
+
+  const isLightTheme = theme === "light";
 
   const name =
     type === "received"
@@ -34,47 +40,81 @@ export default function RequestDetailsModal({
   const email =
     type === "received" ? request.senderEmail : request.receiverEmail;
 
+  const isPending = request.status === "PENDING";
+  const isLoading = actionLoadingId === request.id;
+
   return (
-    <Modal open={open} title="Request Details" onClose={onClose}>
-      <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+    <Modal open={open} title="Request Details" onClose={onClose} theme={theme}>
+      <div
+        className={cn(
+          "rounded-lg border p-4",
+          isLightTheme
+            ? "border-gray-200 bg-gray-50"
+            : "border-white/10 bg-white/5"
+        )}
+      >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-md font-semibold text-white">{name}</p>
-            <p className="text-xs text-gray-400">{email}</p>
+            <p
+              className={cn(
+                "text-md font-semibold",
+                isLightTheme ? "text-gray-900" : "text-white"
+              )}
+            >
+              {name}
+            </p>
+            <p className={cn("text-xs", isLightTheme ? "text-gray-600" : "text-gray-400")}>
+              {email}
+            </p>
           </div>
 
           <StatusBadge status={request.status} />
         </div>
 
-        <div className="mt-3 grid gap-1 text-xs text-gray-300 md:grid-cols-2">
+        <div
+          className={cn(
+            "mt-3 grid gap-1 text-xs md:grid-cols-2",
+            isLightTheme ? "text-gray-700" : "text-gray-300"
+          )}
+        >
           <p>
-            <span className="font-medium text-white">Method:</span>{" "}
+            <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
+              Method:
+            </span>{" "}
             {request.method}
           </p>
           <p>
-            <span className="font-medium text-white">Matched Area:</span>{" "}
+            <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
+              Matched Area:
+            </span>{" "}
             {request.matchedArea || "-"}
           </p>
           <p>
-            <span className="font-medium text-white">Created:</span>{" "}
+            <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
+              Created:
+            </span>{" "}
             {formatDateTime(request.createdAt)}
           </p>
           <p>
-            <span className="font-medium text-white">Responded:</span>{" "}
+            <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
+              Responded:
+            </span>{" "}
             {formatDateTime(request.respondedAt)}
           </p>
           <p className="md:col-span-2">
-            <span className="font-medium text-white">Message:</span>{" "}
+            <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
+              Message:
+            </span>{" "}
             {request.message || "-"}
           </p>
         </div>
 
-        {type === "received" && request.status === "PENDING" ? (
+        {type === "received" && isPending ? (
           <div className="mt-5 flex gap-3">
             <button
               type="button"
               onClick={() => onApprove?.(request.id)}
-              disabled={actionLoadingId === request.id}
+              disabled={isLoading}
               className="rounded-lg bg-emerald-600 px-4 py-2 text-xs text-white hover:bg-emerald-500 disabled:opacity-50"
             >
               Approve
@@ -82,10 +122,23 @@ export default function RequestDetailsModal({
             <button
               type="button"
               onClick={() => onReject?.(request.id)}
-              disabled={actionLoadingId === request.id}
-              className="rounded-2xl bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-500 disabled:opacity-50"
+              disabled={isLoading}
+              className="rounded-lg bg-red-600 px-4 py-2 text-xs text-white hover:bg-red-500 disabled:opacity-50"
             >
               Reject
+            </button>
+          </div>
+        ) : null}
+
+        {type === "sent" && isPending ? (
+          <div className="mt-5 flex gap-3">
+            <button
+              type="button"
+              onClick={() => onCancel?.(request.id)}
+              disabled={isLoading}
+              className="rounded-lg bg-red-600 px-4 py-2 text-xs text-white hover:bg-red-500 disabled:opacity-50"
+            >
+              Cancel Request
             </button>
           </div>
         ) : null}
