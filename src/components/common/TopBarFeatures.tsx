@@ -17,7 +17,9 @@ const features = [
     { label: "Messages", href: "/messages", icon: MessageCircle },
     { label: "Midwives Map", href: "/midwives-map", icon: MapPinned },
     { label: "Health Records", href: "/health-records", icon: FileHeart },
+    { label: "check_list", href: "/check_list", icon: Settings },
     { label: "Settings", href: "/settings", icon: Settings },
+
 ];
 
 const languages = ["EN", "සිං", "த"] as const;
