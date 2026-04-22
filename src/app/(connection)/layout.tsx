@@ -1,6 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClientFloatingChatbot } from "@/components/ClientFloatingChatbot";
-import Navbar from "./midwife/components/Navbar";
+import Navbar from "../(panel)/midwife/components/Navbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

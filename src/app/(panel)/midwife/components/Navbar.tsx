@@ -23,7 +23,7 @@ import { logout } from "@/lib/authentication";
 import { useRouter } from "next/navigation";
 
 const navLinks = [
-  { name: "Dashboard", href: "#", icon: LayoutGrid },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutGrid },
   { name: "Sample", href: "#", icon: BarChart3 },
   { name: "Sample", href: "#", icon: Activity },
   { name: "Three Posha", href: "#", icon: FileText },
@@ -165,7 +165,7 @@ export default function Navbar() {
             </button>
 
             <div className="flex h-[52px] min-w-0 items-center gap-3 pr-1 sm:pr-2 lg:border-r lg:border-white/10 lg:px-4">
-              <Link href="#" className="flex min-w-0 items-center gap-2">
+              <Link href="/dashboard" className="flex min-w-0 items-center gap-2">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white text-black">
                   <Logo />
                 </div>

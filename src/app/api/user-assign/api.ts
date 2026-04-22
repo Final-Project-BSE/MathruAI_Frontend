@@ -147,4 +147,18 @@ export const assignmentApi = {
       token,
       payload
     ),
+
+  getDistricts: (token?: string) =>
+    request<string[]>(
+      `/api/locations/districts`,
+      "GET",
+      token
+    ),
+
+  getMohAreasByDistrict: (district: string, token?: string) =>
+    request<string[]>(
+      `/api/locations/moh-areas?district=${encodeURIComponent(district)}`,
+      "GET",
+      token
+    ),
 };

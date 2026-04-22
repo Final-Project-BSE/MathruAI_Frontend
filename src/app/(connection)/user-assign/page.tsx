@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import Assignment from "./assignment";
+import Assignment from "../components/assignment";
 import { getSession } from "@/lib/authentication";
 import { getcuruser } from "../../api/user/api";
 import type { Role } from "../../api/user-assign/types";

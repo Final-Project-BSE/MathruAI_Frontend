@@ -49,10 +49,12 @@ export default function HealthMonitoringCard({
   }, [patientId, monitoring]);
 
   useEffect(() => {
-    setCachedHealthMonitoringBundle(patientId, {
-      monitoring: latestMonitoring,
-    });
-  }, [patientId, latestMonitoring]);
+  if (!latestMonitoring) return;
+
+  setCachedHealthMonitoringBundle(patientId, {
+    monitoring: latestMonitoring,
+  });
+}, [patientId, latestMonitoring]);
 
   const mainTone = useMemo(
     () => riskTone(latestMonitoring?.riskLevel),
