@@ -57,7 +57,7 @@ export default function SearchableSelect({
       <label
         className={cn(
           "mb-2 block text-xs font-medium",
-          isLightTheme ? "text-gray-700" : "text-gray-300"
+          isLightTheme ? "text-gray-900" : "text-gray-300"
         )}
       >
         {label}
@@ -78,7 +78,7 @@ export default function SearchableSelect({
         className={cn(
           "w-full rounded-md border px-4 py-2 text-xs outline-none disabled:cursor-not-allowed disabled:opacity-50",
           isLightTheme
-            ? "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-[#d04f51]"
+            ? "border-gray-300 bg-white text-gray-900 placeholder:text-gray-800 focus:border-[#d04f51]"
             : "border-white/10 bg-black text-white placeholder:text-gray-500 focus:border-[#d04f51]"
         )}
       />

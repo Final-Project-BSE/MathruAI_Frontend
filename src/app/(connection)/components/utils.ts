@@ -34,7 +34,7 @@ export function getRequestStatusClass(status?: string) {
     status === "PENDING" && "bg-yellow-500/15 text-yellow-300",
     status === "APPROVED" && "bg-emerald-500/15 text-emerald-300",
     status === "REJECTED" && "bg-red-500/15 text-red-300",
-    status === "ASSIGNED" && "bg-blue-500/15 text-blue-300",
+    status === "ASSIGNED" && "bg-green-400 text-white",
     status === "AVAILABLE" && "bg-emerald-500/15 text-emerald-300",
     !status && "bg-blue-500/15 text-blue-300"
   );

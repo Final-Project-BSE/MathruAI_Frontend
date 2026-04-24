@@ -22,6 +22,7 @@ import UpdateAssignedMotherSection from "./UpdateAssignedMotherSection";
 import UserDetailsModal from "./UserDetailsModal";
 import { useAutoDismiss } from "../../../components/common/useAutoDismiss";
 import { cn, hasMidwifeRole, hasMotherRole } from "./utils";
+import TopBarFeatures from "@/components/common/TopBarFeatures";
 
 type Props = {
   userId: number;
@@ -543,10 +544,12 @@ export default function Assignment({
     <div
       className={cn(
         "min-h-screen",
-        isLightTheme ? "bg-gray-50 text-gray-900" : "bg-black text-white"
+        isLightTheme ? "bg-[#fed2cc] text-black" : "bg-black text-white"
       )}
     >
       <div className="mx-auto max-w-7xl p-4 md:p-6">
+
+        {isMotherSide ? <TopBarFeatures /> : null}
         <AssignmentPageHeader
           isMidwife={isMidwife}
           isMotherSide={isMotherSide}

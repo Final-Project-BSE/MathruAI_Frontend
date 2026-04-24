@@ -10,6 +10,7 @@ import {
   MapPin,
   CalendarDays,
   CreditCard,
+  MessageSquare,
   Map,
 } from "lucide-react";
 import type {
@@ -19,15 +20,20 @@ import type {
 import ProtectedImage from "../../../../../../../lib/ProtectedImage";
 import PatientInfoForm from "./PatientInfoForm";
 import { formatDate } from "./lib/utils";
+import MessagesPopup from "@/app/(connection)/messages/MessagesPopup";
 
 type PatientSummaryCardProps = {
   patient: AssignedPatientDetailResponseDto | null;
   patientStage: string;
   token: string;
   form: AssignedUserProfileUpdateRequestDto;
-  setForm: React.Dispatch<React.SetStateAction<AssignedUserProfileUpdateRequestDto>>;
+  setForm: React.Dispatch<
+    React.SetStateAction<AssignedUserProfileUpdateRequestDto>
+  >;
   onSave?: () => void | Promise<void>;
   saving?: boolean;
+  unreadCount?: number;
+  onMessagesClosed?: () => void;
 };
 
 function getInitials(patient: AssignedPatientDetailResponseDto | null) {
@@ -66,9 +72,12 @@ export default function PatientSummaryCard({
   setForm,
   onSave,
   saving = false,
+  unreadCount = 0,
+  onMessagesClosed,
 }: PatientSummaryCardProps) {
   const [open, setOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
+  const [messagesOpen, setMessagesOpen] = useState(false);
 
   const hasCoordinates =
     typeof patient?.latitude === "number" &&
@@ -79,13 +88,9 @@ export default function PatientSummaryCard({
       return `${patient?.latitude},${patient?.longitude}`;
     }
 
-    const locationParts = [
-      patient?.address,
-      patient?.mohArea,
-      patient?.district,
-    ].filter(Boolean);
-
-    return locationParts.join(", ");
+    return [patient?.address, patient?.mohArea, patient?.district]
+      .filter(Boolean)
+      .join(", ");
   }, [
     hasCoordinates,
     patient?.latitude,
@@ -96,12 +101,26 @@ export default function PatientSummaryCard({
   ]);
 
   const googleMapsUrl = mapQuery
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        mapQuery
+      )}`
     : null;
 
   const googleMapsEmbedUrl = mapQuery
-    ? `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=15&output=embed`
+    ? `https://www.google.com/maps?q=${encodeURIComponent(
+        mapQuery
+      )}&z=15&output=embed`
     : null;
+
+  async function handleSaveClick() {
+    if (onSave) await onSave();
+    setOpen(false);
+  }
+
+  function handleOpenMessages() {
+    if (!patient?.id) return;
+    setMessagesOpen(true);
+  }
 
   const initialsFallback = (
     <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-white/10 text-xl font-bold text-white sm:h-28 sm:w-28">
@@ -115,13 +134,6 @@ export default function PatientSummaryCard({
     </div>
   );
 
-  async function handleSaveClick() {
-    if (onSave) {
-      await onSave();
-    }
-    setOpen(false);
-  }
-
   return (
     <>
       <section>
@@ -134,7 +146,11 @@ export default function PatientSummaryCard({
                 <ProtectedImage
                   src={patient?.profileImageUrl}
                   token={token}
-                  alt={`${patient?.firstName ?? ""} ${patient?.lastName ?? ""}`.trim() || "Patient"}
+                  alt={
+                    `${patient?.firstName ?? ""} ${
+                      patient?.lastName ?? ""
+                    }`.trim() || "Patient"
+                  }
                   className="h-24 w-24 rounded-2xl bg-white/10 object-cover shadow-md sm:h-28 sm:w-28"
                   fallback={initialsFallback}
                   loadingFallback={loadingFallback}
@@ -145,8 +161,10 @@ export default function PatientSummaryCard({
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h2 className="truncate text-md font-bold tracking-tight text-white sm:text-md">
-                      {patient?.firstName || "Unknown"} {patient?.lastName || "Patient"}
+                      {patient?.firstName || "Unknown"}{" "}
+                      {patient?.lastName || "Patient"}
                     </h2>
+
                     <p className="mt-0.5 mb-2 text-xs font-medium text-zinc-400">
                       {patientStage || "No role"}
                     </p>
@@ -161,47 +179,63 @@ export default function PatientSummaryCard({
                       label="Phone"
                       value={patient?.phoneNumber || "-"}
                     />
-
                     <DetailRow
                       icon={<CreditCard className="h-4 w-4" />}
                       label="National ID"
                       value={patient?.nationalIdNumber || "-"}
                     />
-
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setOpen(true)}
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-white/10 bg-white/5 text-zinc-300 transition hover:bg-white/10 hover:text-white"
-                    aria-label="Edit patient information"
-                    title="Edit patient information"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={handleOpenMessages}
+                      disabled={!patient?.id}
+                      className="relative inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 text-xs font-medium text-white/80 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label="Open messages"
+                      title="Open messages"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      <span>Chat</span>
+
+                      {unreadCount > 0 ? (
+                        <span className="absolute -right-2 -top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                          {unreadCount > 99 ? "99+" : unreadCount}
+                        </span>
+                      ) : null}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setOpen(true)}
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-white/10 bg-white/5 text-zinc-300 transition hover:bg-white/10 hover:text-white"
+                      aria-label="Edit patient information"
+                      title="Edit patient information"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
               <div className="sm:col-span-2">
                 <DetailRow
-                    icon={<CalendarDays className="h-4 w-4" />}
-                    label="DOB"
-                    value={formatDate(patient?.dateOfBirth)}
-                  />
+                  icon={<CalendarDays className="h-4 w-4" />}
+                  label="DOB"
+                  value={formatDate(patient?.dateOfBirth)}
+                />
                 <DetailRow
-                    icon={<MapPin className="h-4 w-4" />}
-                    label="Address"
-                    value={patient?.address || "-"}
-                  />
-                <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
-                  
+                  icon={<MapPin className="h-4 w-4" />}
+                  label="Address"
+                  value={patient?.address || "-"}
+                />
 
+                <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
                   <DetailRow
                     icon={<MapPin className="h-4 w-4" />}
                     label="District"
                     value={patient?.district || "-"}
                   />
-
                   <DetailRow
                     icon={<MapPin className="h-4 w-4" />}
                     label="MOH Area"
@@ -231,7 +265,9 @@ export default function PatientSummaryCard({
           <div className="w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
               <div>
-                <h3 className="text-lg font-semibold text-white">Patient Location</h3>
+                <h3 className="text-lg font-semibold text-white">
+                  Patient Location
+                </h3>
                 <p className="text-sm text-zinc-400">
                   View the patient location in Google Maps
                 </p>
@@ -295,7 +331,9 @@ export default function PatientSummaryCard({
           <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-white/10 bg-black shadow-2xl">
             <div className="sticky top-0 flex items-center justify-between border-b border-white/10 bg-black px-5 py-4">
               <div>
-                <h3 className="text-lg font-semibold text-white">Edit Patient Information</h3>
+                <h3 className="text-lg font-semibold text-white">
+                  Edit Patient Information
+                </h3>
                 <p className="text-sm text-zinc-400">
                   Update the assigned patient details.
                 </p>
@@ -319,7 +357,7 @@ export default function PatientSummaryCard({
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 border-t border-white/10 px-5 py-4">
+            <div className="sticky bottom-0 flex justify-end gap-3 border-t border-white/10 bg-black px-5 py-4">
               <button
                 type="button"
                 onClick={() => setOpen(false)}
@@ -341,6 +379,16 @@ export default function PatientSummaryCard({
           </div>
         </div>
       ) : null}
+
+      <MessagesPopup
+        open={messagesOpen}
+        onClose={() => {
+          setMessagesOpen(false);
+          onMessagesClosed?.();
+        }}
+        targetUserId={patient?.id ?? null}
+        theme="dark"
+      />
     </>
   );
 }
