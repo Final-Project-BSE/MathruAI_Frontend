@@ -1,9 +1,6 @@
 "use client";
 
 import Link from "next/link";
-<<<<<<< HEAD
-import { Bell, FileHeart, MapPinned, Menu, MessageCircle, Settings ,CheckSquare  } from "lucide-react";
-=======
 import {
   Bell,
   FileHeart,
@@ -11,8 +8,8 @@ import {
   Menu,
   MessageCircle,
   Settings,
+  CheckSquare,
 } from "lucide-react";
->>>>>>> 530b70bf6a9b93597342400eb16514a6e16a95f1
 import { getcuruser } from "@/app/api/user/api";
 import type { UserResponseDto } from "@/app/api/user/types";
 import { useEffect, useMemo, useState } from "react";
@@ -26,20 +23,11 @@ type TopBarFeaturesProps = {
   avatarUrl?: string;
 };
 
-<<<<<<< HEAD
-const features = [
-    { label: "Messages", href: "/messages", icon: MessageCircle },
-    { label: "Midwives Map", href: "/midwives-map", icon: MapPinned },
-    { label: "Health Records", href: "/health-records", icon: FileHeart },
-    { label: "checklist", href: "/pregnancy/checklist", icon: CheckSquare  },
-    { label: "Settings", href: "/settings", icon: Settings },
-
-=======
 const baseFeatures = [
   { label: "Midwives Map", href: "/registered-midwives-map", icon: MapPinned },
   { label: "Health Records", href: "/health-records", icon: FileHeart },
+      { label: "checklist", href: "/pregnancy/checklist", icon: CheckSquare  },
   { label: "Settings", href: "/settings", icon: Settings },
->>>>>>> 530b70bf6a9b93597342400eb16514a6e16a95f1
 ];
 
 const languages = ["EN", "සිං", "த"] as const;
