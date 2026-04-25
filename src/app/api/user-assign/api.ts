@@ -3,6 +3,7 @@ import type {
   AreaSearchRequestDto,
   AssignedUserProfileUpdateRequestDto,
   ConnectionRequestResponseDto,
+  MapUserResponseDto,
   SendConnectionRequestDto,
   UserResponseDto,
 } from "./types";
@@ -175,6 +176,13 @@ export const assignmentApi = {
       "POST",
       token,
       payload
+    ),
+
+  getAllMappableOppositeUsers: (requesterId: number, token?: string) =>
+    request<MapUserResponseDto[]>(
+      `/api/connections/map/all/${requesterId}`,
+      "GET",
+      token
     ),
 
   getDistricts: (token?: string) =>

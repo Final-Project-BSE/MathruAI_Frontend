@@ -21,6 +21,10 @@ import {
 import Logo from "@/components/common/Logo";
 import { logout } from "@/lib/authentication";
 import { useRouter } from "next/navigation";
+import MessagesPopup from "../../../(connection)/messages/MessagesPopup";
+import { getSession } from "@/lib/authentication";
+import { getcuruser } from "@/app/api/user/api";
+import { chatApi } from "@/app/api/chat/api";
 
 const navLinks = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutGrid },
@@ -41,6 +45,11 @@ export default function Navbar() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const profileRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
+  const [messagesOpen, setMessagesOpen] = useState(false);
+
+  const [token, setToken] = useState("");
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const filteredItems = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -102,6 +111,44 @@ export default function Navbar() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadUnreadCount() {
+      try {
+        const session = await getSession();
+        const jwt = session?.user?.token || "";
+
+        if (!jwt) return;
+
+        const me = await getcuruser(jwt);
+        const unread = await chatApi.getUnreadCount(me.id, jwt);
+
+        if (!active) return;
+
+        setToken(jwt);
+        setCurrentUserId(me.id);
+        setUnreadCount(unread.unreadCount || 0);
+      } catch {
+        if (!active) return;
+        setUnreadCount(0);
+      }
+    }
+
+    void loadUnreadCount();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function refreshUnreadCount() {
+    if (!token || !currentUserId) return;
+
+    const unread = await chatApi.getUnreadCount(currentUserId, token);
+    setUnreadCount(unread.unreadCount || 0);
+  }
 
   function handleSearchToggle() {
     setSearchOpen((prev) => !prev);
@@ -207,9 +254,8 @@ export default function Navbar() {
 
                   <ChevronDown
                     size={12}
-                    className={`text-white/70 transition-transform ${
-                      profileDropdownOpen ? "rotate-180" : ""
-                    }`}
+                    className={`text-white/70 transition-transform ${profileDropdownOpen ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
 
@@ -251,11 +297,10 @@ export default function Navbar() {
                   <Link
                     key={`${item.name}-${index}`}
                     href={item.href}
-                    className={`shrink-0 rounded-full px-4 py-2 text-center text-[11px] font-medium transition ${
-                      active
-                        ? "bg-white/10 text-white"
-                        : "text-white/55 hover:bg-white/5 hover:text-white"
-                    }`}
+                    className={`shrink-0 rounded-full px-4 py-2 text-center text-[11px] font-medium transition ${active
+                      ? "bg-white/10 text-white"
+                      : "text-white/55 hover:bg-white/5 hover:text-white"
+                      }`}
                     title={item.name}
                   >
                     {item.name}
@@ -286,26 +331,29 @@ export default function Navbar() {
 
             <button
               type="button"
+              onClick={() => setMessagesOpen(true)}
               className="relative flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/80 transition hover:bg-white/[0.06] hover:text-white"
+              aria-label="Open messages"
             >
               <MessageSquare size={14} />
-              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#8b5cf6] px-1 text-[8px] font-semibold text-white">
-                1
-              </span>
+
+              {unreadCount > 0 ? (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-600 px-1 text-[8px] font-semibold text-white">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              ) : null}
             </button>
 
             <div ref={searchRef} className="relative flex items-center">
               <div
-                className={`absolute right-0 top-1/2 -translate-y-1/2 overflow-hidden transition-all duration-300 ease-out ${
-                  searchOpen
-                    ? "w-[min(320px,calc(100vw-24px))] opacity-100"
-                    : "pointer-events-none w-9 opacity-0 sm:w-10"
-                }`}
+                className={`absolute right-0 top-1/2 -translate-y-1/2 overflow-hidden transition-all duration-300 ease-out ${searchOpen
+                  ? "w-[min(320px,calc(100vw-24px))] opacity-100"
+                  : "pointer-events-none w-9 opacity-0 sm:w-10"
+                  }`}
               >
                 <div
-                  className={`flex h-10 items-center rounded-full border border-white/10 bg-black shadow-[0_12px_40px_rgba(0,0,0,0.35)] transition-all duration-300 ease-out ${
-                    searchOpen ? "translate-x-0 scale-100" : "translate-x-3 scale-95"
-                  }`}
+                  className={`flex h-10 items-center rounded-full border border-white/10 bg-black shadow-[0_12px_40px_rgba(0,0,0,0.35)] transition-all duration-300 ease-out ${searchOpen ? "translate-x-0 scale-100" : "translate-x-3 scale-95"
+                    }`}
                 >
                   <button
                     type="button"
@@ -338,11 +386,10 @@ export default function Navbar() {
                 </div>
 
                 <div
-                  className={`absolute right-0 top-12 w-full rounded-2xl border border-white/10 bg-black p-2 shadow-[0_12px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-all duration-300 ease-out ${
-                    searchOpen
-                      ? "translate-y-0 opacity-100"
-                      : "pointer-events-none -translate-y-2 opacity-0"
-                  }`}
+                  className={`absolute right-0 top-12 w-full rounded-2xl border border-white/10 bg-black p-2 shadow-[0_12px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-all duration-300 ease-out ${searchOpen
+                    ? "translate-y-0 opacity-100"
+                    : "pointer-events-none -translate-y-2 opacity-0"
+                    }`}
                 >
                   <div className="mb-2 px-2 pt-1 text-[10px] uppercase tracking-[0.18em] text-white/35">
                     Search Results
@@ -360,11 +407,10 @@ export default function Navbar() {
                             type="button"
                             onClick={() => handleSelectItem(item.href)}
                             onMouseEnter={() => setSelectedIndex(index)}
-                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition ${
-                              active
-                                ? "bg-white/10 text-white"
-                                : "text-white/75 hover:bg-white/5 hover:text-white"
-                            }`}
+                            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition ${active
+                              ? "bg-white/10 text-white"
+                              : "text-white/75 hover:bg-white/5 hover:text-white"
+                              }`}
                           >
                             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5">
                               <Icon size={15} />
@@ -412,21 +458,18 @@ export default function Navbar() {
       </header>
 
       <div
-        className={`fixed inset-0 z-50 lg:hidden ${
-          mobileMenuOpen ? "pointer-events-auto" : "pointer-events-none"
-        }`}
+        className={`fixed inset-0 z-50 lg:hidden ${mobileMenuOpen ? "pointer-events-auto" : "pointer-events-none"
+          }`}
       >
         <div
           onClick={() => setMobileMenuOpen(false)}
-          className={`absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 ${
-            mobileMenuOpen ? "opacity-100" : "opacity-0"
-          }`}
+          className={`absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 ${mobileMenuOpen ? "opacity-100" : "opacity-0"
+            }`}
         />
 
         <aside
-          className={`absolute left-0 top-0 h-full w-[88%] max-w-[360px] border-r border-white/10 bg-black shadow-[0_20px_80px_rgba(0,0,0,0.45)] transition-transform duration-300 ease-out ${
-            mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
+          className={`absolute left-0 top-0 h-full w-[88%] max-w-[360px] border-r border-white/10 bg-black shadow-[0_20px_80px_rgba(0,0,0,0.45)] transition-transform duration-300 ease-out ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
         >
           <div className="flex h-full flex-col">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
@@ -499,11 +542,10 @@ export default function Navbar() {
                       key={`${item.name}-${index}`}
                       type="button"
                       onClick={() => handleSelectItem(item.href)}
-                      className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition ${
-                        active
-                          ? "bg-white/10 text-white"
-                          : "text-white/70 hover:bg-white/5 hover:text-white"
-                      }`}
+                      className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition ${active
+                        ? "bg-white/10 text-white"
+                        : "text-white/70 hover:bg-white/5 hover:text-white"
+                        }`}
                     >
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/5">
                         <Icon size={17} />
@@ -544,6 +586,14 @@ export default function Navbar() {
           </div>
         </aside>
       </div>
+      <MessagesPopup
+  open={messagesOpen}
+  onClose={() => {
+    setMessagesOpen(false);
+    void refreshUnreadCount();
+  }}
+  theme="dark"
+/>
     </>
   );
 }

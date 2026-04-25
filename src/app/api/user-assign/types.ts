@@ -63,6 +63,22 @@ export interface UserResponseDto {
   roles: Role[];
 }
 
+export interface MapUserResponseDto {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  address?: string | null;
+  area?: string | null;
+  district?: string | null;
+  mohArea?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  assignedMidwifeId?: number | null;
+  assignedMidwifeName?: string | null;
+  roles: Role[];
+}
+
 export interface ConnectionRequestResponseDto {
   id: number;
   senderId: number;

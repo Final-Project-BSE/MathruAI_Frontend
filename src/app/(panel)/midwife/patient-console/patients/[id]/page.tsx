@@ -24,6 +24,7 @@ import HealthRecordsSection from "./components/HealthRecordsSection";
 import PatientSummaryCard from "./components/PatientSummaryCard";
 import FertilityCard from "./components/FertilityCard";
 import StatusAlert from "./components/StatusAlert";
+import DailyRecommendationCard from "./components/daily-recommendation/DailyRecommendationCard";
 import { getRoleLabel } from "./components/lib/utils";
 import {
   clearCachedHealthMonitoringBundle,
@@ -42,6 +43,7 @@ import PatientSidebar from "../../components/PatientSidebar";
 import { filterPatients } from "./components/lib/patientConsoleShared";
 import HealthMonitoringCard from "./components/health-monitoring/HealthMonitoringCard";
 import { healthMonitoringApis } from "../../../../../api/healthmonitor/api";
+import { chatApi } from "@/app/api/chat/api";
 
 export default function AssignedPatientManagePage() {
   const router = useRouter();
@@ -73,6 +75,8 @@ export default function AssignedPatientManagePage() {
   const [profileSaving, setProfileSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const [unreadByPatientId, setUnreadByPatientId] = useState<Record<number, number>>({});
 
   const [form, setForm] = useState<AssignedUserProfileUpdateRequestDto>({
     firstName: "",
@@ -244,6 +248,7 @@ export default function AssignedPatientManagePage() {
         const currentUser = await getcuruser(jwt);
         if (!active) return;
         setMidwifeId(currentUser.id);
+        void loadUnreadCounts(jwt, currentUser.id);
 
         const listPromise =
           patients.length > 0
@@ -295,7 +300,7 @@ export default function AssignedPatientManagePage() {
 
         const cachedRecords =
           getCachedPatientBundle(patientId)?.recordsByCategory?.[
-            selectedCategoryId
+          selectedCategoryId
           ];
 
         if (cachedRecords) {
@@ -334,6 +339,10 @@ export default function AssignedPatientManagePage() {
 
   const patientStage = useMemo(() => {
     return patient ? getRoleLabel(patient.roles) : "-";
+  }, [patient]);
+
+  const isPregnancyUser = useMemo(() => {
+    return Boolean(patient?.roles?.includes("PREGNANT_MOTHER"));
   }, [patient]);
 
   function openPatient(entry: UserResponseDto) {
@@ -497,6 +506,17 @@ export default function AssignedPatientManagePage() {
     }
   }
 
+  async function loadUnreadCounts(jwt: string, currentUserId: number) {
+    const conversations = await chatApi.getMyConversations(currentUserId, jwt);
+    const next: Record<number, number> = {};
+
+    conversations.forEach((conversation) => {
+      next[conversation.otherUser.id] = conversation.unreadCount || 0;
+    });
+
+    setUnreadByPatientId(next);
+  }
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center bg-black text-white">
@@ -531,8 +551,14 @@ export default function AssignedPatientManagePage() {
                 token={token}
                 form={form}
                 setForm={setForm}
-                saving={profileSaving}
                 onSave={handleProfileSave}
+                saving={profileSaving}
+                unreadCount={patient ? unreadByPatientId[patient.id] || 0 : 0}
+                onMessagesClosed={() => {
+                  if (token && midwifeId) {
+                    void loadUnreadCounts(token, midwifeId);
+                  }
+                }}
               />
 
               <HealthMonitoringCard
@@ -545,6 +571,14 @@ export default function AssignedPatientManagePage() {
                 onDelete={handleMonitoringDelete}
               />
             </div>
+
+            {isPregnancyUser ? (
+              <DailyRecommendationCard
+                token={token}
+                userId={patientId}
+                enabled={isPregnancyUser}
+              />
+            ) : null}
 
             <FertilityCard fertility={fertility} />
 

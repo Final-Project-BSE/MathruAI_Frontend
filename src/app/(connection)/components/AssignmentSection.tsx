@@ -44,7 +44,7 @@ export default function AssignmentSection({
         assignedMidwife ? (
           <div
             className={cn(
-              "rounded-2xl border p-4",
+              "rounded-md border p-4",
               isLightTheme
                 ? "border-gray-200 bg-white shadow-sm"
                 : "border-white/10 bg-white/5"
@@ -55,7 +55,7 @@ export default function AssignmentSection({
                 <p
                   className={cn(
                     "font-semibold",
-                    isLightTheme ? "text-gray-900" : "text-white"
+                    isLightTheme ? "text-gray-900 text-sm" : "text-white text-xs"
                   )}
                 >
                   {assignedMidwife.firstName} {assignedMidwife.lastName}
@@ -63,7 +63,7 @@ export default function AssignmentSection({
                 <p
                   className={cn(
                     "text-sm",
-                    isLightTheme ? "text-gray-600" : "text-gray-400"
+                    isLightTheme ? "text-gray-600 text-sm" : "text-gray-400 text-xs"
                   )}
                 >
                   {assignedMidwife.email}
@@ -76,7 +76,7 @@ export default function AssignmentSection({
                   type="button"
                   onClick={() => onCancelAssignedMidwife()}
                   disabled={assignmentActionLoadingId === "midwife"}
-                  className="rounded-xl bg-red-600 px-3 py-2 text-sm text-white hover:bg-red-500 disabled:opacity-50"
+                  className="rounded-md bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-500 disabled:opacity-50"
                 >
                   Cancel Assignment
                 </button>
@@ -86,7 +86,7 @@ export default function AssignmentSection({
                   className={cn(
                     "rounded-xl border px-3 py-2 text-sm",
                     isLightTheme
-                      ? "border-gray-200 text-gray-700 hover:bg-gray-50"
+                      ? "border-black text-black hover:bg-gray-200"
                       : "border-white/10 text-gray-300 hover:bg-white/10"
                   )}
                 >

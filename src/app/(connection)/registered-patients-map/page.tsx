@@ -1,13 +1,8 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/authentication";
-import { getcuruser } from "../../../api/user/api";
-import type { Role } from "../../../api/user-assign/types";
-
-import Navbar from "../components/Navbar";
-import TopBar from "./components/TopBar";
-import WelcomeHeaderCard from "./components/WelcomeHeaderCard";
-import DashboardFeatures from "./components/DashboardFeatures";
-import ManagementCards from "./components/ManagementCard";
+import { getcuruser } from "../../api/user/api";
+import type { Role } from "../../api/user-assign/types";
+import RegisteredUsersMapPage from "../components/midwife-map/RegisteredUsersMapPage";
 
 const VALID_ROLES: Role[] = [
   "MIDWIFE",
@@ -22,7 +17,7 @@ function toRoles(input: string[]): Role[] {
   );
 }
 
-export default async function MidwifeDashboardPage() {
+export default async function RegisteredPatientsMapPage() {
   const session = await getSession();
 
   if (!session?.user?.token || !session?.user?.roles?.length) {
@@ -32,7 +27,9 @@ export default async function MidwifeDashboardPage() {
   const token = session.user.token;
   const roles: Role[] = toRoles(session.user.roles);
 
-  if (!roles.includes("MIDWIFE")) {
+  const isMidwife = roles.includes("MIDWIFE");
+
+  if (!isMidwife) {
     redirect("/sign-in");
   }
 
@@ -44,16 +41,11 @@ export default async function MidwifeDashboardPage() {
   }
 
   return (
-    <div className="bg-[#000000] text-white">
-      <WelcomeHeaderCard
-        userId={Number(currentUser.id)}
-        token={token}
-        roles={roles}
-      />
-
-      <TopBar />
-      <ManagementCards />
-      <DashboardFeatures />
-    </div>
+    <RegisteredUsersMapPage
+      userId={currentUser.id}
+      token={token}
+      roles={roles}
+      mode="midwife-patients"
+    />
   );
 }
