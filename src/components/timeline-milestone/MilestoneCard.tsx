@@ -26,7 +26,7 @@ export default function MilestoneCard({ data, animKey }: MilestoneCardProps) {
         {/* Background image */}
         <div className="absolute inset-0">
           <Image
-            src="/images/auth-bg.png"
+            src="/ima"
             alt="Background"
             fill
             className="object-cover opacity-15"
@@ -49,6 +49,7 @@ export default function MilestoneCard({ data, animKey }: MilestoneCardProps) {
                 emoji={data.emoji}
                 sizeComparison={data.sizeComparison}
                 color={data.color}
+                image={data.image}
               />
             </div>
 
@@ -79,7 +80,7 @@ export default function MilestoneCard({ data, animKey }: MilestoneCardProps) {
 
               {/* Title */}
               <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 leading-tight">
-                {data.emoji} {data.title}
+              {data.title}
               </h2>
 
               {/* Developments */}

@@ -7,9 +7,10 @@ interface FetalIllustrationProps {
   emoji: string;
   sizeComparison: string;
   color: string;
+  image?: string;
 }
 
-export default function FetalIllustration({ week, emoji, sizeComparison, color }: FetalIllustrationProps) {
+export default function FetalIllustration({ week,  sizeComparison, color, image }: FetalIllustrationProps) {
   // Scale factor based on week (grows from 40% to 100%)
   const scale = 0.4 + (week / 41) * 0.6;
 
@@ -29,16 +30,16 @@ export default function FetalIllustration({ week, emoji, sizeComparison, color }
       <div
         className="relative rounded-3xl overflow-hidden shadow-xl border-2 border-white/40 transition-all duration-500"
         style={{
-          width: `${Math.max(140, 180 * scale)}px`,
-          height: `${Math.max(140, 180 * scale)}px`,
+          width: `${Math.max(250, 300 * scale)}px`,
+          height: `${Math.max(250, 300 * scale)}px`,
         }}
       >
         <Image
-          src="/images/auth-bg.png"
+          src={image || ""}
           alt={`Week ${week} fetal development`}
           fill
           className="object-cover"
-          sizes="200px"
+          sizes="260px"
         />
         {/* Gradient overlay with emoji */}
         <div
@@ -47,9 +48,9 @@ export default function FetalIllustration({ week, emoji, sizeComparison, color }
             background: `linear-gradient(135deg, ${color}40, ${color}20)`,
           }}
         >
-          <span className="text-5xl drop-shadow-lg" style={{ fontSize: `${Math.max(36, 48 * scale)}px` }}>
+          {/* <span className="text-5xl drop-shadow-lg" style={{ fontSize: `${Math.max(36, 48 * scale)}px` }}>
             {emoji}
-          </span>
+          </span> */}
         </div>
       </div>
 
@@ -61,7 +62,7 @@ export default function FetalIllustration({ week, emoji, sizeComparison, color }
           boxShadow: `0 2px 10px ${color}40`,
         }}
       >
-        🍎 Size of a {sizeComparison}
+         Size of a {sizeComparison}
       </div>
 
       {/* Progress bar: week X of 41 */}

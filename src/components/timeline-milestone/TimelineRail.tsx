@@ -38,8 +38,11 @@ export default function TimelineRail({
 
       <div
         ref={railRef}
-        className="flex flex-nowrap items-center gap-2 overflow-x-auto py-3 px-4 scrollbar-hide"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        className="flex flex-nowrap items-center gap-2 overflow-x-auto py-3 px-4"
+        style={{
+          scrollbarWidth: "thin",
+          scrollbarColor: "#fed2cc #f5f5f5",
+        }}
       >
         {FETAL_DATA.map((weekData) => {
           const isSelected = weekData.week === selectedWeek;
@@ -53,7 +56,7 @@ export default function TimelineRail({
               }}
               onClick={() => onSelectWeek(weekData.week)}
               className={`
-                relative shrink-0 flex flex-col items-center gap-0.5 rounded-2xl px-3 py-2 transition-all duration-300
+                relative shrink-0 flex cursor-pointer flex-col items-center gap-0.5 rounded-2xl px-3 py-2 transition-all duration-300
                 ${
                   isSelected
                     ? "text-white shadow-lg scale-110"

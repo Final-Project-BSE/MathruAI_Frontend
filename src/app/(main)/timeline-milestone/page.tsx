@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from "react";
 import Container from "@/components/shared/container";
-import { Baby } from "lucide-react";
 import TopBarFeatures from "@/components/common/TopBarFeatures";
 import {
   FETAL_DATA,
@@ -12,7 +11,6 @@ import TrimesterTabs from "@/components/timeline-milestone/TrimesterTabs";
 import TimelineRail from "@/components/timeline-milestone/TimelineRail";
 import MilestoneCard from "@/components/timeline-milestone/MilestoneCard";
 import GrowthStats from "@/components/timeline-milestone/GrowthStats";
-import Image from "next/image";
 import WeekSearch from "@/components/timeline-milestone/WeekSearch";
 
 export default function TimelineMilestonePage() {
@@ -61,13 +59,13 @@ export default function TimelineMilestonePage() {
       <div className="relative bg-[#fed2cc] min-h-screen p-4 md:p-6 overflow-hidden">
         {/* Subtle background image */}
         <div className="absolute inset-0 opacity-5 pointer-events-none">
-          <Image
+          {/* <Image
             src="/images/auth-bg.png"
             alt=""
             fill
             className="object-cover"
             sizes="100vw"
-          />
+          /> */}
         </div>
 
         <div className="relative z-10">
@@ -76,9 +74,7 @@ export default function TimelineMilestonePage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-400 to-pink-600 text-white shadow-lg shadow-pink-300/40">
-                <Baby className="h-6 w-6" />
-              </div>
+            
               <div>
                 <h1 className="text-xl md:text-2xl font-extrabold text-gray-900">
                   Fetal Development Timeline
