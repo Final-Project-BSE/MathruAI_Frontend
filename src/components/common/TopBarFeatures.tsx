@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, FileHeart, MapPinned, Menu, MessageCircle, Settings } from "lucide-react";
+import { Bell, FileHeart, MapPinned, Menu, MessageCircle, Settings ,CheckSquare  } from "lucide-react";
 import { getcuruser } from "@/app/api/user/api";
 import type { UserResponseDto } from "@/app/api/user/types";
 import { useEffect, useMemo, useState } from "react";
@@ -17,7 +17,7 @@ const features = [
     { label: "Messages", href: "/messages", icon: MessageCircle },
     { label: "Midwives Map", href: "/midwives-map", icon: MapPinned },
     { label: "Health Records", href: "/health-records", icon: FileHeart },
-    { label: "check_list", href: "/check_list", icon: Settings },
+    { label: "checklist", href: "/pregnancy/checklist", icon: CheckSquare  },
     { label: "Settings", href: "/settings", icon: Settings },
 
 ];
