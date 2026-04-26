@@ -44,6 +44,7 @@ import { filterPatients } from "./components/lib/patientConsoleShared";
 import HealthMonitoringCard from "./components/health-monitoring/HealthMonitoringCard";
 import { healthMonitoringApis } from "../../../../../api/healthmonitor/api";
 import { chatApi } from "@/app/api/chat/api";
+import PatientVaccinationCard from "./components/vaccination/PatientVaccinationCard";
 
 export default function AssignedPatientManagePage() {
   const router = useRouter();
@@ -591,6 +592,14 @@ export default function AssignedPatientManagePage() {
                 onDelete={handleMonitoringDelete}
               />
             </div>
+
+            {midwifeId && patient ? (
+              <PatientVaccinationCard
+                token={token}
+                midwifeId={midwifeId}
+                patientId={patientId}
+              />
+            ) : null}
 
             {isPregnancyUser ? (
               <DailyRecommendationCard

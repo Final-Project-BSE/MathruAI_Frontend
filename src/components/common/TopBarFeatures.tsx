@@ -3,7 +3,7 @@
 import Link from "next/link";
 import {
   Bell,
-  FileHeart,
+  Syringe,
   MapPinned,
   Menu,
   MessageCircle,
@@ -24,7 +24,7 @@ type TopBarFeaturesProps = {
 
 const baseFeatures = [
   { label: "Midwives Map", href: "/registered-midwives-map", icon: MapPinned },
-  { label: "Health Records", href: "/health-records", icon: FileHeart },
+  { label: "Vaccination", href: "/vaccination", icon: Syringe },
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
