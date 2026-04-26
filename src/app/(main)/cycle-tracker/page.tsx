@@ -14,6 +14,7 @@ import {
   getLatestFertility,
   type FertilityResponseDto,
 } from "../../api/cycletracker/api";
+import TopBarFeatures from "@/components/common/TopBarFeatures";
 
 function formatDateForApi(date: Date): string {
   const year = date.getFullYear();
@@ -69,12 +70,12 @@ export function buildCalendarDays(params: {
     new Date(date.getTime() + n * 86400000);
 
   // ✅ FIX 1 applied: all backend date strings parsed as local dates
-  const safeStartDate1  = parseLocalDate(safeStart1);
-  const safeEndDate1    = parseLocalDate(safeEnd1);
-  const safeStartDate2  = parseLocalDate(safeStart2);
-  const safeEndDate2    = parseLocalDate(safeEnd2);
+  const safeStartDate1 = parseLocalDate(safeStart1);
+  const safeEndDate1 = parseLocalDate(safeEnd1);
+  const safeStartDate2 = parseLocalDate(safeStart2);
+  const safeEndDate2 = parseLocalDate(safeEnd2);
   const fertileStartDate = parseLocalDate(fertileStart);
-  const fertileEndDate   = parseLocalDate(fertileEnd);
+  const fertileEndDate = parseLocalDate(fertileEnd);
   const ovulationDateObj = parseLocalDate(ovulationDate);
 
   for (let i = 1; i <= daysInMonth; i++) {
@@ -152,23 +153,14 @@ export default function CycleTrackerPage() {
           setIsAuthenticated(true);
 
           const latest = await getLatestFertility(session.user.token);
+
           if (latest) {
             setFertilityData(latest);
+            setLastPeriodDate(latest.lastPeriodDate);
+            setCycleLength(latest.averageCycleLength);
 
-            // ✅ FIX 2: If localStorage has no lastPeriodDate, derive it from
-            // nextPeriodDate - cycleLength so the calendar useEffect doesn't early-return
-            const savedLast = localStorage.getItem("ct_lastPeriodDate");
-            const savedLen  = localStorage.getItem("ct_cycleLength");
-
-            if (!savedLast && latest.nextPeriodDate) {
-              const savedCycleLen = savedLen ? Number(savedLen) : 28;
-              const nextPeriod = parseLocalDate(latest.nextPeriodDate);
-              if (nextPeriod) {
-                const derived = new Date(nextPeriod);
-                derived.setDate(derived.getDate() - savedCycleLen);
-                setLastPeriodDate(formatDateForApi(derived));
-              }
-            }
+            localStorage.setItem("ct_lastPeriodDate", latest.lastPeriodDate);
+            localStorage.setItem("ct_cycleLength", String(latest.averageCycleLength));
           }
         } else {
           setError("Please log in to access the cycle tracker.");
@@ -186,9 +178,6 @@ export default function CycleTrackerPage() {
 
   // Build calendar days
   useEffect(() => {
-    // ✅ FIX 2: Also allow building calendar when fertilityData exists even if
-    // lastPeriodDate isn't set yet (uses nextPeriodDate fallback above, but
-    // guard against both being empty)
     if (!lastPeriodDate && !fertilityData) return;
     if (!lastPeriodDate) return;
 
@@ -202,11 +191,11 @@ export default function CycleTrackerPage() {
         lastPeriodDate,
         cycleLength,
         safeStart1: fertilityData?.safeStart1,
-        safeEnd1:   fertilityData?.safeEnd1,
+        safeEnd1: fertilityData?.safeEnd1,
         safeStart2: fertilityData?.safeStart2,
-        safeEnd2:   fertilityData?.safeEnd2,
+        safeEnd2: fertilityData?.safeEnd2,
         fertileStart: fertilityData?.fertileWindowStart,
-        fertileEnd:   fertilityData?.fertileWindowEnd,
+        fertileEnd: fertilityData?.fertileWindowEnd,
         ovulationDate: fertilityData?.ovulationDate,
       })
     );
@@ -242,10 +231,11 @@ export default function CycleTrackerPage() {
       });
 
       setFertilityData(data);
+      setLastPeriodDate(data.lastPeriodDate);
+      setCycleLength(data.averageCycleLength);
 
-      // ✅ Always save to localStorage so next page load restores correctly
-      localStorage.setItem("ct_lastPeriodDate", lastPeriodDate);
-      localStorage.setItem("ct_cycleLength", String(cycleLength));
+      localStorage.setItem("ct_lastPeriodDate", data.lastPeriodDate);
+      localStorage.setItem("ct_cycleLength", String(data.averageCycleLength));
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
@@ -272,6 +262,7 @@ export default function CycleTrackerPage() {
   return (
     <Container title="Cycle Tracker">
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-pink-200 to-pink-300 p-6">
+        <TopBarFeatures />
         <h1 className="text-3xl font-bold text-gray-800 mb-2">Cycle Tracker</h1>
         <p className="text-gray-700 mb-6">Track your cycle and fertility window</p>
 

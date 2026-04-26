@@ -28,6 +28,8 @@ export interface FertilityResponseDto {
   safeEnd1: string;
   safeStart2: string;
   safeEnd2: string;
+  lastPeriodDate: string;
+  averageCycleLength: number;
 }
 
 export interface CalculateFertilityRequest {
@@ -82,3 +84,5 @@ export async function calculateFertility(
     body: JSON.stringify(payload),
   });
 }
+
+

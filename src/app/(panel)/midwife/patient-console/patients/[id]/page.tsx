@@ -44,6 +44,7 @@ import { filterPatients } from "./components/lib/patientConsoleShared";
 import HealthMonitoringCard from "./components/health-monitoring/HealthMonitoringCard";
 import { healthMonitoringApis } from "../../../../../api/healthmonitor/api";
 import { chatApi } from "@/app/api/chat/api";
+import PatientVaccinationCard from "./components/vaccination/PatientVaccinationCard";
 
 export default function AssignedPatientManagePage() {
   const router = useRouter();
@@ -345,6 +346,10 @@ export default function AssignedPatientManagePage() {
     return Boolean(patient?.roles?.includes("PREGNANT_MOTHER"));
   }, [patient]);
 
+  const isHopeToPregnantUser = useMemo(() => {
+    return Boolean(patient?.roles?.includes("HOPE_TO_PREGNANT_MOTHER"));
+  }, [patient]);
+
   function openPatient(entry: UserResponseDto) {
     if (entry.id === patientId) return;
     router.push(`/midwife/patient-console/patients/${entry.id}`);
@@ -475,6 +480,22 @@ export default function AssignedPatientManagePage() {
     }
   }
 
+  function handleFertilityUpdated(data: FertilityResponseDto) {
+    setFertility(data);
+
+    const cached = getCachedPatientBundle(patientId);
+
+    if (cached) {
+      setCachedPatientBundle(patientId, {
+        ...cached,
+        fertility: data,
+        cachedAt: Date.now(),
+      });
+    }
+
+    setSuccess("Fertility data recalculated successfully.");
+  }
+
   async function handleRefresh() {
     if (!token || !midwifeId || !patientId) return;
 
@@ -572,6 +593,14 @@ export default function AssignedPatientManagePage() {
               />
             </div>
 
+            {midwifeId && patient ? (
+              <PatientVaccinationCard
+                token={token}
+                midwifeId={midwifeId}
+                patientId={patientId}
+              />
+            ) : null}
+
             {isPregnancyUser ? (
               <DailyRecommendationCard
                 token={token}
@@ -580,7 +609,15 @@ export default function AssignedPatientManagePage() {
               />
             ) : null}
 
-            <FertilityCard fertility={fertility} />
+            {midwifeId && isHopeToPregnantUser ? (
+              <FertilityCard
+                fertility={fertility}
+                token={token}
+                midwifeId={midwifeId}
+                patientId={patientId}
+                onFertilityUpdated={handleFertilityUpdated}
+              />
+            ) : null}
 
             <HealthRecordsSection
               categories={categories}
