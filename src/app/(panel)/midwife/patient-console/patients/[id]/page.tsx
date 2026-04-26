@@ -45,6 +45,7 @@ import HealthMonitoringCard from "./components/health-monitoring/HealthMonitorin
 import { healthMonitoringApis } from "../../../../../api/healthmonitor/api";
 import { chatApi } from "@/app/api/chat/api";
 import PatientVaccinationCard from "./components/vaccination/PatientVaccinationCard";
+import RecoveryTrackingCard from "./components/recovery-tracking/RecoveryTrackingCard";
 
 export default function AssignedPatientManagePage() {
   const router = useRouter();
@@ -346,6 +347,10 @@ export default function AssignedPatientManagePage() {
     return Boolean(patient?.roles?.includes("PREGNANT_MOTHER"));
   }, [patient]);
 
+  const isPostpartumUser = useMemo(() => {
+    return Boolean(patient?.roles?.includes("POST_PREGNANT_MOTHER"));
+  }, [patient]);
+
   const isHopeToPregnantUser = useMemo(() => {
     return Boolean(patient?.roles?.includes("HOPE_TO_PREGNANT_MOTHER"));
   }, [patient]);
@@ -609,6 +614,10 @@ export default function AssignedPatientManagePage() {
               />
             ) : null}
 
+            {isPostpartumUser ? (
+              <RecoveryTrackingCard token={token} patientId={patientId} />
+            ) : null}
+
             {midwifeId && isHopeToPregnantUser ? (
               <FertilityCard
                 fertility={fertility}
@@ -625,6 +634,41 @@ export default function AssignedPatientManagePage() {
               setSelectedCategoryId={setSelectedCategoryId}
               recordsLoading={recordsLoading}
               records={records}
+              token={token}
+              midwifeId={midwifeId}
+              patientId={patientId}
+              onRecordsChanged={async () => {
+                if (!token || !midwifeId || !patientId || !selectedCategoryId) return;
+
+                clearCachedPatientBundle(patientId);
+
+                const [freshCategories, freshRecords] = await Promise.all([
+                  midwifePatientApi.getPatientHealthCategories(token, midwifeId, patientId),
+                  midwifePatientApi.getPatientHealthRecordsByCategory(
+                    token,
+                    midwifeId,
+                    patientId,
+                    selectedCategoryId
+                  ),
+                ]);
+
+                setCategories(freshCategories);
+                setRecords(freshRecords);
+                setCachedCategoryRecords(patientId, selectedCategoryId, freshRecords);
+
+                const cached = getCachedPatientBundle(patientId);
+                if (cached) {
+                  setCachedPatientBundle(patientId, {
+                    ...cached,
+                    categories: freshCategories,
+                    recordsByCategory: {
+                      ...cached.recordsByCategory,
+                      [selectedCategoryId]: freshRecords,
+                    },
+                    cachedAt: Date.now(),
+                  });
+                }
+              }}
             />
           </div>
         </main>

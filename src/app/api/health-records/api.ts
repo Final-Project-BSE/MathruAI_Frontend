@@ -152,6 +152,56 @@ export const openSecureFile = async (token: string, fileUrl: string) => {
     }
 };
 
+export const createRecordForAssignedPatient = async (
+  token: string,
+  midwifeId: number,
+  patientId: number,
+  categoryId: string,
+  data: HealthRecordRequest
+): Promise<HealthRecordResponseDto> => {
+  const formData = new FormData();
+
+  formData.append("name", data.name);
+  formData.append("date", data.date);
+
+  if (data.description) {
+    formData.append("description", data.description);
+  }
+
+  if (data.files?.length) {
+    data.files.forEach((file) => {
+      formData.append("files", file);
+    });
+  }
+
+  const res = await api.post<HealthRecordResponseDto>(
+    `/api/health-records/midwife/${midwifeId}/patient/${patientId}/category/${categoryId}`,
+    formData,
+    {
+      headers: {
+        ...authHeader(token),
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  return res.data;
+};
+
+export const deleteRecordForAssignedPatient = async (
+  token: string,
+  midwifeId: number,
+  patientId: number,
+  recordId: string
+): Promise<void> => {
+  await api.delete(
+    `/api/health-records/midwife/${midwifeId}/patient/${patientId}/record/${recordId}`,
+    {
+      headers: authHeader(token),
+    }
+  );
+};
+
 const healthRecordsApi = {
     getCategories,
     getRecordsByCategory,
@@ -161,7 +211,9 @@ const healthRecordsApi = {
     getFileUrl,
     fetchSecureFile,
     downloadSecureFile,
-    openSecureFile
+    openSecureFile,
+    createRecordForAssignedPatient,
+    deleteRecordForAssignedPatient
 };
 
 export default healthRecordsApi;

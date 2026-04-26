@@ -8,6 +8,7 @@ import { MapPinned } from "lucide-react";
 
 import Modal from "../../../../(connection)/components/Modal";
 import RegisteredUsersMapPage from "../../../../(connection)/components/midwife-map/RegisteredUsersMapPage";
+import MidwifeAnnouncementPage from "../../../../(panel)/midwife/announcements/page";
 
 import type { Role } from "../../../../api/user-assign/types";
 
@@ -17,34 +18,27 @@ type Props = {
   roles: Role[];
 };
 
-export default function WelcomeHeaderCard({
-  userId,
-  token,
-  roles,
-}: Props) {
+export default function WelcomeHeaderCard({ userId, token, roles }: Props) {
   const [openMap, setOpenMap] = useState(false);
+  const [openAnnouncement, setOpenAnnouncement] = useState(false);
 
   return (
     <>
       <div className="w-full px-3 sm:px-4">
         <div className="w-full rounded-[20px] px-4 py-4 shadow-sm sm:px-6 sm:py-5">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-
             <div className="min-w-0 flex-1">
               <p className="mb-2 text-xs text-white/60 sm:text-sm">
                 Let&apos;s Rock today.
               </p>
 
               <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.03em] text-white/80 sm:text-[26px] md:text-[30px] lg:text-[32px]">
-                <span className="block sm:inline">
-                  Welcome Back, Masud A.
-                </span>{" "}
+                <span className="block sm:inline">Welcome Back, Masud A.</span>{" "}
                 <span className="inline-block">👋</span>
               </h1>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between lg:justify-end">
-
               <div className="hidden items-center gap-3 md:flex">
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/80 text-lg font-semibold text-[#171717] shadow-sm sm:h-12 sm:w-12 sm:text-xl">
                   19
@@ -76,7 +70,9 @@ export default function WelcomeHeaderCard({
               </button>
 
               <button
-                aria-label="Open menu"
+                type="button"
+                onClick={() => setOpenAnnouncement(true)}
+                aria-label="Open announcements"
                 className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/80 text-neutral-700 shadow-sm md:flex"
               >
                 <FontAwesomeIcon icon={faBullhorn} className="h-6 w-6" />
@@ -98,6 +94,17 @@ export default function WelcomeHeaderCard({
           roles={roles}
           mode="midwife-patients"
         />
+      </Modal>
+
+      <Modal
+        open={openAnnouncement}
+        onClose={() => setOpenAnnouncement(false)}
+        title="Announcements"
+        theme="dark"
+      >
+        <div className="max-h-[80vh]">
+          <MidwifeAnnouncementPage token={token} />
+        </div>
       </Modal>
     </>
   );

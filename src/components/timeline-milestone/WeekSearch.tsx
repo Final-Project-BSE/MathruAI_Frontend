@@ -59,11 +59,11 @@ export default function WeekSearch({ onSelectWeek, totalWeeks }: WeekSearchProps
       className={`
         relative flex items-center gap-2 rounded-2xl border px-4 py-3
         bg-white/80 backdrop-blur-md shadow-sm transition-all duration-300
-        ${isFocused ? "border-pink-400 shadow-pink-200/50 shadow-md ring-2 ring-pink-200/40" : "border-neutral-200"}
+        ${isFocused ? "border-[#d04f51] shadow-pink-200/50 shadow-xs ring-1 ring-[#d04f51]" : "border-[#d04f51]"}
       `}
       style={{ maxWidth: 400 }}
     >
-      <Search className="h-5 w-5 text-pink-400 shrink-0" />
+      <Search className="h-5 w-5 text-[#d04f51] shrink-0" />
       <input
         ref={inputRef}
         type="text"
@@ -79,7 +79,7 @@ export default function WeekSearch({ onSelectWeek, totalWeeks }: WeekSearchProps
       {query && (
         <button
           onClick={() => { setQuery(""); inputRef.current?.focus(); }}
-          className="rounded-full p-1 text-gray-400 hover:bg-pink-50 hover:text-pink-500 transition"
+          className="rounded-full p-1 text-gray-400 hover:bg-white hover:text-[#d04f51] transition"
           aria-label="Clear search"
         >
           <X className="h-4 w-4" />

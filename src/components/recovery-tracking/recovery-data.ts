@@ -19,15 +19,6 @@ export interface DayAdvice {
   tasks: RecoveryTask[];
 }
 
-const CATEGORY_ICONS: Record<TaskCategory, string> = {
-  physical: "🧘‍♀️",
-  nutrition: "🥗",
-  baby: "👶",
-  mental: "🧠",
-  medical: "💊",
-  warning: "⚠️",
-};
-
 const CATEGORY_LABELS: Record<TaskCategory, string> = {
   physical: "Physical Recovery",
   nutrition: "Nutrition & Hydration",
@@ -38,7 +29,7 @@ const CATEGORY_LABELS: Record<TaskCategory, string> = {
 };
 
 const CATEGORY_COLORS: Record<TaskCategory, string> = {
-  physical: "#ec4899", // pink
+  physical: "#d04f51", // pink
   nutrition: "#10b981", // emerald
   baby: "#3b82f6", // blue
   mental: "#8b5cf6", // violet
@@ -46,7 +37,7 @@ const CATEGORY_COLORS: Record<TaskCategory, string> = {
   warning: "#ef4444", // red
 };
 
-export { CATEGORY_ICONS, CATEGORY_LABELS, CATEGORY_COLORS };
+export {CATEGORY_LABELS, CATEGORY_COLORS };
 
 // Helper to generate a task ID
 const genId = (day: number, cat: string, idx: number) => `d${day}-${cat}-${idx}`;

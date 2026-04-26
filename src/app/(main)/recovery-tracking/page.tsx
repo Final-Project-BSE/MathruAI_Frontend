@@ -149,7 +149,7 @@ export default function RecoveryTrackingPage() {
               </div>
               <div className="w-16 h-16 rounded-full border-4 border-white shadow-sm flex items-center justify-center bg-pink-50 relative overflow-hidden">
                 <div 
-                  className="absolute bottom-0 left-0 right-0 bg-pink-200 transition-all duration-500"
+                  className="absolute bottom-0 left-0 right-0 bg-[#d04f51] transition-all duration-500"
                   style={{ height: `${dailyProgressPercent}%` }}
                 />
                 <span className="relative z-10 font-bold text-pink-700 text-sm">
@@ -161,7 +161,7 @@ export default function RecoveryTrackingPage() {
             {/* Overall Daily Progress Bar */}
             <div className="w-full bg-white/80 rounded-full h-2.5 overflow-hidden">
               <div 
-                className="bg-gradient-to-r from-pink-400 to-purple-500 h-2.5 rounded-full transition-all duration-700 ease-out" 
+                className="bg-gradient-to-r from-[#fab0a7] to-[#d04f51] h-2.5 rounded-full transition-all duration-700 ease-out" 
                 style={{ width: `${dailyProgressPercent}%` }}
               ></div>
             </div>
@@ -173,7 +173,7 @@ export default function RecoveryTrackingPage() {
               <button 
                 onClick={handleSaveProgress}
                 disabled={isSaving || !userId}
-                className="flex items-center cursor-pointer gap-2 bg-pink-500 hover:bg-pink-600 disabled:bg-pink-300 text-white px-5 py-2 rounded-full text-sm font-bold shadow-md transition-all"
+                className="flex items-center cursor-pointer gap-2 bg-[#d04f51] hover:bg-[#d43d40] disabled:bg-pink-300 text-white px-5 py-2 rounded-full text-sm font-bold shadow-md transition-all"
               >
                 {isSaving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

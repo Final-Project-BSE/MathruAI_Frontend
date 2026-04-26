@@ -41,7 +41,7 @@ export default function DayRail({ selectedDay, onSelectDay }: DayRailProps) {
               onClick={() => onSelectDay(day)}
               className={`snap-center cursor-pointer shrink-0 flex flex-col items-center justify-center w-14 h-16 rounded-2xl border-2 transition-all duration-300 ${
                 isSelected
-                  ? "bg-[#ec4899] border-[#ec4899] text-white shadow-md transform scale-110"
+                  ? "bg-[#d04f51] border-[#d04f51] text-white shadow-md transform scale-110"
                   : "bg-white/60 border-white text-gray-600 hover:bg-white hover:scale-105"
               }`}
             >
