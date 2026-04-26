@@ -21,7 +21,7 @@ export default function TrimesterTabs({
             key={trimester}
             onClick={() => onSelect(trimester)}
             className={`
-              relative px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 whitespace-nowrap
+              relative px-4 py-2.5 rounded-xl cursor-pointer text-sm font-semibold transition-all duration-300 whitespace-nowrap
               ${
                 isActive
                   ? "text-white shadow-lg scale-105"
