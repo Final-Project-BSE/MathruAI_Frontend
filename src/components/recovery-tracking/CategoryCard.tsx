@@ -105,7 +105,7 @@ export default function CategoryCard({
                   )}
                 </div>
                 <span className={`text-sm flex-1 pt-0.5 ${
-                  isCompleted && !isWarning ? 'line-through text-gray-400' : isWarning ? 'text-red-900 font-medium' : 'text-gray-700 font-medium'
+                  isCompleted && !isWarning ? ' text-gray-600' : isWarning ? 'text-red-900 font-medium' : 'text-gray-700 font-medium'
                 }`}>
                   {task.text}
                 </span>

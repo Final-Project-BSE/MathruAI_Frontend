@@ -1,17 +1,91 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Container from "@/components/shared/container";
 import TopBarFeatures from "@/components/common/TopBarFeatures";
 import { RECOVERY_DATA, TaskCategory } from "../../../components/recovery-tracking/recovery-data";
 import DayRail from "../../../components/recovery-tracking/DayRail";
 import CategoryCard from "../../../components/recovery-tracking/CategoryCard";
-import { Heart, FileText, CheckCircle2 } from "lucide-react";
+import {CheckCircle2, Loader2 } from "lucide-react";
+import recoveryTrackingApi from "@/app/api/recovery-tracking/api";
+import { getcuruser } from "@/app/api/user/api";
+import { getSession } from "@/lib/authentication";
 
 export default function RecoveryTrackingPage() {
   const [selectedDay, setSelectedDay] = useState(1);
   const [completedTaskIds, setCompletedTaskIds] = useState<Set<string>>(new Set());
   const [dailyNotes, setDailyNotes] = useState<Record<number, string>>({});
+  
+  const [userId, setUserId] = useState<number | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch initial data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const session = await getSession();
+        const tk = session?.user?.token;
+        if (!tk) return;
+        setToken(tk);
+
+        const me = await getcuruser(tk);
+        const uId = me.id;
+        if (!uId) return;
+        setUserId(uId);
+
+        const records = await recoveryTrackingApi.getAllRecordsForPatient(tk, uId);
+        console.log("Fetched records:", records);
+        
+        const initialTasks = new Set<string>();
+        const initialNotes: Record<number, string> = {};
+
+        if (Array.isArray(records)) {
+          records.forEach((record) => {
+            if (record.completedTaskIds) {
+              record.completedTaskIds.forEach((id) => initialTasks.add(id));
+            }
+            if (record.dailyNotes) {
+              initialNotes[record.dayNumber] = record.dailyNotes;
+            }
+          });
+        }
+
+        setCompletedTaskIds(initialTasks);
+        setDailyNotes(initialNotes);
+      } catch (err) {
+        console.error("Failed to fetch recovery records:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const handleSaveProgress = async () => {
+    if (!token || !userId) return;
+    
+    setIsSaving(true);
+    try {
+      const currentDayTasks = Array.from(completedTaskIds).filter(id => id.startsWith(`d${selectedDay}-`));
+      
+      await recoveryTrackingApi.saveOrUpdateRecord(token, {
+        patientId: userId,
+        dayNumber: selectedDay,
+        completedTaskIds: currentDayTasks,
+        dailyNotes: dailyNotes[selectedDay] || "",
+      });
+      alert("Progress saved successfully!");
+    } catch (err) {
+      console.error("Failed to save record:", err);
+      alert("Failed to save progress. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const currentData = useMemo(() => {
     return RECOVERY_DATA.find((d) => d.day === selectedDay) || RECOVERY_DATA[0];
@@ -65,13 +139,11 @@ export default function RecoveryTrackingPage() {
           <TopBarFeatures />
 
           {/* Clean, calm header */}
-          <div className="bg-white/60 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-white/50 mb-6">
+          <div className="bg-white/60 backdrop-blur-md rounded-3xl p-3 shadow-sm border border-white/50 mb-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h1 className="text-2xl font-extrabold text-gray-900 flex items-center gap-2">
-                  Welcome, Sarah <Heart className="w-6 h-6 text-pink-500 fill-pink-500" />
-                </h1>
-                <p className="text-sm font-medium text-gray-600">
+               
+                <p className="text-lg font-medium text-gray-600">
                   Postpartum Day {selectedDay}
                 </p>
               </div>
@@ -93,9 +165,24 @@ export default function RecoveryTrackingPage() {
                 style={{ width: `${dailyProgressPercent}%` }}
               ></div>
             </div>
-            <p className="text-xs text-gray-500 mt-2 font-medium">
-              Daily completion: {completedRegular} of {regularTasks.length} tasks
-            </p>
+            
+            <div className="flex justify-between items-center mt-4">
+              <p className="text-xs text-gray-500 font-medium">
+                Daily completion: {completedRegular} of {regularTasks.length} tasks
+              </p>
+              <button 
+                onClick={handleSaveProgress}
+                disabled={isSaving || !userId}
+                className="flex items-center cursor-pointer gap-2 bg-pink-500 hover:bg-pink-600 disabled:bg-pink-300 text-white px-5 py-2 rounded-full text-sm font-bold shadow-md transition-all"
+              >
+                {isSaving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4" />
+                )}
+                {isSaving ? "Saving..." : "Save Progress"}
+              </button>
+            </div>
           </div>
 
           {/* Day Selector */}
@@ -103,21 +190,7 @@ export default function RecoveryTrackingPage() {
             <DayRail selectedDay={selectedDay} onSelectDay={setSelectedDay} />
           </div>
 
-          {/* Daily Advice Card */}
-          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-3xl p-5 mb-6 shadow-sm border border-indigo-100/50 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-2 h-full bg-purple-400"></div>
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-full bg-purple-200 flex items-center justify-center shrink-0">
-                <span className="text-xl">✨</span>
-              </div>
-              <div>
-                <h3 className="font-bold text-purple-900 mb-1">Today&apos;s Focus</h3>
-                <p className="text-sm text-purple-800 leading-relaxed font-medium">
-                  {currentData.adviceText}
-                </p>
-              </div>
-            </div>
-          </div>
+         
 
           {/* Categories Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
@@ -168,7 +241,7 @@ export default function RecoveryTrackingPage() {
           {/* Summary / Notes Section */}
           <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-6 shadow-sm border border-white/50 mb-8">
             <div className="flex items-center gap-2 mb-4">
-              <FileText className="w-5 h-5 text-gray-500" />
+            
               <h2 className="text-lg font-bold text-gray-800">Daily Notes & Symptoms</h2>
             </div>
             <textarea
@@ -178,11 +251,6 @@ export default function RecoveryTrackingPage() {
               value={dailyNotes[selectedDay] || ""}
               onChange={handleNoteChange}
             ></textarea>
-            <div className="flex justify-end mt-3">
-              <button className="flex items-center gap-2 bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-full text-sm font-bold shadow-md transition-all">
-                <CheckCircle2 className="w-4 h-4" /> Save Notes
-              </button>
-            </div>
           </div>
 
         </div>
