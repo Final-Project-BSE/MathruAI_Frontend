@@ -29,6 +29,7 @@ export default function HealthRecordsCategoriesPage() {
 
                 const data = await getCategories(token);
                 setCategories(data);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (err: any) {
                 console.error("Failed to fetch categories:", err);
                 const errorMsg = err.response?.data?.message || err.message || "Failed to load health record categories.";
