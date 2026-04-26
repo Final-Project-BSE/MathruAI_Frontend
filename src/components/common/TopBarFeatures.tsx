@@ -262,12 +262,15 @@ export default function TopBarFeatures({
               )}
             </div>
 
-            <div className="hidden min-w-0 items-center gap-3 rounded-full border border-neutral-200 bg-neutral-50 p-1 pr-3 min-[900px]:flex">
+            <Link
+              href="/profile"
+              className="hidden min-w-0 items-center gap-3 rounded-full border border-neutral-200 bg-neutral-50 p-1 pr-3 transition hover:bg-neutral-100 min-[900px]:flex"
+            >
               <div className="h-10 w-10 overflow-hidden rounded-full">
                 <ProtectedImage
                   src={resolvedAvatar}
                   alt={fullname}
-                  token={null}
+                  token={token}
                   fallback={avatarFallback}
                   className="h-full w-full object-cover"
                 />
@@ -281,7 +284,7 @@ export default function TopBarFeatures({
                   {userEmail}
                 </p>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
       </div>
