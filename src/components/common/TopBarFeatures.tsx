@@ -7,7 +7,7 @@ import {
   MapPinned,
   Menu,
   MessageCircle,
-  Settings,
+  Package ,
   CheckSquare,
 } from "lucide-react";
 import { getcuruser } from "@/app/api/user/api";
@@ -26,8 +26,8 @@ type TopBarFeaturesProps = {
 const baseFeatures = [
   { label: "Midwives Map", href: "/registered-midwives-map", icon: MapPinned },
   { label: "Health Records", href: "/health-records", icon: FileHeart },
-      { label: "checklist", href: "/pregnancy/checklist", icon: CheckSquare  },
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "checklist", href: "/pregnancy/checklist", icon: CheckSquare  },
+  { label: "Thriposha", href: "/triposha", icon: Package  },
 ];
 
 const languages = ["EN", "සිං", "த"] as const;
