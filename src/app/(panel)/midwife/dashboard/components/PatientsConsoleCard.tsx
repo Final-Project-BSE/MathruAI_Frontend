@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { assignmentApi } from "@/app/api/user-assign/api";
 import type { UserResponseDto } from "@/app/api/user-assign/types";
+import ProtectedImage from "@/lib/ProtectedImage";
 
 type Props = {
   token: string;
@@ -240,17 +241,22 @@ export default function PatientsConsoleCard({
                       type="button"
                       className="flex w-full items-center gap-3 rounded-[14px] border border-white/8 bg-white/[0.03] px-3 py-2.5 text-left transition hover:border-white/15 hover:bg-white/[0.05]"
                     >
-                      {patient.profileImageUrl ? (
-                        <img
+                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full ring-1 ring-white/10">
+                        <ProtectedImage
                           src={patient.profileImageUrl}
-                          alt={`${patient.firstName} ${patient.lastName}`}
-                          className="h-10 w-10 rounded-full object-cover ring-1 ring-white/10"
+                          token={token}
+                          alt={`${patient.firstName ?? ""} ${patient.lastName ?? ""}`.trim() || "Mother"}
+                          fallback={
+                            <div className="flex h-full w-full items-center justify-center bg-white/10 text-xs font-semibold text-white/70">
+                              {`${patient.firstName?.[0] ?? ""}${patient.lastName?.[0] ?? ""}`.toUpperCase() || "M"}
+                            </div>
+                          }
+                          loadingFallback={
+                            <div className="h-full w-full animate-pulse bg-white/10" />
+                          }
+                          className="h-full w-full object-cover"
                         />
-                      ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white/70 ring-1 ring-white/10">
-                          {`${patient.firstName?.[0] ?? ""}${patient.lastName?.[0] ?? ""}`.toUpperCase()}
-                        </div>
-                      )}
+                      </div>
 
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
