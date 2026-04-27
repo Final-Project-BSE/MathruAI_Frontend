@@ -42,9 +42,9 @@ export default function TriposhaCard({
 
   return (
     <>
-      <section className="rounded-2xl border border-pink-100 bg-white p-5 text-gray-800 shadow-sm">
+      <section className="rounded-2xl border border-pink-100 bg-[#fed2cc] p-5 text-gray-800 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-md font-semibold text-gray-900">
             Triposha Tracking
           </h2>
 
@@ -71,7 +71,7 @@ export default function TriposhaCard({
             {records.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-pink-100 bg-[#fff7f6] p-4 shadow-sm"
+                className="flex items-center justify-between gap-3 rounded-xl border border-pink-100 bg-[#fed2cc] p-4 shadow-sm"
               >
                 <div>
                   <div className="font-semibold text-gray-900">
@@ -83,7 +83,7 @@ export default function TriposhaCard({
                   </div>
 
                   {item.notes && (
-                    <div className="mt-2 rounded-lg bg-white px-3 py-2 text-xs text-gray-600">
+                    <div className="mt-2 rounded-lg bg-[#fed2cc] border border-pink-100 px-3 py-2 text-xs text-gray-600">
                       {item.notes}
                     </div>
                   )}

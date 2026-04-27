@@ -58,8 +58,8 @@ export default function RecordCard({
         <div className="w-full h-24 bg-gradient-to-br from-pink-50 to-rose-100 flex flex-col items-center justify-center border-b border-pink-100 gap-1.5">
           {totalFiles > 0 ? (
             <>
-              <Files className="h-8 w-8 text-pink-300" />
-              <span className="text-xs text-pink-600 font-medium">
+              <Files className="h-8 w-8 text-[#d04f51]" />
+              <span className="text-xs text-[#d04f51]font-medium">
                 {totalFiles} file{totalFiles > 1 ? "s" : ""} attached
               </span>
             </>
@@ -97,7 +97,7 @@ export default function RecordCard({
         </Link>
 
         {/* Action buttons */}
-        <div className="px-4 pb-4 flex gap-2 border-t border-gray-100 pt-3">
+        <div className="px-2 pb-4 flex border-t border-gray-100 pt-3">
           {totalFiles > 0 && (
             <Button
               size="sm"

@@ -18,6 +18,8 @@ import MessagesPopup from "../../app/(connection)/messages/MessagesPopup";
 import { chatApi } from "@/app/api/chat/api";
 import ChecklistPopup from "@/app/(main)/checklist/ChecklistPopup";
 import TriposhaPopup from "@/app/(main)/triposha/TriposhaPopup";
+import MidwivesMapPopup from "@/app/(connection)/registered-midwives-map/MidwivesMapPopup";
+import VaccinationPopup from "@/app/(main)/vaccination/VaccinationPopup";
 
 type TopBarFeaturesProps = {
   name?: string;
@@ -42,6 +44,9 @@ export default function TopBarFeatures({
 
   const [token, setToken] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
+
+  const [midwivesMapOpen, setMidwivesMapOpen] = useState(false);
+  const [vaccinationOpen, setVaccinationOpen] = useState(false);
 
   useEffect(() => {
     const loadMe = async () => {
@@ -135,25 +140,23 @@ export default function TopBarFeatures({
                 <span className="hidden min-[1250px]:inline">Messages</span>
               </button>
 
-              <Link
-                href="/registered-midwives-map"
+              <button
+                type="button"
+                onClick={() => setMidwivesMapOpen(true)}
                 className="inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
               >
                 <MapPinned className="h-5 w-5 shrink-0 min-[1250px]:h-4 min-[1250px]:w-4" />
-                <span className="hidden min-[1250px]:inline">
-                  Midwives Map
-                </span>
-              </Link>
+                <span className="hidden min-[1250px]:inline">Midwives Map</span>
+              </button>
 
-              <Link
-                href="/vaccination"
+              <button
+                type="button"
+                onClick={() => setVaccinationOpen(true)}
                 className="inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
               >
                 <Syringe className="h-5 w-5 shrink-0 min-[1250px]:h-4 min-[1250px]:w-4" />
-                <span className="hidden min-[1250px]:inline">
-                  Vaccination
-                </span>
-              </Link>
+                <span className="hidden min-[1250px]:inline">Vaccination</span>
+              </button>
 
               <button
                 type="button"
@@ -203,23 +206,29 @@ export default function TopBarFeatures({
                     <span>Messages</span>
                   </button>
 
-                  <Link
-                    href="/registered-midwives-map"
-                    onClick={() => setIsMobileFeaturesOpen(false)}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMidwivesMapOpen(true);
+                      setIsMobileFeaturesOpen(false);
+                    }}
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
                   >
                     <MapPinned className="h-4 w-4 shrink-0" />
                     <span>Midwives Map</span>
-                  </Link>
+                  </button>
 
-                  <Link
-                    href="/vaccination"
-                    onClick={() => setIsMobileFeaturesOpen(false)}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVaccinationOpen(true);
+                      setIsMobileFeaturesOpen(false);
+                    }}
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
                   >
                     <Syringe className="h-4 w-4 shrink-0" />
                     <span>Vaccination</span>
-                  </Link>
+                  </button>
 
                   <button
                     type="button"
@@ -355,6 +364,16 @@ export default function TopBarFeatures({
       />
 
       <TriposhaPopup open={triposhaOpen} onClose={() => setTriposhaOpen(false)} />
+
+      <MidwivesMapPopup
+        open={midwivesMapOpen}
+        onClose={() => setMidwivesMapOpen(false)}
+      />
+
+      <VaccinationPopup
+        open={vaccinationOpen}
+        onClose={() => setVaccinationOpen(false)}
+      />
     </>
   );
 }
