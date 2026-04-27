@@ -21,12 +21,12 @@ const featureItems: FeatureItem[] = [
     { label: "Emergency Numbers", icon: PhoneCall, href: "/emergency-numbers" },
     { label: "Notes", icon: NotebookPen, href: "/notes" },
     { label: "Analytics", icon: BarChart3, href: "/analytics" },
-    {
-        label: "Emergency Contact",
-        icon: Siren,
-        href: "/emergency-contact",
-        danger: true,
-    },
+    // {
+    //     label: "Emergency Contact",
+    //     icon: Siren,
+    //     href: "/emergency-contact",
+    //     danger: true,
+    // },
 ];
 
 export default function DashboardFeatures() {
@@ -44,7 +44,7 @@ export default function DashboardFeatures() {
             grid grid-cols-1 gap-3
             sm:grid-cols-2
             lg:grid-cols-3
-            xl:grid-cols-5
+            xl:grid-cols-4
           "
                 >
                     {featureItems.map((item) => {

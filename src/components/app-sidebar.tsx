@@ -66,10 +66,6 @@ const data = {
       url: "/timeline-milestone",
     },
     {
-      title: "Nutrition & Wellness",
-      url: "/nutrition-wellness",
-    },
-    {
       title: "Announcements",
       url: "/announcement",
     },

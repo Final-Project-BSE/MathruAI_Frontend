@@ -173,8 +173,6 @@ export default function RegisteredUsersMapPage({
       <div className="mx-auto max-w-7xl p-4 md:p-6">
         {!isMidwife && (
           <>
-            {isMotherSide && <TopBarFeatures />}
-
             <div className="mb-6">
               <h1
                 className={`text-2xl font-bold ${isMidwife ? "text-white" : "text-gray-900"

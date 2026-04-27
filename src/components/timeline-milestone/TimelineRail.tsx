@@ -74,13 +74,6 @@ export default function TimelineRail({
               title={weekData.title}
               id={`week-pill-${weekData.week}`}
             >
-              {/* Pulse ring for active */}
-              {isSelected && (
-                <span
-                  className="absolute inset-0 rounded-2xl animate-ping opacity-20"
-                  style={{ background: color }}
-                />
-              )}
               <span className="relative text-xs font-bold">
                 W{weekData.week}
               </span>

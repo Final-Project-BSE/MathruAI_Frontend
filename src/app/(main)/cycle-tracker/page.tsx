@@ -261,7 +261,7 @@ export default function CycleTrackerPage() {
 
   return (
     <Container title="Cycle Tracker">
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-pink-200 to-pink-300 p-6">
+      <div className="min-h-screen bg-[#fed2cc] p-6">
         <TopBarFeatures />
         <h1 className="text-3xl font-bold text-gray-800 mb-2">Cycle Tracker</h1>
         <p className="text-gray-700 mb-6">Track your cycle and fertility window</p>

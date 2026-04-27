@@ -86,7 +86,6 @@ export default function MilestoneCard({ data, animKey }: MilestoneCardProps) {
               {/* Developments */}
               <div>
                 <h3 className="text-sm font-bold text-gray-700 mb-2.5 flex items-center gap-1.5">
-                  <Sparkles className="h-4 w-4 text-amber-500" />
                   Key Developments
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

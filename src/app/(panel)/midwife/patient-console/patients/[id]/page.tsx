@@ -45,6 +45,12 @@ import HealthMonitoringCard from "./components/health-monitoring/HealthMonitorin
 import { healthMonitoringApis } from "../../../../../api/healthmonitor/api";
 import { chatApi } from "@/app/api/chat/api";
 import PatientVaccinationCard from "./components/vaccination/PatientVaccinationCard";
+import RecoveryTrackingCard from "./components/recovery-tracking/RecoveryTrackingCard";
+
+import { triposhaApi } from "@/app/api/triposha/api";
+import type { TriposhaRecord } from "@/app/api/triposha/types";
+import TriposhaCard from "./components/TriposhaCard";
+import TriposhaForm from "./components/TriposhaForm";
 
 export default function AssignedPatientManagePage() {
   const router = useRouter();
@@ -94,6 +100,9 @@ export default function AssignedPatientManagePage() {
     longitude: undefined,
   });
 
+  const [triposha, setTriposha] = useState<TriposhaRecord[]>([]);
+  const [triposhaLoading, setTriposhaLoading] = useState(false);
+
   useEffect(() => {
     if (!error && !success) return;
 
@@ -104,6 +113,12 @@ export default function AssignedPatientManagePage() {
 
     return () => window.clearTimeout(timer);
   }, [error, success]);
+
+  useEffect(() => {
+    if (token && patientId) {
+      loadTriposha();
+    }
+  }, [token, patientId]);
 
   function hydrateFromBundle(bundle: {
     patient: AssignedPatientDetailResponseDto;
@@ -196,6 +211,20 @@ export default function AssignedPatientManagePage() {
     }
   }
 
+  async function loadTriposha() {
+    if (!token || !patientId) return;
+
+    try {
+      setTriposhaLoading(true);
+      const data = await triposhaApi.getByPatient(token, patientId);
+      setTriposha(data);
+    } catch (err) {
+      console.error("Failed to load Triposha:", err);
+      setTriposha([]);
+    } finally {
+      setTriposhaLoading(false);
+    }
+  }
   async function reloadMonitoringDataFromServer() {
     if (!token || !midwifeId || !patientId) return;
 
@@ -346,6 +375,10 @@ export default function AssignedPatientManagePage() {
     return Boolean(patient?.roles?.includes("PREGNANT_MOTHER"));
   }, [patient]);
 
+  const isPostpartumUser = useMemo(() => {
+    return Boolean(patient?.roles?.includes("POST_PREGNANT_MOTHER"));
+  }, [patient]);
+
   const isHopeToPregnantUser = useMemo(() => {
     return Boolean(patient?.roles?.includes("HOPE_TO_PREGNANT_MOTHER"));
   }, [patient]);
@@ -402,6 +435,99 @@ export default function AssignedPatientManagePage() {
     }
   }
 
+  async function handleAddTriposha(data: {
+    quantity: number;
+    status: "GIVEN" | "PENDING" | "MISSED";
+    notes?: string;
+  }) {
+    if (!token || !midwifeId || !patientId) return;
+
+    try {
+      setError("");
+      setSuccess("");
+
+      await triposhaApi.create(token, {
+        patientId,
+        midwifeId,
+        quantity: data.quantity,
+        status: data.status,
+        notes: data.notes,
+        distributionDate: new Date().toISOString(),
+        nextDueDate: new Date().toISOString(),
+      });
+
+      setSuccess("Triposha record added successfully.");
+      await loadTriposha();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to add Triposha"
+      );
+    }
+  }
+
+
+  async function handleDeleteTriposha(id: number) {
+    if (!token) return;
+
+    try {
+      setError("");
+      setSuccess("");
+
+      console.log("Deleting ID:", id);
+
+      await triposhaApi.delete(token, id);
+
+      // ✅ REMOVE FROM UI IMMEDIATELY
+      setTriposha(prev => prev.filter(item => item.id !== id));
+
+      setSuccess("Triposha record deleted.");
+    } catch (err) {
+      console.error(err);
+
+      if (err instanceof Error && err.message.includes("not found")) {
+        setTriposha(prev => prev.filter(item => item.id !== id));
+        setError("Record already deleted.");
+        return;
+      }
+
+      setError(
+        err instanceof Error ? err.message : "Delete failed"
+      );
+    }
+  }
+
+  async function handleUpdateTriposha(
+    id: number,
+    data: {
+      quantity: number;
+      status: "GIVEN" | "PENDING" | "MISSED";
+      notes?: string;
+    }
+  ) {
+    if (!token || !midwifeId || !patientId) return;
+
+    try {
+      setError("");
+      setSuccess("");
+
+      await triposhaApi.update(token, id, {
+        patientId,
+        midwifeId,
+        quantity: data.quantity,
+        status: data.status,
+        notes: data.notes,
+        distributionDate: new Date().toISOString(),
+        nextDueDate: new Date().toISOString(),
+      });
+
+      setSuccess("Triposha record updated successfully.");
+      await loadTriposha();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to update Triposha"
+      );
+    }
+  }
   async function handleMonitoringSave(
     payload: HealthMonitoringUpsertRequestDto
   ) {
@@ -527,6 +653,7 @@ export default function AssignedPatientManagePage() {
     }
   }
 
+
   async function loadUnreadCounts(jwt: string, currentUserId: number) {
     const conversations = await chatApi.getMyConversations(currentUserId, jwt);
     const next: Record<number, number> = {};
@@ -609,6 +736,10 @@ export default function AssignedPatientManagePage() {
               />
             ) : null}
 
+            {isPostpartumUser ? (
+              <RecoveryTrackingCard token={token} patientId={patientId} />
+            ) : null}
+
             {midwifeId && isHopeToPregnantUser ? (
               <FertilityCard
                 fertility={fertility}
@@ -619,12 +750,55 @@ export default function AssignedPatientManagePage() {
               />
             ) : null}
 
+            <TriposhaCard
+              records={triposha}
+              onDelete={handleDeleteTriposha}
+              onAdd={handleAddTriposha}
+              onUpdate={handleUpdateTriposha}
+            />
+
+
             <HealthRecordsSection
               categories={categories}
               selectedCategoryId={selectedCategoryId}
               setSelectedCategoryId={setSelectedCategoryId}
               recordsLoading={recordsLoading}
               records={records}
+              token={token}
+              midwifeId={midwifeId}
+              patientId={patientId}
+              onRecordsChanged={async () => {
+                if (!token || !midwifeId || !patientId || !selectedCategoryId) return;
+
+                clearCachedPatientBundle(patientId);
+
+                const [freshCategories, freshRecords] = await Promise.all([
+                  midwifePatientApi.getPatientHealthCategories(token, midwifeId, patientId),
+                  midwifePatientApi.getPatientHealthRecordsByCategory(
+                    token,
+                    midwifeId,
+                    patientId,
+                    selectedCategoryId
+                  ),
+                ]);
+
+                setCategories(freshCategories);
+                setRecords(freshRecords);
+                setCachedCategoryRecords(patientId, selectedCategoryId, freshRecords);
+
+                const cached = getCachedPatientBundle(patientId);
+                if (cached) {
+                  setCachedPatientBundle(patientId, {
+                    ...cached,
+                    categories: freshCategories,
+                    recordsByCategory: {
+                      ...cached.recordsByCategory,
+                      [selectedCategoryId]: freshRecords,
+                    },
+                    cachedAt: Date.now(),
+                  });
+                }
+              }}
             />
           </div>
         </main>
