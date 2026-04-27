@@ -7,7 +7,8 @@ import {
   MapPinned,
   Menu,
   MessageCircle,
-  Settings,
+  Package,
+  CheckSquare,
 } from "lucide-react";
 import { getcuruser } from "@/app/api/user/api";
 import type { UserResponseDto } from "@/app/api/user/types";
@@ -15,18 +16,14 @@ import { useEffect, useMemo, useState } from "react";
 import ProtectedImage from "../../lib/ProtectedImage";
 import MessagesPopup from "../../app/(connection)/messages/MessagesPopup";
 import { chatApi } from "@/app/api/chat/api";
+import ChecklistPopup from "@/app/(main)/checklist/ChecklistPopup";
+import TriposhaPopup from "@/app/(main)/triposha/TriposhaPopup";
 
 type TopBarFeaturesProps = {
   name?: string;
   email?: string;
   avatarUrl?: string;
 };
-
-const baseFeatures = [
-  { label: "Midwives Map", href: "/registered-midwives-map", icon: MapPinned },
-  { label: "Vaccination", href: "/vaccination", icon: Syringe },
-  { label: "Settings", href: "/settings", icon: Settings },
-];
 
 const languages = ["EN", "සිං", "த"] as const;
 
@@ -38,7 +35,10 @@ export default function TopBarFeatures({
     useState<(typeof languages)[number]>("EN");
   const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
   const [isMobileFeaturesOpen, setIsMobileFeaturesOpen] = useState(false);
+
   const [messagesOpen, setMessagesOpen] = useState(false);
+  const [checklistOpen, setChecklistOpen] = useState(false);
+  const [triposhaOpen, setTriposhaOpen] = useState(false);
 
   const [token, setToken] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
@@ -54,7 +54,6 @@ export default function TopBarFeatures({
 
         const user = await getcuruser(sessionToken);
         setMe(user);
-
         setToken(sessionToken);
 
         const unread = await chatApi.getUnreadCount(user.id, sessionToken);
@@ -106,6 +105,16 @@ export default function TopBarFeatures({
     </div>
   );
 
+  const openChecklist = () => {
+    setChecklistOpen(true);
+    setIsMobileFeaturesOpen(false);
+  };
+
+  const openTriposha = () => {
+    setTriposhaOpen(true);
+    setIsMobileFeaturesOpen(false);
+  };
+
   return (
     <>
       <div className="mb-6 w-full">
@@ -126,22 +135,43 @@ export default function TopBarFeatures({
                 <span className="hidden min-[1250px]:inline">Messages</span>
               </button>
 
-              {baseFeatures.map((item) => {
-                const Icon = item.icon;
+              <Link
+                href="/registered-midwives-map"
+                className="inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
+              >
+                <MapPinned className="h-5 w-5 shrink-0 min-[1250px]:h-4 min-[1250px]:w-4" />
+                <span className="hidden min-[1250px]:inline">
+                  Midwives Map
+                </span>
+              </Link>
 
-                return (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    className="inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
-                  >
-                    <Icon className="h-5 w-5 shrink-0 min-[1250px]:h-4 min-[1250px]:w-4" />
-                    <span className="hidden min-[1250px]:inline">
-                      {item.label}
-                    </span>
-                  </Link>
-                );
-              })}
+              <Link
+                href="/vaccination"
+                className="inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
+              >
+                <Syringe className="h-5 w-5 shrink-0 min-[1250px]:h-4 min-[1250px]:w-4" />
+                <span className="hidden min-[1250px]:inline">
+                  Vaccination
+                </span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={openChecklist}
+                className="inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
+              >
+                <CheckSquare className="h-5 w-5 shrink-0 min-[1250px]:h-4 min-[1250px]:w-4" />
+                <span className="hidden min-[1250px]:inline">Checklist</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={openTriposha}
+                className="inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
+              >
+                <Package className="h-5 w-5 shrink-0 min-[1250px]:h-4 min-[1250px]:w-4" />
+                <span className="hidden min-[1250px]:inline">Triposha</span>
+              </button>
             </div>
 
             <div className="relative min-[724px]:hidden">
@@ -155,17 +185,17 @@ export default function TopBarFeatures({
               </button>
 
               {isMobileFeaturesOpen && (
-                <div className="absolute left-0 top-full z-20 mt-2 min-w-[180px] rounded-xl border border-neutral-200 bg-white p-1 shadow-md">
+                <div className="absolute left-0 top-full z-20 mt-2 min-w-[190px] rounded-xl border border-neutral-200 bg-white p-1 shadow-md">
                   <button
                     type="button"
                     onClick={() => {
                       setMessagesOpen(true);
                       setIsMobileFeaturesOpen(false);
                     }}
-                    className="relative inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
+                    className="relative flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
                   >
                     {unreadCount > 0 ? (
-                      <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                      <span className="absolute right-2 top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
                         {unreadCount > 99 ? "99+" : unreadCount}
                       </span>
                     ) : null}
@@ -173,21 +203,41 @@ export default function TopBarFeatures({
                     <span>Messages</span>
                   </button>
 
-                  {baseFeatures.map((item) => {
-                    const Icon = item.icon;
+                  <Link
+                    href="/registered-midwives-map"
+                    onClick={() => setIsMobileFeaturesOpen(false)}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
+                  >
+                    <MapPinned className="h-4 w-4 shrink-0" />
+                    <span>Midwives Map</span>
+                  </Link>
 
-                    return (
-                      <Link
-                        key={item.label}
-                        href={item.href}
-                        onClick={() => setIsMobileFeaturesOpen(false)}
-                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
-                      >
-                        <Icon className="h-4 w-4 shrink-0" />
-                        <span>{item.label}</span>
-                      </Link>
-                    );
-                  })}
+                  <Link
+                    href="/vaccination"
+                    onClick={() => setIsMobileFeaturesOpen(false)}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
+                  >
+                    <Syringe className="h-4 w-4 shrink-0" />
+                    <span>Vaccination</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={openChecklist}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
+                  >
+                    <CheckSquare className="h-4 w-4 shrink-0" />
+                    <span>Checklist</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={openTriposha}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
+                  >
+                    <Package className="h-4 w-4 shrink-0" />
+                    <span>Triposha</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -298,6 +348,13 @@ export default function TopBarFeatures({
         targetUserId={targetUserId}
         theme="light"
       />
+
+      <ChecklistPopup
+        open={checklistOpen}
+        onClose={() => setChecklistOpen(false)}
+      />
+
+      <TriposhaPopup open={triposhaOpen} onClose={() => setTriposhaOpen(false)} />
     </>
   );
 }
