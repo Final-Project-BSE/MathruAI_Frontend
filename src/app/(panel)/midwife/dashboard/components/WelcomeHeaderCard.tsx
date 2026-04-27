@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBullhorn } from "@fortawesome/free-solid-svg-icons";
@@ -10,6 +10,8 @@ import Modal from "../../../../(connection)/components/Modal";
 import RegisteredUsersMapPage from "../../../../(connection)/components/midwife-map/RegisteredUsersMapPage";
 import MidwifeAnnouncementPage from "../../../../(panel)/midwife/announcements/page";
 
+import { getcuruser } from "../../../../api/user/api";
+import type { UserResponseDto } from "../../../../api/user/types";
 import type { Role } from "../../../../api/user-assign/types";
 
 type Props = {
@@ -21,6 +23,45 @@ type Props = {
 export default function WelcomeHeaderCard({ userId, token, roles }: Props) {
   const [openMap, setOpenMap] = useState(false);
   const [openAnnouncement, setOpenAnnouncement] = useState(false);
+  const [me, setMe] = useState<UserResponseDto | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadLoggedInUser() {
+      try {
+        if (!token) return;
+
+        const user = await getcuruser(token);
+
+        if (!active) return;
+        setMe(user);
+      } catch (error) {
+        console.error("Failed to load logged-in user:", error);
+      }
+    }
+
+    void loadLoggedInUser();
+
+    return () => {
+      active = false;
+    };
+  }, [token]);
+
+  const displayName = useMemo(() => {
+    const name = `${me?.firstName ?? ""} ${me?.lastName ?? ""}`.trim();
+    return name || "User";
+  }, [me]);
+
+  const currentDate = useMemo(() => {
+    const now = new Date();
+
+    return {
+      dayNumber: now.getDate(),
+      dayName: now.toLocaleDateString("en-US", { weekday: "short" }),
+      monthName: now.toLocaleDateString("en-US", { month: "long" }),
+    };
+  }, []);
 
   return (
     <>
@@ -33,7 +74,9 @@ export default function WelcomeHeaderCard({ userId, token, roles }: Props) {
               </p>
 
               <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.03em] text-white/80 sm:text-[26px] md:text-[30px] lg:text-[32px]">
-                <span className="block sm:inline">Welcome Back, Masud A.</span>{" "}
+                <span className="block sm:inline">
+                  Welcome Back, {displayName}
+                </span>{" "}
                 <span className="inline-block">👋</span>
               </h1>
             </div>
@@ -41,13 +84,15 @@ export default function WelcomeHeaderCard({ userId, token, roles }: Props) {
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between lg:justify-end">
               <div className="hidden items-center gap-3 md:flex">
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/80 text-lg font-semibold text-[#171717] shadow-sm sm:h-12 sm:w-12 sm:text-xl">
-                  19
+                  {currentDate.dayNumber}
                 </div>
 
                 <div className="leading-tight text-white/80">
-                  <div className="text-xs font-medium text-white/60">Tue.</div>
+                  <div className="text-xs font-medium text-white/60">
+                    {currentDate.dayName}.
+                  </div>
                   <div className="text-sm font-semibold sm:text-base">
-                    December
+                    {currentDate.monthName}
                   </div>
                 </div>
               </div>
@@ -62,6 +107,7 @@ export default function WelcomeHeaderCard({ userId, token, roles }: Props) {
               </Link>
 
               <button
+                type="button"
                 onClick={() => setOpenMap(true)}
                 aria-label="Open patients map"
                 className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/80 text-neutral-700 shadow-sm md:flex"
