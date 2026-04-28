@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   Bell,
+  CalendarPlus,
   FileHeart,
   MapPinned,
   Menu,
@@ -15,6 +16,7 @@ import { useEffect, useMemo, useState } from "react";
 import ProtectedImage from "../../lib/ProtectedImage";
 import MessagesPopup from "../../app/(connection)/messages/MessagesPopup";
 import { chatApi } from "@/app/api/chat/api";
+import MotherAppointmentRequestDialog from "@/components/appointment/MotherAppointmentRequestDialog";
 
 type TopBarFeaturesProps = {
   name?: string;
@@ -39,6 +41,7 @@ export default function TopBarFeatures({
   const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
   const [isMobileFeaturesOpen, setIsMobileFeaturesOpen] = useState(false);
   const [messagesOpen, setMessagesOpen] = useState(false);
+  const [requestDialogOpen, setRequestDialogOpen] = useState(false);
 
   const [token, setToken] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
@@ -90,12 +93,7 @@ export default function TopBarFeatures({
     if (!me) return avatarUrl;
 
     return (
-      me.avatarUrl ||
       me.profileImageUrl ||
-      me.profilePictureUrl ||
-      me.imageUrl ||
-      me.photoUrl ||
-      me.profileImage ||
       avatarUrl
     );
   }, [me, avatarUrl]);
@@ -142,6 +140,15 @@ export default function TopBarFeatures({
                   </Link>
                 );
               })}
+
+              <button
+                type="button"
+                onClick={() => setRequestDialogOpen(true)}
+                className="inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
+              >
+                <CalendarPlus className="h-5 w-5 shrink-0 min-[1250px]:h-4 min-[1250px]:w-4" />
+                <span className="hidden min-[1250px]:inline">Appointment</span>
+              </button>
             </div>
 
             <div className="relative min-[724px]:hidden">
@@ -188,6 +195,18 @@ export default function TopBarFeatures({
                       </Link>
                     );
                   })}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRequestDialogOpen(true);
+                      setIsMobileFeaturesOpen(false);
+                    }}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
+                  >
+                    <CalendarPlus className="h-4 w-4 shrink-0" />
+                    <span>Appointment</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -267,7 +286,7 @@ export default function TopBarFeatures({
                 <ProtectedImage
                   src={resolvedAvatar}
                   alt={fullname}
-                  token={null}
+                  token={token}
                   fallback={avatarFallback}
                   className="h-full w-full object-cover"
                 />
@@ -295,6 +314,16 @@ export default function TopBarFeatures({
         targetUserId={targetUserId}
         theme="light"
       />
+
+      {token && me?.id && me.assignedMidwifeId ? (
+        <MotherAppointmentRequestDialog
+          open={requestDialogOpen}
+          onOpenChange={setRequestDialogOpen}
+          token={token}
+          midwifeId={me.assignedMidwifeId}
+          userId={me.id}
+        />
+      ) : null}
     </>
   );
 }
