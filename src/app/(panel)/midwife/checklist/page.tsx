@@ -1,167 +1,244 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  ChecklistItemDto,
+  getMasterChecklist,
+  addChecklistItem,
+  deleteChecklistItem,
+} from "@/app/api/checklist/api";
 import ChecklistItem from "./ChecklistItem";
-import { getItems, addItem, deleteItem, updateItem } from "@/app/api/checklist/api";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, Plus, Loader2 } from "lucide-react";
+import { getSession } from "@/lib/authentication";
+import { getcuruser } from "@/app/api/user/api";
 
-
-
-export default function MidwifePage() {
-  const [items, setItems] = useState<any[]>([]);
-  const [popup, setPopup] = useState<string | null>(null); 
+export default function MidwifeChecklistPage() {
+  const [midwifeId, setMidwifeId] = useState<number | null>(null);
+  const [items, setItems] = useState<ChecklistItemDto[]>([]);
+  const [popup, setPopup] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const [form, setForm] = useState({
     name: "",
     quantity: 1,
     category: "Mother",
-    checked: false,
   });
 
-  const load = async () => {
-    const data = await getItems();
+  const showPopup = (message: string) => {
+    setPopup(message);
+    setTimeout(() => setPopup(null), 2200);
+  };
+
+  const load = async (id: number) => {
+    const data = await getMasterChecklist(id);
     setItems(data);
   };
 
   useEffect(() => {
-    load();
+    let active = true;
+
+    async function init() {
+      try {
+        setLoading(true);
+
+        const session = await getSession();
+        const token = session?.user?.token;
+
+        if (!token) {
+          throw new Error("User is not authenticated");
+        }
+
+        const me = await getcuruser(token);
+
+        if (!active) return;
+
+        setMidwifeId(me.id);
+        await load(me.id);
+      } catch (error) {
+        console.error("Failed to load midwife checklist:", error);
+        showPopup("Failed to load checklist");
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    void init();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
-  //   const handleAdd = async () => {
-
-  //   // 🔴 UPDATED: Validation added here
-  //   if (!form.name.trim()) {
-  //     alert("⚠️ Item name cannot be empty!");
-  //     return;
-  //   }
-
-  //   await addItem(form);
-
-  //   // 🟢 UPDATED: success popup
-  //   alert("✅ Item added successfully!");
-
-  //   setForm({ name: "", quantity: 1, category: "Mother", checked: false });
-  //   load();
-  // };
-
-   const handleAdd = async () => {
-
-    // 🟡 REPLACED alert
-    if (!form.name.trim()) {
-      setPopup("⚠️ Item name cannot be empty!");
-      setTimeout(() => setPopup(null), 2000);
+  const handleAdd = async () => {
+    if (!midwifeId) {
+      showPopup("Midwife account not loaded");
       return;
     }
 
-    await addItem(form);
+    if (!form.name.trim()) {
+      showPopup("Item name cannot be empty");
+      return;
+    }
 
-    // 🟢 SUCCESS POPUP
-    setPopup("✅ Item added successfully!");
-    setTimeout(() => setPopup(null), 2000);
+    if (form.quantity < 1) {
+      showPopup("Quantity must be at least 1");
+      return;
+    }
 
-    setForm({ name: "", quantity: 1, category: "Mother", checked: false });
-    load();
+    try {
+      await addChecklistItem(midwifeId, {
+        name: form.name.trim(),
+        quantity: form.quantity,
+        category: form.category,
+      });
+
+      setForm({ name: "", quantity: 1, category: "Mother" });
+      showPopup("Checklist item added");
+      await load(midwifeId);
+    } catch (error) {
+      console.error("Failed to add checklist item:", error);
+      showPopup("Failed to add checklist item");
+    }
   };
 
   const handleDelete = async (id: number) => {
-    await deleteItem(id);
-    load();
+    if (!midwifeId) {
+      showPopup("Midwife account not loaded");
+      return;
+    }
+
+    try {
+      await deleteChecklistItem(midwifeId, id);
+      showPopup("Checklist item deleted");
+      await load(midwifeId);
+    } catch (error) {
+      console.error("Failed to delete checklist item:", error);
+      showPopup("Failed to delete checklist item");
+    }
   };
 
-  const handleToggle = async (item: any) => {
-    await updateItem(item.id, { ...item, checked: !item.checked });
-    load();
-  };
+  const motherItems = items.filter(
+    (i) => i.category?.trim().toLowerCase() === "mother"
+  );
 
-  const mother = items.filter(i => i.category === "Mother");
-  const baby = items.filter(i => i.category === "Baby");
+  const babyItems = items.filter(
+    (i) => i.category?.trim().toLowerCase() === "baby"
+  );
 
   return (
-        <div className=" p-4 md:p-6   bg-black min-h-screen text-white">
-
-  <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-r from-[#f17641] to-[#d04f51] p-5 text-white shadow-lg">
-        <div className="relative z-10 flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur">
-            <ClipboardList className="h-7 w-7 text-white" />
+    <main className="min-h-screen bg-black p-6 text-white">
+      <div className="mx-auto max-w-7xl space-y-6">
+        {popup && (
+          <div className="fixed right-5 top-5 z-50 rounded-xl border border-white/10 bg-zinc-950 px-5 py-3 text-sm text-white shadow-2xl">
+            {popup}
           </div>
+        )}
+
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold md:text-2xl">Hospital Bag Checklist</h1>
-            <p className="text-sm opacity-90 mt-0.5">
-             Be prepared with all the essentials for your big day            </p>
+            <h1 className="mt-2 flex items-center gap-3 text-md font-bold">
+              <ClipboardList className="h-6 w-6" />
+              Hospital Bag Checklist
+            </h1>
+
+            <p className="mt-1 text-xs text-zinc-400">
+              Create and manage your own checklist for your assigned users only.
+            </p>
           </div>
-                    </div>
+        </div>
+
+        <section className="rounded-2xl border border-white/10 bg-zinc-950 p-5 shadow-xl">
+          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold">
+            <Plus className="h-4 w-4" />
+            Add new checklist item
+          </h2>
+
+          <div className="grid gap-3 md:grid-cols-[1fr_120px_160px_120px]">
+            <input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Item name"
+              className="w-full rounded-xl border border-white/10 bg-black px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600"
+            />
+
+            <input
+              type="number"
+              min={1}
+              value={form.quantity}
+              onChange={(e) =>
+                setForm({ ...form, quantity: Number(e.target.value) })
+              }
+              className="w-full rounded-xl border border-white/10 bg-black px-3 py-2 text-sm text-white outline-none"
+            />
+
+            <select
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+              className="w-full rounded-xl border border-white/10 bg-black px-3 py-2 text-sm text-white outline-none"
+            >
+              <option value="Mother">Mother</option>
+              <option value="Baby">Baby</option>
+            </select>
+
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={loading || !midwifeId}
+              className="flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Plus className="h-4 w-4" />
+              Add
+            </button>
           </div>
+        </section>
 
-{popup && (
-  <div className="fixed top-5 right-5 z-50 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg border border-gray-600 animate-bounce">
-    {popup}
-  </div>
-)}
+        {loading ? (
+          <div className="flex justify-center py-20 text-zinc-400">
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            Loading checklist...
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2">
+            <section className="rounded-2xl border border-white/10 bg-zinc-950 p-5 shadow-xl">
+              <h2 className="mb-4 text-sm font-semibold">Mother Items</h2>
 
-    {/* FORM */}
-    <div className="flex gap-2 mb-5">
-      <input
-        value={form.name}
-        onChange={(e) => setForm({ ...form, name: e.target.value })}
-        className="border border-gray-700 bg-gray-700 text-white p-2 flex-1 rounded"
-        placeholder="Item"
-      />
+              <div className="space-y-3">
+                {motherItems.length === 0 ? (
+                  <p className="text-sm text-zinc-500">
+                    No mother items added.
+                  </p>
+                ) : (
+                  motherItems.map((item) => (
+                    <ChecklistItem
+                      key={item.id}
+                      item={item}
+                      onDelete={handleDelete}
+                    />
+                  ))
+                )}
+              </div>
+            </section>
 
-      <input
-        type="number"
-        value={form.quantity}
-        onChange={(e) => setForm({ ...form, quantity: +e.target.value })}
-        className="border border-gray-700 bg-gray-700 text-white p-2 w-20 rounded"
-      />
+            <section className="rounded-2xl border border-white/10 bg-zinc-950 p-5 shadow-xl">
+              <h2 className="mb-4 text-sm font-semibold">Baby Items</h2>
 
-      <select
-        value={form.category}
-        onChange={(e) => setForm({ ...form, category: e.target.value })}
-        className="border border-gray-700 bg-gray-700 text-white p-2 rounded"
-      >
-        <option>Mother</option>
-        <option>Baby</option>
-      </select>
-
-      <button
-        onClick={handleAdd}
-        className=" bg-[#ef8354] hover: bg-[#f0ae92] text-white px-3 rounded w-32"
-      >
-        Add
-      </button>
-    </div>
-
-    <div className="flex gap-6">
-      
-      {/* Mother Card */}
-      <div className="flex-1 border border-gray-700 bg-gray-900 rounded-lg p-4 shadow">
-        <h2 className="font-bold mb-3 text-lg text-white">Mother</h2>
-
-        {mother.map(item => (
-          <ChecklistItem
-            key={item.id}
-            item={item}
-            onDelete={handleDelete}
-            onToggle={handleToggle}
-          />
-        ))}
+              <div className="space-y-3">
+                {babyItems.length === 0 ? (
+                  <p className="text-sm text-zinc-500">No baby items added.</p>
+                ) : (
+                  babyItems.map((item) => (
+                    <ChecklistItem
+                      key={item.id}
+                      item={item}
+                      onDelete={handleDelete}
+                    />
+                  ))
+                )}
+              </div>
+            </section>
+          </div>
+        )}
       </div>
-
-      {/* Baby Card */}
-      <div className="flex-1 border border-gray-700 bg-gray-900 rounded-lg p-4 shadow">
-        <h2 className="font-bold mb-3 text-lg text-white">Baby</h2>
-
-        {baby.map(item => (
-          <ChecklistItem
-            key={item.id}
-            item={item}
-            onDelete={handleDelete}
-            onToggle={handleToggle}
-          />
-        ))}
-      </div>
-
-    </div>
-  </div>
+    </main>
   );
 }

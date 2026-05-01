@@ -1,7 +1,9 @@
-const BASE_URL =
-  (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080").replace(/\/$/, "");
+import type { TriposhaRecord } from "./types";
 
-type HttpMethod = "GET" | "POST" | "DELETE";
+const BASE_URL =
+  (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080").replace(/\/$/, "");
+
+type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 
 async function request<T>(
   path: string,
@@ -19,14 +21,32 @@ async function request<T>(
     cache: "no-store",
   });
 
-  const data = await res.json();
+  const contentType = res.headers.get("content-type") || "";
+  const data = contentType.includes("application/json")
+    ? await res.json()
+    : await res.text();
 
   if (!res.ok) {
-    throw new Error(data?.message || "Request failed");
+    const message =
+      typeof data === "string"
+        ? data
+        : data?.message || data?.error || "Request failed";
+
+    throw new Error(message);
   }
 
-  return data;
+  return data as T;
 }
+
+export type TriposhaPayload = {
+  patientId: number;
+  midwifeId: number;
+  distributionDate: string;
+  quantity: number;
+  status: "GIVEN" | "PENDING" | "MISSED";
+  nextDueDate: string;
+  notes?: string;
+};
 
 export const triposhaApi = {
   getByPatient: (token: string, patientId: number) =>
@@ -36,29 +56,19 @@ export const triposhaApi = {
       token
     ),
 
-  create: (
-    token: string,
-    payload: Omit<TriposhaRecord, "id">
-  ) =>
-    request<TriposhaRecord>(
-      `/api/triposha`,
-      "POST",
-      token,
-      payload
+  getByMidwife: (token: string, midwifeId: number) =>
+    request<TriposhaRecord[]>(
+      `/api/triposha/midwife/${midwifeId}`,
+      "GET",
+      token
     ),
+
+  create: (token: string, payload: TriposhaPayload) =>
+    request<TriposhaRecord>(`/api/triposha`, "POST", token, payload),
+
+  update: (token: string, id: number, payload: TriposhaPayload) =>
+    request<TriposhaRecord>(`/api/triposha/${id}`, "PUT", token, payload),
 
   delete: (token: string, id: number) =>
-    request<void>(`/api/triposha/${id}`, "DELETE", token),
-
-   update: (
-    token: string,
-    id: number,
-    payload: Omit<TriposhaRecord, "id">
-  ) =>
-    request<TriposhaRecord>(
-      `/api/triposha/${id}`,
-      "PUT",
-      token,
-      payload
-    ),
+    request<string>(`/api/triposha/${id}`, "DELETE", token),
 };

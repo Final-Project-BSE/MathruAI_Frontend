@@ -1,6 +1,3 @@
-
-
-
 "use client";
 
 import { useState } from "react";
@@ -9,23 +6,23 @@ import { formatDate } from "./lib/utils";
 import { Trash2, Pencil, X } from "lucide-react";
 import TriposhaForm from "./TriposhaForm";
 
+type TriposhaFormData = {
+  quantity: number;
+  status: "GIVEN" | "PENDING" | "MISSED";
+  notes?: string;
+};
+
 type Props = {
   records: TriposhaRecord[];
+  readOnly?: boolean;
   onDelete?: (id: number) => void;
-  onAdd?: (data: {
-    quantity: number;
-    status: "GIVEN" | "PENDING" | "MISSED";
-    notes?: string;
-  }) => void;
-  onUpdate?: (id: number, data: {
-    quantity: number;
-    status: "GIVEN" | "PENDING" | "MISSED";
-    notes?: string;
-  }) => void;
+  onAdd?: (data: TriposhaFormData) => void;
+  onUpdate?: (id: number, data: TriposhaFormData) => void;
 };
 
 export default function TriposhaCard({
   records,
+  readOnly = false,
   onDelete,
   onAdd,
   onUpdate,
@@ -33,7 +30,10 @@ export default function TriposhaCard({
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<TriposhaRecord | null>(null);
 
-  const isEdit = !!selected;
+  const isEdit = Boolean(selected);
+  const canAdd = !readOnly && Boolean(onAdd);
+  const canEdit = !readOnly && Boolean(onUpdate);
+  const canDelete = !readOnly && Boolean(onDelete);
 
   function handleClose() {
     setOpen(false);
@@ -42,21 +42,21 @@ export default function TriposhaCard({
 
   return (
     <>
-      {/* MAIN CARD */}
-      <section className="rounded-2xl border border-white/10 bg-zinc-950 p-5">
-        <div className="flex items-center justify-between mb-4">
+      <section className="rounded-2xl border border-white/10 bg-zinc-950 p-5 text-white">
+        <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Triposha Tracking</h2>
 
-          {/* ADD BUTTON */}
-          <button
-            onClick={() => {
-              setSelected(null);
-              setOpen(true);
-            }}
-            className="rounded-lg border border-white/10 px-3 py-1 text-sm hover:bg-white/10"
-          >
-            + Add
-          </button>
+          {canAdd && (
+            <button
+              onClick={() => {
+                setSelected(null);
+                setOpen(true);
+              }}
+              className="rounded-lg border border-white/10 px-3 py-1 text-sm hover:bg-white/10"
+            >
+              + Add
+            </button>
+          )}
         </div>
 
         {records.length === 0 ? (
@@ -68,7 +68,7 @@ export default function TriposhaCard({
             {records.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center justify-between rounded-xl bg-zinc-900 p-3"
+                className="flex items-center justify-between gap-3 rounded-xl bg-zinc-900 p-3"
               >
                 <div>
                   <div className="font-medium">
@@ -80,65 +80,66 @@ export default function TriposhaCard({
                   </div>
 
                   {item.notes && (
-                    <div className="text-xs text-zinc-400">
+                    <div className="mt-1 text-xs text-zinc-400">
                       {item.notes}
                     </div>
                   )}
                 </div>
 
-                <div className="flex gap-2">
-                  {/* EDIT */}
-                  <button
-                    onClick={() => {
-                      setSelected(item);
-                      setOpen(true);
-                    }}
-                    className="text-blue-400 hover:text-blue-300"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
+                {(canEdit || canDelete) && (
+                  <div className="flex gap-2">
+                    {canEdit && (
+                      <button
+                        onClick={() => {
+                          setSelected(item);
+                          setOpen(true);
+                        }}
+                        className="text-blue-400 hover:text-blue-300"
+                        type="button"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    )}
 
-                  {/* DELETE */}
-                  {onDelete && (
-                    <button
-                      onClick={() => onDelete(item.id)}
-                      className="text-red-400 hover:text-red-300"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
+                    {canDelete && (
+                      <button
+                        onClick={() => onDelete?.(item.id)}
+                        className="text-red-400 hover:text-red-300"
+                        type="button"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
       </section>
 
-      {/* MODAL */}
-      {open && (
+      {open && !readOnly && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4">
-          <div className="w-full max-w-xl rounded-2xl bg-zinc-950 border border-white/10 p-5 space-y-4">
-
-            {/* HEADER */}
+          <div className="w-full max-w-xl space-y-4 rounded-2xl border border-white/10 bg-zinc-950 p-5 text-white">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">
                 {isEdit ? "Edit Triposha" : "Add Triposha"}
               </h3>
 
-              <button onClick={handleClose}>
+              <button onClick={handleClose} type="button">
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            {/* FORM */}
             <TriposhaForm
               initialData={selected || undefined}
               onSubmit={(data) => {
-                if (isEdit && selected && onUpdate) {
-                  onUpdate(selected.id, data);
-                } else if (onAdd) {
-                  onAdd(data);
+                if (isEdit && selected) {
+                  onUpdate?.(selected.id, data);
+                } else {
+                  onAdd?.(data);
                 }
+
                 handleClose();
               }}
             />

@@ -1,74 +1,6 @@
-
-
-// "use client";
-
-// import { useState, useEffect } from "react";
-// import type { TriposhaRecord } from "@/app/api/triposha/types";
-
-// type Props = {
-//   initialData?: TriposhaRecord;
-//   onSubmit: (data: {
-//     quantity: number;
-//     status: "GIVEN" | "PENDING" | "MISSED";
-//     notes?: string;
-//   }) => void;
-// };
-
-// export default function TriposhaForm({ initialData, onSubmit }: Props) {
-//   const [quantity, setQuantity] = useState(1);
-//   const [status, setStatus] = useState<"GIVEN" | "PENDING" | "MISSED">("GIVEN");
-//   const [notes, setNotes] = useState("");
-
-//   useEffect(() => {
-//     if (initialData) {
-//       setQuantity(initialData.quantity);
-//       setStatus(initialData.status as any);
-//       setNotes(initialData.notes || "");
-//     }
-//   }, [initialData]);
-
-//   return (
-//     <div className="space-y-3 rounded-xl border border-white/10 p-4">
-//       <input
-//         type="number"
-//         value={quantity}
-//         onChange={(e) => setQuantity(Number(e.target.value))}
-//         className="w-full rounded bg-zinc-900 p-2 text-sm"
-//       />
-
-//       <select
-//         value={status}
-//         onChange={(e) => setStatus(e.target.value as any)}
-//         className="w-full rounded bg-zinc-900 p-2 text-sm"
-//       >
-//         <option value="GIVEN">Given</option>
-//         <option value="PENDING">Pending</option>
-//         <option value="MISSED">Missed</option>
-//       </select>
-
-//       <input
-//         value={notes}
-//         onChange={(e) => setNotes(e.target.value)}
-//         className="w-full rounded bg-zinc-900 p-2 text-sm"
-//         placeholder="Notes"
-//       />
-
-//       <button
-//         onClick={() =>
-//           onSubmit({ quantity, status, notes })
-//         }
-//         className="w-full rounded bg-white px-4 py-2 text-sm text-black"
-//       >
-//         {initialData ? "Update" : "Add"}
-//       </button>
-      
-//     </div>
-//   );
-// }
-
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { TriposhaRecord } from "@/app/api/triposha/types";
 
 type Props = {
@@ -85,14 +17,12 @@ export default function TriposhaForm({ initialData, onSubmit }: Props) {
   const [status, setStatus] = useState<"GIVEN" | "PENDING" | "MISSED">("GIVEN");
   const [notes, setNotes] = useState("");
 
-  // ✅ LOAD DATA WHEN EDIT MODE OPENS
   useEffect(() => {
     if (initialData) {
       setQuantity(initialData.quantity);
-      setStatus(initialData.status as any);
+      setStatus(initialData.status);
       setNotes(initialData.notes || "");
     } else {
-      // reset when switching from edit → add
       setQuantity(1);
       setStatus("GIVEN");
       setNotes("");
@@ -100,28 +30,31 @@ export default function TriposhaForm({ initialData, onSubmit }: Props) {
   }, [initialData]);
 
   function handleSubmit() {
+    if (quantity <= 0) return;
+
     onSubmit({
       quantity,
       status,
-      notes: notes.trim() === "" ? undefined : notes,
+      notes: notes.trim() || undefined,
     });
   }
 
   return (
     <div className="space-y-3 rounded-xl border border-white/10 p-4">
-      {/* Quantity */}
       <input
         type="number"
+        min={1}
         value={quantity}
         onChange={(e) => setQuantity(Number(e.target.value))}
         className="w-full rounded bg-zinc-900 p-2 text-sm"
         placeholder="Quantity"
       />
 
-      {/* Status */}
       <select
         value={status}
-        onChange={(e) => setStatus(e.target.value as any)}
+        onChange={(e) =>
+          setStatus(e.target.value as "GIVEN" | "PENDING" | "MISSED")
+        }
         className="w-full rounded bg-zinc-900 p-2 text-sm"
       >
         <option value="GIVEN">Given</option>
@@ -129,7 +62,6 @@ export default function TriposhaForm({ initialData, onSubmit }: Props) {
         <option value="MISSED">Missed</option>
       </select>
 
-      {/* Notes */}
       <input
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
@@ -137,9 +69,9 @@ export default function TriposhaForm({ initialData, onSubmit }: Props) {
         placeholder="Notes"
       />
 
-      {/* Submit */}
       <button
         onClick={handleSubmit}
+        type="button"
         className="w-full rounded bg-white px-4 py-2 text-sm text-black"
       >
         {initialData ? "Update" : "Add"}

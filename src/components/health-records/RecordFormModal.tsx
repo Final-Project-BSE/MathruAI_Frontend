@@ -118,7 +118,7 @@ export default function RecordFormModal({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[520px] rounded-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle className="text-pink-600 text-base font-semibold">
+                    <DialogTitle className="text-[#d04f51] text-base font-semibold">
                         {initialData ? "Edit Record" : "Add New Record"}
                     </DialogTitle>
                 </DialogHeader>
@@ -183,7 +183,7 @@ export default function RecordFormModal({
                             className={`w-full border-2 border-dashed rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition
                 ${isDragging ? "border-pink-500 bg-pink-50" : "border-pink-200 hover:border-pink-400 hover:bg-pink-50"}`}
                         >
-                            <UploadCloud className="h-8 w-8 text-pink-400" />
+                            <UploadCloud className="h-8 w-8 text-[#d04f51]" />
                             <p className="text-sm text-gray-600 font-medium">Click or drag & drop files here</p>
                             <p className="text-xs text-gray-400">Supports: JPG, PNG, WEBP, GIF, PDF</p>
                         </div>
@@ -235,7 +235,7 @@ export default function RecordFormModal({
                         <Button type="button" variant="outline" onClick={onClose} className="flex-1 rounded-xl">
                             Cancel
                         </Button>
-                        <Button type="submit" className="flex-1 rounded-xl bg-pink-500 hover:bg-pink-600 text-white">
+                        <Button type="submit" className="flex-1 rounded-xl bg-[#d04f51] text-white">
                             {initialData ? "Save Changes" : "Add Record"}
                         </Button>
                     </DialogFooter>

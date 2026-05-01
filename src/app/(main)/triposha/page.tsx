@@ -1,105 +1,104 @@
-"use client";
+// "use client";
 
-import { useEffect, useState } from "react";
-import { getSession } from "@/lib/authentication";
-import { triposhaApi } from "@/app/api/triposha/api";
-import type { TriposhaRecord } from "@/app/api/triposha/types";
+// import { useEffect, useState } from "react";
+// import { Package, Loader2 } from "lucide-react";
 
-import TopBarFeatures from "@/components/common/TopBarFeatures";
-import { Package } from "lucide-react";
+// import { getSession } from "@/lib/authentication";
+// import { getcuruser } from "@/app/api/user/api";
+// import { triposhaApi } from "@/app/api/triposha/api";
+// import type { TriposhaRecord } from "@/app/api/triposha/types";
 
-import TriposhaCard from "@/app/(panel)/midwife/patient-console/patients/[id]/components/TriposhaCard";
+// import TopBarFeatures from "@/components/common/TopBarFeatures";
+// import TriposhaCard from "@/app/(panel)/midwife/patient-console/patients/[id]/components/TriposhaCard";
 import { jsx } from "react/jsx-runtime";
 
-export default function MotherTriposhaPage() {
-  const [token, setToken] = useState("");
-  const [patientId, setPatientId] = useState<number | null>(null); // 🔥 UPDATED (was userId)
-  const [records, setRecords] = useState<TriposhaRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+// export default function MotherTriposhaPage() {
+//   const [records, setRecords] = useState<TriposhaRecord[]>([]);
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState("");
 
-  // ===============================
-  // 🔥 UPDATED: LOAD LOGIC FIXED
-  // ===============================
+//   useEffect(() => {
+//     let active = true;
 
+//     async function loadTriposha() {
+//       try {
+//         setLoading(true);
+//         setError("");
 
-useEffect(() => {
-  async function init() {
-    try {
-      const session = await getSession();
+//         const session = await getSession();
+//         const jwt = session?.user?.token || "";
 
-      console.log("SESSION:", session); // 🔥 DEBUG
+//         if (!jwt) {
+//           throw new Error("You are not authenticated. Please sign in again.");
+//         }
 
-      const jwt = session?.user?.token;
+//         const currentUser = await getcuruser(jwt);
+//         const patientId = currentUser.id;
 
-      if (!jwt) throw new Error("No token found");
+//         const data = await triposhaApi.getByPatient(jwt, patientId);
 
-      setToken(jwt);
+//         if (!active) return;
+//         setRecords(data);
+//       } catch (err) {
+//         if (!active) return;
 
-      // 🔥 SAFE ID HANDLING
-      const userId = session?.user?.id;
+//         console.error("Failed to load Triposha:", err);
+//         setRecords([]);
+//         setError(
+//           err instanceof Error
+//             ? err.message
+//             : "Failed to load Triposha records."
+//         );
+//       } finally {
+//         if (active) setLoading(false);
+//       }
+//     }
 
-      if (!userId) throw new Error("No user id found");
+//     void loadTriposha();
 
-      // 🔥 TEMP FIX (until mapping confirmed)
-      const data = await triposhaApi.getByPatient(jwt, userId);
+//     return () => {
+//       active = false;
+//     };
+//   }, []);
 
-      setPatientId(userId);
-      setRecords(data);
+//   if (loading) {
+//     return (
+//       <div className="flex min-h-screen items-center justify-center bg-[#fed2cc] text-[#d04f51]">
+//         <Loader2 className="h-6 w-6 animate-spin" />
+//       </div>
+//     );
+//   }
 
-    } catch (err) {
-      console.error("Failed to load Triposha:", err);
-      setRecords([]);
-    } finally {
-      setLoading(false);
-    }
-  }
+//   return (
+//     <div className="min-h-screen bg-[#fed2cc] p-4 md:p-6">
+//       <TopBarFeatures />
 
-  init();
-}, []);
+//       <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-r from-[#fab0a7] to-[#d04f51] p-5 text-white shadow-lg">
+//         <div className="relative z-10 flex items-center gap-4">
+//           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur">
+//             <Package className="h-7 w-7 text-white" />
+//           </div>
 
-  // ===============================
-  // LOADING STATE
-  // ===============================
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center text-white bg-black">
-        Loading...
-      </div>
-    );
-  }
+//           <div>
+//             <h1 className="text-xl font-bold md:text-2xl">
+//               My Triposha Records
+//             </h1>
+//             <p className="mt-0.5 text-sm opacity-90">
+//               Track your nutrition support and upcoming allocations
+//             </p>
+//           </div>
+//         </div>
+//       </div>
 
-  return (
-    <div className="bg-[#fed2cc] min-h-screen p-4 md:p-6">
+//       <div className="mx-auto max-w-3xl space-y-4">
+//         {error && (
+//           <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+//             {error}
+//           </div>
+//         )}
 
-      {/* TOP BAR */}
-      <TopBarFeatures />
-
-      {/* HEADER */}
-      <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-r from-[#fab0a7] to-[#d04f51] p-5 text-white shadow-lg">
-        <div className="relative z-10 flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur">
-            <Package className="h-7 w-7 text-white" />
-          </div>
-
-          <div>
-            <h1 className="text-xl font-bold md:text-2xl">
-              My Triposha Records
-            </h1>
-            <p className="text-sm opacity-90 mt-0.5">
-              Track your nutrition support and upcoming allocations
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* CONTENT */}
-      <div className="mx-auto max-w-3xl space-y-6 bg-white/90 p-6 rounded-xl text-white">
-
-        {/* 🔥 UPDATED: READ-ONLY MODE (mother cannot edit/delete) */}
-        <TriposhaCard
-          records={records}
-        />
-      </div>
-    </div>
-  );
-}
+//         <TriposhaCard records={records} readOnly />
+//       </div>
+//     </div>
+//   );
+// }
