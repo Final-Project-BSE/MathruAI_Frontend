@@ -85,4 +85,6 @@ export interface FertilityResponseDto {
   safeEnd1: string;
   safeStart2: string;
   safeEnd2: string;
+  lastPeriodDate: string;
+  averageCycleLength: number;
 }

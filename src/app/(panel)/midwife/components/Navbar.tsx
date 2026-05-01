@@ -7,7 +7,7 @@ import {
   Bell,
   Search,
   Settings,
-  Lock,
+  Syringe,
   X,
   LayoutGrid,
   BarChart3,
@@ -280,10 +280,11 @@ export default function Navbar() {
 
               <button
                 type="button"
+                onClick={() => router.push("/midwife/vaccinations")}
                 className="inline-flex items-center gap-2 rounded-xl bg-[#d9c2ff] px-5 py-2 text-[12px] font-medium text-[#121212] shadow-[0_0_0_1px_rgba(255,255,255,0.08)] transition hover:brightness-105"
               >
-                <span>Sample</span>
-                <Lock size={12} strokeWidth={2.2} />
+                <span>Vaccination</span>
+                <Syringe size={12} strokeWidth={2.2} />
               </button>
             </div>
           </div>
@@ -313,10 +314,11 @@ export default function Navbar() {
           <div className="ml-auto flex h-[52px] shrink-0 items-center gap-2 bg-black px-1 sm:gap-3 sm:px-2 lg:px-4">
             <button
               type="button"
+              onClick={() => router.push("/midwife/vaccinations")}
               className="hidden items-center gap-2 rounded-xl bg-[#d9c2ff] px-3 py-2 text-[11px] font-medium text-[#121212] transition hover:brightness-105 md:inline-flex lg:hidden"
             >
-              <span>Deposit</span>
-              <Lock size={12} strokeWidth={2.2} />
+              <span>Vaccination</span>
+              <Syringe size={12} strokeWidth={2.2} />
             </button>
 
             <button
@@ -448,6 +450,7 @@ export default function Navbar() {
 
             <button
               type="button"
+              onClick={() => router.push("/midwife/profile")}
               className="hidden h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 text-white/80 transition hover:bg-white/[0.06] hover:text-white sm:flex"
             >
               <span className="text-[10px]">Settings</span>
@@ -524,10 +527,11 @@ export default function Navbar() {
 
               <button
                 type="button"
+                onClick={() => router.push("/midwife/vaccinations")}
                 className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#d9c2ff] px-4 py-3 text-[13px] font-medium text-[#121212] transition hover:brightness-105"
               >
-                <span>Deposit</span>
-                <Lock size={13} strokeWidth={2.2} />
+                <span>Vaccination</span>
+                <Syringe size={13} strokeWidth={2.2} />
               </button>
             </div>
 
@@ -587,13 +591,13 @@ export default function Navbar() {
         </aside>
       </div>
       <MessagesPopup
-  open={messagesOpen}
-  onClose={() => {
-    setMessagesOpen(false);
-    void refreshUnreadCount();
-  }}
-  theme="dark"
-/>
+        open={messagesOpen}
+        onClose={() => {
+          setMessagesOpen(false);
+          void refreshUnreadCount();
+        }}
+        theme="dark"
+      />
     </>
   );
 }

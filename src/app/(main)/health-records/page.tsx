@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Container from "@/components/shared/container";
-import { FolderHeart, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import TopBarFeatures from "@/components/common/TopBarFeatures";
 import CategoryCard, { Category } from "@/components/health-records/CategoryCard";
 import { getCategories } from "@/app/api/health-records/api";
@@ -29,6 +29,7 @@ export default function HealthRecordsCategoriesPage() {
 
                 const data = await getCategories(token);
                 setCategories(data);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (err: any) {
                 console.error("Failed to fetch categories:", err);
                 const errorMsg = err.response?.data?.message || err.message || "Failed to load health record categories.";
@@ -60,9 +61,7 @@ export default function HealthRecordsCategoriesPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-pink-500 text-white">
-                            <FolderHeart className="h-6 w-6" />
-                        </div>
+                     
                         <div>
                             <h1 className="text-xl md:text-2xl font-bold text-gray-900">Health Records</h1>
                             <p className="text-sm text-gray-500">View and manage your health records by category</p>

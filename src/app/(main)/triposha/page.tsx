@@ -9,6 +9,7 @@ import TopBarFeatures from "@/components/common/TopBarFeatures";
 import { Package } from "lucide-react";
 
 import TriposhaCard from "@/app/(panel)/midwife/patient-console/patients/[id]/components/TriposhaCard";
+import { jsx } from "react/jsx-runtime";
 
 export default function MotherTriposhaPage() {
   const [token, setToken] = useState("");
@@ -19,34 +20,42 @@ export default function MotherTriposhaPage() {
   // ===============================
   // 🔥 UPDATED: LOAD LOGIC FIXED
   // ===============================
-  useEffect(() => {
-    async function init() {
-      try {
-        const session = await getSession();
 
-        const jwt = session?.user?.token || "";
 
-        const id = session?.user?.patientId || session?.user?.id;
+useEffect(() => {
+  async function init() {
+    try {
+      const session = await getSession();
 
-        if (!jwt || !id) throw new Error("Not authenticated");
+      console.log("SESSION:", session); // 🔥 DEBUG
 
-        setToken(jwt);
-        setPatientId(id); // 🔥 UPDATED
+      const jwt = session?.user?.token;
 
-        // 🔥 UPDATED API CALL (uses patientId correctly)
-        const data = await triposhaApi.getByPatient(jwt, id);
-        setRecords(data);
-      } catch (err) {
-        console.error("Failed to load Triposha:", err);
-        setRecords([]);
-      } finally {
-        setLoading(false);
-      }
+      if (!jwt) throw new Error("No token found");
+
+      setToken(jwt);
+
+      // 🔥 SAFE ID HANDLING
+      const userId = session?.user?.id;
+
+      if (!userId) throw new Error("No user id found");
+
+      // 🔥 TEMP FIX (until mapping confirmed)
+      const data = await triposhaApi.getByPatient(jwt, userId);
+
+      setPatientId(userId);
+      setRecords(data);
+
+    } catch (err) {
+      console.error("Failed to load Triposha:", err);
+      setRecords([]);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    init();
-  }, []);
-  
+  init();
+}, []);
 
   // ===============================
   // LOADING STATE

@@ -113,4 +113,20 @@ export const midwifePatientApi = {
       "GET",
       token
     ),
+
+  calculatePatientFertility: (
+    token: string,
+    midwifeId: number,
+    patientId: number,
+    payload: {
+      lastPeriodDate: string;
+      averageCycleLength: number;
+    }
+  ) =>
+    request<FertilityResponseDto>(
+      `/api/fertility/midwife/${midwifeId}/patient/${patientId}/calculate`,
+      "POST",
+      token,
+      payload
+    ),
 };
