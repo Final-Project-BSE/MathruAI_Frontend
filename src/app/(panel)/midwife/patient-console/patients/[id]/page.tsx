@@ -45,6 +45,7 @@ import HealthMonitoringCard from "./components/health-monitoring/HealthMonitorin
 import { healthMonitoringApis } from "../../../../../api/healthmonitor/api";
 import { chatApi } from "@/app/api/chat/api";
 import PatientVaccinationCard from "./components/vaccination/PatientVaccinationCard";
+import BreastfeedingCard from "./components/midwife-breastfeeding/BreastfeedingCard";
 import RecoveryTrackingCard from "./components/recovery-tracking/RecoveryTrackingCard";
 
 import { triposhaApi } from "@/app/api/triposha/api";
@@ -735,6 +736,14 @@ export default function AssignedPatientManagePage() {
                 enabled={isPregnancyUser}
               />
             ) : null}
+
+            {isPostpartumUser && midwifeId && patient ? (
+              <BreastfeedingCard
+              token={token}
+              patientId={patientId}
+              midwifeId={midwifeId}
+               />
+               ) : null}
 
             {isPostpartumUser ? (
               <RecoveryTrackingCard token={token} patientId={patientId} />

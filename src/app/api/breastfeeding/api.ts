@@ -224,6 +224,53 @@ export const deleteTip = async (
   });
 };
 
+// ===================== MIDWIFE APIs =====================
+
+export const getPatientSessionsForMidwife = async (
+  token: string,
+  midwifeId: number,
+  patientId: number
+): Promise<BreastfeedingSessionResponseDto[]> => {
+  const res = await api.get<BreastfeedingSessionResponseDto[]>(
+    `/api/breastfeeding/midwife/${midwifeId}/patient/${patientId}/sessions`,
+    {
+      headers: authHeader(token),
+    }
+  );
+  return res.data;
+};
+
+export const getPatientIssuesForMidwife = async (
+  token: string,
+  midwifeId: number,
+  patientId: number
+): Promise<BreastfeedingIssueResponseDto[]> => {
+  const res = await api.get<BreastfeedingIssueResponseDto[]>(
+    `/api/breastfeeding/midwife/${midwifeId}/patient/${patientId}/issues`,
+    {
+      headers: authHeader(token),
+    }
+  );
+  return res.data;
+};
+
+export const updatePatientIssueForMidwife = async (
+  token: string,
+  midwifeId: number,
+  patientId: number,
+  issueId: string,
+  data: BreastfeedingIssueRequestDto
+): Promise<BreastfeedingIssueResponseDto> => {
+  const res = await api.put<BreastfeedingIssueResponseDto>(
+    `/api/breastfeeding/midwife/${midwifeId}/patient/${patientId}/issues/${issueId}`,
+    data,
+    {
+      headers: authHeader(token),
+    }
+  );
+  return res.data;
+};
+
 // ===================== DEFAULT EXPORT =====================
 
 const breastfeedingApi = {
@@ -245,6 +292,11 @@ const breastfeedingApi = {
   createTip,
   updateTip,
   deleteTip,
+
+  // Midwife
+  getPatientSessionsForMidwife,
+  getPatientIssuesForMidwife,
+  updatePatientIssueForMidwife,
 };
 
 export default breastfeedingApi;

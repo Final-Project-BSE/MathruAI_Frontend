@@ -260,22 +260,21 @@ const IssueFormModal: React.FC<IssueFormModalProps> = ({
             )}
           </div>
 
-          {/* Midwife Notes */}
-          <div>
-            <Label className="text-sm font-medium text-[#5f3a3b]">
-              Midwife Notes{' '}
-              <span className="text-xs font-normal text-[#8a4b4c]">
-                — optional
-              </span>
-            </Label>
-            <Textarea
-              rows={2}
-              placeholder="Any notes from your midwife..."
-              value={midwifeNotes}
-              onChange={(e) => setMidwifeNotes(e.target.value)}
-              className="mt-1 resize-none rounded-xl border-[#f3d6d7] focus:border-[#d04f51] focus:ring-[#d04f51]"
-            />
-          </div>
+          {/* Midwife Notes - READ ONLY for mother */}
+<div>
+  <Label className="text-sm font-medium text-[#5f3a3b]">
+    Midwife Notes{' '}
+    <span className="text-xs font-normal text-[#8a4b4c]">
+      — added by your midwife
+    </span>
+  </Label>
+  <div className="mt-1 min-h-[60px] rounded-xl border border-[#f3d6d7] bg-[#fffafa] px-3 py-2 text-sm text-[#8a4b4c]">
+    {midwifeNotes
+      ? midwifeNotes
+      : <span className="italic text-[#c0a0a0]">No midwife notes yet.</span>
+    }
+  </div>
+</div>
 
           {/* Resolved Toggle */}
           <div className="flex items-center justify-between rounded-2xl border border-[#f3d6d7] bg-[#fffafa] px-4 py-3">
