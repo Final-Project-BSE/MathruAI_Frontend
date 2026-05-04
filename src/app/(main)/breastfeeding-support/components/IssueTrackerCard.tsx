@@ -148,8 +148,8 @@ const IssueTrackerCard: React.FC<IssueTrackerCardProps> = ({
             {f === 'ALL'
               ? 'All'
               : f === 'UNRESOLVED'
-              ? '⚠️ Unresolved'
-              : '✅ Resolved'}
+              ? 'Unresolved'
+              : 'Resolved'}
           </button>
         ))}
       </div>

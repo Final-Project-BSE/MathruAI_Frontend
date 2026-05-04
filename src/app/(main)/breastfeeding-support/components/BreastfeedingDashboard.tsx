@@ -204,10 +204,10 @@ const BreastfeedingDashboard = () => {
                   ].join(' ')}
                 >
                   {tab === 'sessions'
-                    ? '🤱 Sessions'
+                    ? 'Sessions'
                     : tab === 'issues'
-                    ? '⚠️ Issues'
-                    : '💡 Tips'}
+                    ? 'Issues'
+                    : 'Tips'}
                 </button>
               ))}
             </div>
