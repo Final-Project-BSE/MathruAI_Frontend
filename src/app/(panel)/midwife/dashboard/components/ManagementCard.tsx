@@ -3,7 +3,12 @@ import { VaccinationCard } from "./VaccinationCard";
 import { HomeVisitCard } from "./HomeVisitCard";
 import { AppointmentCard } from "./AppointmentCard";
 
-export default function ManagementCards() {
+type ManagementCardsProps = {
+  token: string;
+  midwifeId: number;
+};
+
+export default function ManagementCards({ token, midwifeId }: ManagementCardsProps) {
   return (
     <section className="min-h-screen bg-black p-2 sm:p-4 lg:p-6">
       <div className="mx-auto max-w-7xl">
@@ -13,7 +18,7 @@ export default function ManagementCards() {
             <VaccinationCard />
           </div>
 
-          <AppointmentCard />
+          <AppointmentCard token={token} midwifeId={midwifeId} />
         </div>
       </div>
     </section>

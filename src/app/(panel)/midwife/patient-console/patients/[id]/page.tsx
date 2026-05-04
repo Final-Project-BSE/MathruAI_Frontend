@@ -24,6 +24,7 @@ import HealthRecordsSection from "./components/HealthRecordsSection";
 import PatientSummaryCard from "./components/PatientSummaryCard";
 import FertilityCard from "./components/FertilityCard";
 import StatusAlert from "./components/StatusAlert";
+import PatientAppointmentsCard from "./components/PatientAppointmentsCard";
 import DailyRecommendationCard from "./components/daily-recommendation/DailyRecommendationCard";
 import { getRoleLabel } from "./components/lib/utils";
 import {
@@ -720,6 +721,18 @@ export default function AssignedPatientManagePage() {
                 onDelete={handleMonitoringDelete}
               />
             </div>
+
+            <PatientAppointmentsCard
+              token={token}
+              midwifeId={midwifeId}
+              patientId={patientId}
+              patientName={
+                patient
+                  ? `${patient.firstName || ""} ${patient.lastName || ""}`.trim()
+                  : ""
+              }
+              defaultLocation={patient?.mohArea || patient?.district || ""}
+            />
 
             {midwifeId && patient ? (
               <PatientVaccinationCard
