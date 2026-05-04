@@ -132,7 +132,8 @@ export default function NewAppointmentForm({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="rounded-lg border border-gray-100 bg-pink-50 p-4 shadow-sm">
       <div className="grid gap-4 md:grid-cols-2">
         <UnavailableDateCalendar
           value={selectedDate}
@@ -142,14 +143,14 @@ export default function NewAppointmentForm({
         />
 
         <div className="space-y-2">
-          <label className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+          <label className="text-xs font-medium uppercase tracking-wide text-zinc-900">
             Available Time
           </label>
           <Select value={startTime} onValueChange={setStartTime}>
-            <SelectTrigger className="w-full border-white/10 bg-white/5 text-white">
+            <SelectTrigger className="w-full border border-[#d04f51]/20 bg-[#d04f51]/10 text-zinc-900 rounded-lg shadow-sm">
               <SelectValue placeholder="Select time" />
             </SelectTrigger>
-            <SelectContent className="border-white/10 bg-zinc-950 text-white">
+            <SelectContent className="border-gray-200 bg-white text-black rounded-lg shadow">
               {availableSlots.length ? (
                 availableSlots.map((time) => (
                   <SelectItem key={time} value={time}>
@@ -165,42 +166,42 @@ export default function NewAppointmentForm({
           </Select>
 
           {slotLoading ? (
-            <p className="text-[11px] text-zinc-400">Loading booked slots...</p>
+            <p className="text-[11px] text-zinc-600">Loading booked slots...</p>
           ) : null}
 
           {!slotLoading && selectedDate && availableSlots.length === 0 ? (
-            <p className="text-[11px] text-amber-300">All time slots are booked for this date.</p>
+            <p className="text-[11px] text-amber-400">All time slots are booked for this date.</p>
           ) : null}
         </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <label className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-            End Time Optional
+          <label className="text-xs font-medium uppercase tracking-wide text-zinc-900">
+            End Time (Optional)
           </label>
           <Input
             type="time"
             value={endTime}
             onChange={(event) => setEndTime(event.target.value)}
-            className="border-white/10 bg-white/5 text-white"
+            className="border border-[#d04f51]/20 bg-[#d04f51]/10 text-zinc-900 rounded-lg shadow-sm"
           />
         </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <label className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+          <label className="text-xs font-medium uppercase tracking-wide text-zinc-900">
             Appointment Type
           </label>
           <Select
             value={appointmentType}
             onValueChange={(value) => setAppointmentType(value as AppointmentTypeCode)}
           >
-            <SelectTrigger className="w-full border-white/10 bg-white/5 text-white">
+            <SelectTrigger className="w-full border border-[#d04f51]/20 bg-[#d04f51]/10 text-zinc-900 rounded-lg shadow-sm">
               <SelectValue placeholder="Select appointment type" />
             </SelectTrigger>
-            <SelectContent className="border-white/10 bg-zinc-950 text-white">
+            <SelectContent className="border-gray-200 bg-white text-black rounded-lg shadow">
               {APPOINTMENT_TYPE_OPTIONS.map((item) => (
                 <SelectItem key={item.value} value={item.value}>
                   {item.label}
@@ -211,30 +212,30 @@ export default function NewAppointmentForm({
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+          <label className="text-xs font-medium uppercase tracking-wide text-zinc-900">
             Location
           </label>
           <Input
             value={location}
             onChange={(event) => setLocation(event.target.value)}
             placeholder="Ex: Nawala Clinic"
-            className="border-white/10 bg-white/5 text-white placeholder:text-zinc-500"
+            className="border border-[#d04f51]/20 bg-[#d04f51]/10 text-zinc-900 placeholder:text-zinc-500 rounded-lg shadow-sm"
           />
         </div>
       </div>
 
       {error ? (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-2 text-sm text-red-200">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-700">
           {error}
         </div>
       ) : null}
 
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end gap-3 mt-3">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
-          className="border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10"
+          className="border-gray-200 bg-white text-zinc-700 hover:bg-pink-50 shadow-sm"
         >
           Back
         </Button>
@@ -242,11 +243,12 @@ export default function NewAppointmentForm({
           type="button"
           onClick={handleSubmit}
           disabled={submitting}
-          className="bg-[#d04f51] text-white hover:bg-[#b94245]"
+          className="bg-[#d04f51] text-white hover:bg-[#b94245] shadow"
         >
           {submitting ? "Saving..." : "Create Appointment"}
         </Button>
       </div>
+    </div>
     </div>
   );
 }

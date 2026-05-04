@@ -64,7 +64,13 @@ const ProtectedImage = ({
         });
 
         if (!response.ok) {
-          throw new Error(`Failed to load image: ${response.status} ${response.statusText}`);
+          // Avoid throwing here to prevent noisy error stacks in the console.
+          console.warn(`ProtectedImage: failed to load ${resolvedSrc} - ${response.status} ${response.statusText}`);
+          if (active) {
+            setBlobUrl('');
+            setFailed(true);
+          }
+          return;
         }
 
         const blob = await response.blob();

@@ -17,6 +17,7 @@ import ProtectedImage from "../../lib/ProtectedImage";
 import MessagesPopup from "../../app/(connection)/messages/MessagesPopup";
 import { chatApi } from "@/app/api/chat/api";
 import MotherAppointmentRequestDialog from "@/components/appointment/MotherAppointmentRequestDialog";
+import { appointmentApi } from "@/app/api/appointment/api";
 
 type TopBarFeaturesProps = {
   name?: string;
@@ -45,6 +46,7 @@ export default function TopBarFeatures({
 
   const [token, setToken] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
+  const [scheduledCount, setScheduledCount] = useState(0);
 
   useEffect(() => {
     const loadMe = async () => {
@@ -76,6 +78,50 @@ export default function TopBarFeatures({
     const unread = await chatApi.getUnreadCount(me.id, token);
     setUnreadCount(unread.unreadCount || 0);
   }
+
+  async function refreshScheduledCount() {
+    if (!token || !me?.id || !me.assignedMidwifeId) return;
+
+    try {
+      const appointments = await appointmentApi.getPatientAppointments(
+        token,
+        me.assignedMidwifeId,
+        me.id
+      );
+
+      // filter out locally deleted appointments so the badge matches the user's view
+      const deletedKey = `deletedAppointments:${me.id}`;
+      let deletedIds: string[] = [];
+      try {
+        const raw = localStorage.getItem(deletedKey);
+        if (raw) deletedIds = JSON.parse(raw) as string[];
+      } catch (e) {
+        deletedIds = [];
+      }
+
+      setScheduledCount(
+        appointments.filter((item) => item.status === "SCHEDULED" && !deletedIds.includes(item.id)).length
+      );
+    } catch (error) {
+      console.error("Failed to load scheduled appointments count:", error);
+    }
+  }
+
+  useEffect(() => {
+    void refreshScheduledCount();
+  }, [token, me?.id, me?.assignedMidwifeId]);
+
+  useEffect(() => {
+    const handleAppointmentsChanged = () => {
+      void refreshScheduledCount();
+    };
+
+    window.addEventListener("appointments:changed", handleAppointmentsChanged);
+
+    return () => {
+      window.removeEventListener("appointments:changed", handleAppointmentsChanged);
+    };
+  }, [token, me?.id, me?.assignedMidwifeId]);
 
   const targetUserId = me?.assignedMidwifeId ?? null;
 
@@ -144,10 +190,15 @@ export default function TopBarFeatures({
               <button
                 type="button"
                 onClick={() => setRequestDialogOpen(true)}
-                className="inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
+                className="relative inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
               >
                 <CalendarPlus className="h-5 w-5 shrink-0 min-[1250px]:h-4 min-[1250px]:w-4" />
                 <span className="hidden min-[1250px]:inline">Appointment</span>
+                {scheduledCount > 0 ? (
+                  <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-[#d04f51] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                    {scheduledCount > 99 ? "99+" : scheduledCount}
+                  </span>
+                ) : null}
               </button>
             </div>
 
@@ -202,10 +253,15 @@ export default function TopBarFeatures({
                       setRequestDialogOpen(true);
                       setIsMobileFeaturesOpen(false);
                     }}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
+                    className="relative flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
                   >
                     <CalendarPlus className="h-4 w-4 shrink-0" />
                     <span>Appointment</span>
+                    {scheduledCount > 0 ? (
+                      <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-[#d04f51] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                        {scheduledCount > 99 ? "99+" : scheduledCount}
+                      </span>
+                    ) : null}
                   </button>
                 </div>
               )}

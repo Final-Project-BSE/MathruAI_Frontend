@@ -237,9 +237,28 @@ export default function AppointmentManagerDialog({
     }
   }
 
+  async function handleDeleteCompleted(row: AppointmentResponseDto) {
+    try {
+      setActionLoadingId(row.id);
+      setError("");
+      setSuccess("");
+
+      if (canUseApi) {
+        await appointmentApi.deleteAppointment(token!, midwifeId!, patientId!, row.id);
+      }
+
+      pushAppointments(appointments.filter((item) => item.id !== row.id));
+      setSuccess("Appointment deleted.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete appointment.");
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto border-white/10 bg-black text-white">
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto border-gray-200 bg-pink-50 text-black rounded-xl p-6 shadow-lg">
         <DialogHeader>
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -263,20 +282,20 @@ export default function AppointmentManagerDialog({
         </DialogHeader>
 
         {error ? (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-2 text-sm text-red-200">
+          <div className="rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-700">
             {error}
           </div>
         ) : null}
 
         {success ? (
-          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-sm text-emerald-200">
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2 text-sm text-emerald-700">
             {success}
           </div>
         ) : null}
 
         {mode === "list" ? (
           <div className="space-y-3">
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs text-zinc-600">
               Current scheduled appointments: {scheduledAppointments.length}
             </p>
             <CurrentAppointmentsList
@@ -285,6 +304,8 @@ export default function AppointmentManagerDialog({
               actionLoadingId={actionLoadingId}
               onCancel={handleCancel}
               onComplete={handleComplete}
+              onDeleteCompleted={handleDeleteCompleted}
+              glass={true}
             />
           </div>
         ) : (
