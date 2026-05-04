@@ -99,8 +99,7 @@ const SignIn = ({
       const redirectPath = getDashboardForRole(userRole);
       console.log("Redirecting to:", redirectPath);
       
-      router.push(redirectPath);
-      router.refresh();
+      router.replace(redirectPath);
 
     } catch (error) {
       const errorMsg = "An unexpected error occurred. Please try again.";

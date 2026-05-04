@@ -1,94 +1,170 @@
-import React from "react";
-import { Clock } from "lucide-react";
+"use client";
 
-type Appointment = {
+import { useEffect, useMemo, useState } from "react";
+import { Clock } from "lucide-react";
+import { appointmentApi } from "@/app/api/appointment/api";
+import type { UpcomingAppointmentResponseDto } from "@/app/api/appointment/types";
+import {
+  formatAppointmentDate,
+  formatTimeLabel,
+  getAppointmentTypeLabel,
+  toAppointmentTimestamp,
+  toIsoDate,
+} from "@/components/appointment/utils";
+
+type UpcomingDashboardAppointment = {
+  id: string;
+  date: string;
   time: string;
   patient: string;
   type: string;
 };
 
-export function AppointmentCard() {
-  const upcomingAppointments: Appointment[] = [
-    { time: "09:00 AM", patient: "Emma Johnson", type: "Vaccination" },
-    { time: "11:30 AM", patient: "Noah Smith", type: "Follow-up" },
-    { time: "02:00 PM", patient: "Olivia Brown", type: "Consultation" },
-  ];
+type AppointmentCardProps = {
+  token: string;
+  midwifeId: number;
+};
 
-  const calendarDays = [
-    ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-    ["", "", "", "1", "2", "3", "4"],
-    ["5", "6", "7", "8", "9", "10", "11"],
-    ["12", "13", "14", "15", "16", "17", "18"],
-    ["19", "20", "21", "22", "23", "24", "25"],
-    ["26", "27", "28", "29", "30", "", ""],
-  ];
+export function AppointmentCard({ token, midwifeId }: AppointmentCardProps) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [showAll, setShowAll] = useState(false);
+  const [upcomingAppointments, setUpcomingAppointments] = useState<
+    UpcomingDashboardAppointment[]
+  >([]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadUpcomingAppointments() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const upcomingRows = await appointmentApi.getUpcomingAppointments(
+          token,
+          midwifeId
+        );
+
+        if (!active) return;
+
+        const mapped = upcomingRows
+          .filter((row) => String(row.status).toUpperCase() === "SCHEDULED")
+          .map((row: UpcomingAppointmentResponseDto) => ({
+            id: String(row.appointmentId),
+            date: row.appointmentDate,
+            time: row.startTime,
+            patient:
+              `${row.firstName || ""} ${row.lastName || ""}`.trim() ||
+              row.userEmail ||
+              `User #${row.userId}`,
+            type: getAppointmentTypeLabel(row.appointmentType),
+          }));
+
+        mapped.sort((a, b) => {
+          const aTs = toAppointmentTimestamp(a.date, a.time);
+          const bTs = toAppointmentTimestamp(b.date, b.time);
+
+          if (aTs === null && bTs === null) return 0;
+          if (aTs === null) return 1;
+          if (bTs === null) return -1;
+
+          return aTs - bTs;
+        });
+
+        setUpcomingAppointments(mapped);
+      } catch (err) {
+        if (!active) return;
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load upcoming appointments"
+        );
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadUpcomingAppointments();
+
+    const intervalId = window.setInterval(() => {
+      void loadUpcomingAppointments();
+    }, 30000);
+
+    function handleFocus() {
+      void loadUpcomingAppointments();
+    }
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+
+    function handleAppointmentsChanged() {
+      void loadUpcomingAppointments();
+    }
+
+    window.addEventListener("appointments:changed", handleAppointmentsChanged);
+
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
+      window.removeEventListener("appointments:changed", handleAppointmentsChanged);
+    };
+  }, [token, midwifeId]);
+
+  const todayCount = useMemo(() => {
+    const todayLabel = toIsoDate(new Date());
+
+    return upcomingAppointments.filter((item) => item.date === todayLabel).length;
+  }, [upcomingAppointments]);
+
+  const visibleAppointments = useMemo(() => {
+    return showAll ? upcomingAppointments : upcomingAppointments.slice(0, 3);
+  }, [showAll, upcomingAppointments]);
 
   return (
     <div className="rounded-2xl border border-white/8 bg-white/5 p-4 sm:p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-[16px] font-semibold text-white/80 sm:text-[18px]">Appointment</h2>
+          <h2 className="text-[16px] font-semibold text-white/80 sm:text-[18px]">Upcoming Appointments</h2>
           <p className="text-[11px] sm:text-[12px] leading-6 text-white/50">
-            View schedules, upcoming visits, and manage bookings with a quick calendar view.
+            Quick view of upcoming patient visits for today.
           </p>
         </div>
         <span className="rounded-full bg-[#d04f51]/10 px-3 py-1 text-xs font-medium text-[#fab0a7]">
-          3 Today
+          {todayCount} Today
         </span>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/30 p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-white">April 2026</h3>
-            <span className="text-xs text-slate-400">Monthly View</span>
-          </div>
-
-          <div className="space-y-2 text-center text-xs">
-            <div className="grid grid-cols-7 gap-1 font-medium text-slate-500">
-              {calendarDays[0].map((day) => (
-                <div key={day}>{day}</div>
-              ))}
-            </div>
-
-            {calendarDays.slice(1).map((week, weekIndex) => (
-              <div key={weekIndex} className="grid grid-cols-7 gap-1">
-                {week.map((date, dateIndex) => {
-                  const isSelected = date === "15";
-                  const hasEvent = ["10", "15", "22"].includes(date);
-
-                  return (
-                    <div
-                      key={`${weekIndex}-${dateIndex}`}
-                      className={`flex h-7 w-7 items-center justify-center rounded-lg border text-sm transition ${
-                        date
-                          ? isSelected
-                            ? "border-[#d04f51] bg-[#d04f51] font-semibold text-black"
-                            : hasEvent
-                            ? "border-[#d04f51]/30 bg-[#fab0a7]/10 text-[#fab0a7]"
-                            : "border-slate-800 bg-slate-950/50 text-slate-300"
-                          : "border-transparent"
-                      }`}
-                    >
-                      {date}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+      <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-900/30 p-4">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-white">Patient List</h3>
+          <div className="flex items-center gap-3">
+            {upcomingAppointments.length > 3 ? (
+              <button
+                type="button"
+                onClick={() => setShowAll((prev) => !prev)}
+                className="text-xs font-medium text-[#fab0a7] transition hover:text-[#ffd0c9]"
+              >
+                {showAll ? "Show less" : "View all"}
+              </button>
+            ) : null}
+            <span className="text-xs text-slate-400">Time Sorted</span>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/30 p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-white">Upcoming Appointments</h3>
-            <span className="text-xs text-slate-400">Patient List</span>
-          </div>
-
+        {loading ? (
+          <p className="text-sm text-zinc-400">Loading upcoming appointments...</p>
+        ) : error ? (
+          <p className="text-sm text-red-300">{error}</p>
+        ) : upcomingAppointments.length ? (
           <div className="space-y-3">
-            {upcomingAppointments.map((appointment) => (
+            {visibleAppointments.map((appointment) => (
               <div
-                key={`${appointment.time}-${appointment.patient}`}
+                key={`${appointment.id}-${appointment.date}-${appointment.time}`}
                 className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/50 p-2"
               >
                 <div className="flex items-center gap-3">
@@ -98,20 +174,21 @@ export function AppointmentCard() {
                   <div>
                     <p className="text-xs font-medium text-white">{appointment.patient}</p>
                     <p className="text-xs text-slate-400">{appointment.type}</p>
+                    <p className="text-[10px] text-slate-500">
+                      {formatAppointmentDate(appointment.date)}
+                    </p>
                   </div>
                 </div>
                 <span className="text-xs font-semibold text-slate-300">
-                  {appointment.time}
+                  {formatTimeLabel(appointment.time)}
                 </span>
               </div>
             ))}
           </div>
-        </div>
+        ) : (
+          <p className="text-sm text-zinc-400">No upcoming appointments found.</p>
+        )}
       </div>
-
-      <button className="mt-6 w-full rounded-xl bg-[#d04f51] px-4 py-3 text-sm font-medium text-white transition hover:bg-[#b94245]">
-        View Appointments
-      </button>
     </div>
   );
 }
