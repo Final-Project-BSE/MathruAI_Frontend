@@ -24,6 +24,7 @@ import HealthRecordsSection from "./components/HealthRecordsSection";
 import PatientSummaryCard from "./components/PatientSummaryCard";
 import FertilityCard from "./components/FertilityCard";
 import StatusAlert from "./components/StatusAlert";
+import PatientAppointmentsCard from "./components/PatientAppointmentsCard";
 import DailyRecommendationCard from "./components/daily-recommendation/DailyRecommendationCard";
 import { getRoleLabel } from "./components/lib/utils";
 import {
@@ -45,6 +46,7 @@ import HealthMonitoringCard from "./components/health-monitoring/HealthMonitorin
 import { healthMonitoringApis } from "../../../../../api/healthmonitor/api";
 import { chatApi } from "@/app/api/chat/api";
 import PatientVaccinationCard from "./components/vaccination/PatientVaccinationCard";
+import BreastfeedingCard from "./components/midwife-breastfeeding/BreastfeedingCard";
 import RecoveryTrackingCard from "./components/recovery-tracking/RecoveryTrackingCard";
 
 import { triposhaApi } from "@/app/api/triposha/api";
@@ -720,6 +722,18 @@ export default function AssignedPatientManagePage() {
               />
             </div>
 
+            <PatientAppointmentsCard
+              token={token}
+              midwifeId={midwifeId}
+              patientId={patientId}
+              patientName={
+                patient
+                  ? `${patient.firstName || ""} ${patient.lastName || ""}`.trim()
+                  : ""
+              }
+              defaultLocation={patient?.mohArea || patient?.district || ""}
+            />
+
             {midwifeId && patient ? (
               <PatientVaccinationCard
                 token={token}
@@ -735,6 +749,14 @@ export default function AssignedPatientManagePage() {
                 enabled={isPregnancyUser}
               />
             ) : null}
+
+            {isPostpartumUser && midwifeId && patient ? (
+              <BreastfeedingCard
+              token={token}
+              patientId={patientId}
+              midwifeId={midwifeId}
+               />
+               ) : null}
 
             {isPostpartumUser ? (
               <RecoveryTrackingCard token={token} patientId={patientId} />
