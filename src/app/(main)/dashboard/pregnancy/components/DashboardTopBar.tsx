@@ -89,10 +89,6 @@ function DashboardTopBar({ info, stats }: DashboardTopBarProps) {
           {greeting}, {fullname}
         </h1>
 
-        <div className="text-sm opacity-90">
-          {t.dashboard.patientId}: RP-2025-001
-        </div>
-
         {info.subtitle ? (
           <div className="mt-1 text-sm opacity-90">{info.subtitle}</div>
         ) : null}

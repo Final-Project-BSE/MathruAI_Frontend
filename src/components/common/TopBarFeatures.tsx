@@ -364,14 +364,6 @@ export default function TopBarFeatures({
           <div className="hidden h-10 w-px shrink-0 bg-neutral-200 lg:block" />
 
           <div className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-700 transition hover:bg-neutral-100 sm:h-11 sm:w-11"
-              aria-label={t.dashboard.notifications}
-            >
-              <Bell className="h-5 w-5" />
-            </button>
-
             <div className="hidden items-center rounded-full border border-neutral-200 bg-neutral-50 p-1 min-[1750px]:flex">
               {languages.map((item) => {
                 const isActive = language === item.code;

@@ -181,7 +181,7 @@ export const reproductiveTranslations: Record<
       title: "ප්‍රජනන සැලසුම් පුවරුව",
       subtitle: "වත්මන් චක්‍ර දිනය",
       healthyMessage: "ඔබේ චක්‍රය සෞඛ්‍ය සම්පන්නව පෙනේ!",
-      nextPeriodIn: "ඊළඟ මාසිකය තව",
+      nextPeriodIn: "ඊළඟ මාසිකයට තව",
     },
 
     features: {

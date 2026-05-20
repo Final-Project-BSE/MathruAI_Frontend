@@ -59,48 +59,6 @@ export default function PregnancyPage() {
 
           <TodaysRecommendation href="/daily-recommendations" />
 
-          <Card className="border-[#d04f51]/20 bg-white shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base font-semibold text-[#d04f51]">
-                {t.pregnancy.kickCounter.title}
-              </CardTitle>
-            </CardHeader>
-
-            <CardContent>
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <div className="text-3xl font-bold text-[#d04f51]">
-                    {kickCount}
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    {t.pregnancy.kickCounter.trackedToday}
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    className="bg-[#d04f51] text-white hover:bg-[#b84345]"
-                    onClick={() => setKickCount((prev) => prev + 1)}
-                  >
-                    {t.pregnancy.kickCounter.addKick}
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    className="border-[#d04f51] text-[#d04f51] hover:bg-[#d04f51]/5"
-                    onClick={() => setKickCount(0)}
-                  >
-                    {t.pregnancy.kickCounter.reset}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="mt-4 rounded-lg bg-[#d04f51]/10 p-3 text-xs text-[#d04f51]">
-                {t.pregnancy.kickCounter.tip}
-              </div>
-            </CardContent>
-          </Card>
-
           <MidwifeConnectivityCard />
 
           <AnnouncementDashboardCard />

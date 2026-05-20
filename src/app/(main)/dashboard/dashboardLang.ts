@@ -71,7 +71,7 @@ export const dashboardTranslations: Record<LanguageCode, {
     days: "දින",
     open: "විවෘත කරන්න",
     goodMorning: "සුභ උදෑසනක්",
-    goodAfternoon: "සුභ දහවල්",
+    goodAfternoon: "සුභ දහවලක්",
     goodEvening: "සුභ සන්ධ්‍යාවක්",
     goodNight: "සුභ රාත්‍රියක්",
     patientId: "රෝගී අංකය",

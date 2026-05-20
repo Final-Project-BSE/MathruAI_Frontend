@@ -339,16 +339,6 @@ export default function SingleRecordPage() {
                     <Pencil className="h-3.5 w-3.5" />
                     {hr.edit}
                   </Button>
-
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setDeleteOpen(true)}
-                    className="rounded-xl hover:bg-red-50 hover:text-red-600 text-gray-600 gap-1.5 text-xs"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    {hr.delete}
-                  </Button>
                 </div>
               </div>
 

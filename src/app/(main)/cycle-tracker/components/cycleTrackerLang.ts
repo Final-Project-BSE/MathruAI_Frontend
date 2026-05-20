@@ -109,13 +109,13 @@ export const cycleTrackerTranslations: Record<
     averageCycleLength: "සාමාන්‍ය චක්‍ර දිග (දින)",
     calculateButton: "සරු කාලය ගණනය කරන්න",
     calculatingButton: "ගණනය කරමින්...",
-    calculatedSuccess: "සරු කාලය සාර්ථකව ගණනය කරන ලදී!",
+    calculatedSuccess: "සරු කාලය නිවැරදිව ගණනය කරන ලදී!",
     enterLastPeriodDate:
       "කරුණාකර ඔබේ අවසන් මාසික රුධිර වහනය ආරම්භ වූ දිනය ඇතුළත් කරන්න",
     loginToCalculate: "සරු කාලය ගණනය කිරීමට කරුණාකර පිවිසෙන්න",
     calculationFailed: "සරු කාලය ගණනය කිරීම අසාර්ථක විය",
 
-    calendar: "දින දර්ශනය",
+    calendar: "දින දර්.ශනය",
     recalculate: "නැවත ගණනය කරන්න",
     weekdays: ["ඉරි", "සඳු", "අඟ", "බදා", "බ්‍රහ", "සිකු", "සෙන"],
     period: "මාසික කාලය",

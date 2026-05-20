@@ -6,10 +6,12 @@ import TopBarFeatures from "@/components/common/TopBarFeatures";
 import { ShieldCheck } from "lucide-react";
 import { LoadingState } from "@/components/common/LoadingState";
 import { useLanguage } from "@/components/common/useLanguage";
+import Container from "@/components/shared/container";
 
 export default function Page() {
   const [pageReady, setPageReady] = useState(false);
   const { t } = useLanguage();
+  const birthControl = t.birthControl;
 
   useEffect(() => {
     setPageReady(true);
@@ -20,6 +22,7 @@ export default function Page() {
   }
 
   return (
+    <Container title={birthControl.pageTitle}>
     <div className="min-h-screen bg-[#fed2cc] p-4 md:p-6">
       <TopBarFeatures />
 
@@ -45,5 +48,6 @@ export default function Page() {
         <BirthControlPagination />
       </div>
     </div>
+    </Container>
   );
 }

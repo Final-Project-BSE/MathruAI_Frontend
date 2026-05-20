@@ -18,6 +18,7 @@ import TopBarFeatures from "@/components/common/TopBarFeatures";
 import { LoadingState } from "@/components/common/LoadingState";
 import { LanguageCode, useLanguage } from "@/components/common/useLanguage";
 import { translateText } from "@/components/common/translateText";
+import Container from "@/components/shared/container";
 
 const getCategoryStyles = (category: string) => {
   switch (category.toLowerCase()) {
@@ -119,6 +120,7 @@ const formatDate = (
 
 export default function Announcements() {
   const { language, t } = useLanguage();
+  const announcement = t.announcement;
 
   const [announcements, setAnnouncements] = useState<AnnouncementDto[]>([]);
   const [translatedAnnouncements, setTranslatedAnnouncements] = useState<
@@ -245,6 +247,7 @@ export default function Announcements() {
   }
 
   return (
+    <Container title={announcement.title}>
     <div className="bg-[#fed2cc] min-h-screen p-4 md:p-6">
       <TopBarFeatures />
 
@@ -348,5 +351,6 @@ export default function Announcements() {
         </CardContent>
       </Card>
     </div>
+    </Container>
   );
 }

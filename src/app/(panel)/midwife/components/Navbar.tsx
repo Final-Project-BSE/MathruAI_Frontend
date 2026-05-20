@@ -29,10 +29,7 @@ import ProtectedImage from '@/lib/ProtectedImage';
 
 const navLinks = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
-  { name: 'Sample', href: '#', icon: BarChart3 },
   { name: 'Checklist', href: '/midwife/checklist', icon: Activity },
-  { name: 'Three Posha', href: '#', icon: FileText },
-  { name: 'Analytics', href: '#', icon: Wallet },
 ];
 
 function getFullName(user: UserResponseDto | null) {
@@ -401,16 +398,6 @@ export default function Navbar() {
             >
               <span>Vaccination</span>
               <Syringe size={12} strokeWidth={2.2} />
-            </button>
-
-            <button
-              type="button"
-              className="relative flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/80 transition hover:bg-white/[0.06] hover:text-white"
-            >
-              <Bell size={14} />
-              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#8b5cf6] px-1 text-[8px] font-semibold text-white">
-                2
-              </span>
             </button>
 
             <button

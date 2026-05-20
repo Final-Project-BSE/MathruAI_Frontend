@@ -82,7 +82,7 @@ export const vaccinationTranslations: Record<
     emptyValue: "-",
 
     status: {
-      PENDING: "පොරොත්තුවෙන්",
+      PENDING: "බලාපොරොත්තුවෙන්",
       COMPLETED: "සම්පූර්ණයි",
       MISSED: "මඟහැරී ඇත",
     },

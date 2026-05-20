@@ -78,9 +78,6 @@ function DashboardTopBar({ info, stats }: DashboardTopBarProps) {
         <h1 className="mb-1 text-xl font-bold md:text-2xl">
           {greeting}, {fullname}
         </h1>
-        <div className="text-sm opacity-90">
-          {t.dashboard.patientId}: RP-2025-001
-        </div>
       </div>
 
       <div

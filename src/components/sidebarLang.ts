@@ -50,14 +50,14 @@ export const sidebarTranslations: Record<LanguageCode, SidebarTranslation> = {
   si: {
     nav: {
       reproductiveDashboard: "ප්‍රජනන පුවරුව",
-      pregnancyDashboard: "ගර්භණී පුවරුව",
+      pregnancyDashboard: "ගැබිනි මවගේ පුවරුව",
       postpartumDashboard: "ප්‍රසවයෙන් පසු පුවරුව",
       cycleTracker: "මාසික චක්‍ර නිරීක්ෂකය",
       healthMonitoring: "සෞඛ්‍ය නිරීක්ෂණය",
-      dailyRecommendations: "දෛනික නිර්දේශ",
+      dailyRecommendations: "දෛනික යෝජනා",
       midwifeConnection: "පවුල් සෞඛ්‍ය සේවිකා සම්බන්ධතාව",
       aiAssistant: "AI සහායක",
-      healthRecords: "සෞඛ්‍ය වාර්තා",
+      healthRecords: "සෞඛ්‍ය ලේඛන",
       timelineMilestone: "කාලරේඛාව සහ සන්ධිස්ථාන",
       announcements: "නිවේදන",
       recoveryTracking: "ප්‍රකෘති නිරීක්ෂණය",

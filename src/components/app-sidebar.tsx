@@ -85,10 +85,6 @@ const data = {
       key: "birthControl",
       url: "/birth-control",
     },
-    {
-      key: "analytics",
-      url: "/analytics",
-    },
   ],
 } as const;
 

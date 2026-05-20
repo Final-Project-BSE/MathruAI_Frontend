@@ -53,7 +53,6 @@ export default async function MidwifeDashboardPage() {
 
       <TopBar />
       <ManagementCards token={token} midwifeId={Number(currentUser.id)} />
-      <DashboardFeatures />
     </div>
   );
 }

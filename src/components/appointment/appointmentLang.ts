@@ -68,7 +68,7 @@ export const appointmentTranslations: Record<
     appointmentCompleted: "හමුවීම සම්පූර්ණ ලෙස සලකුණු කරන ලදී.",
     appointmentDeleted: "හමුවීම මකා දමන ලදී.",
     appointmentRemovedLocally: "හමුවීම දේශීයව ඉවත් කරන ලදී.",
-    appointmentSubmitted: "හමුවීම් ඉල්ලීම සාර්ථකව යවන ලදී.",
+    appointmentSubmitted: "හමුවීම් ඉල්ලීම නිවැරදිව යවන ලදී.",
 
     currentScheduledAppointments: "වත්මන් නියමිත හමුවීම්",
   },

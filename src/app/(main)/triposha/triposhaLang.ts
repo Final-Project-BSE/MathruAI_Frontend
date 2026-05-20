@@ -56,15 +56,15 @@ export const triposhaTranslations: Record<LanguageCode, TriposhaTranslation> = {
   },
 
   si: {
-    popupTitle: "මගේ ත්‍රිපෝෂ වාර්තා",
+    popupTitle: "මගේ ත්‍රිපෝෂ රිපෝට්ස්",
     popupDescription: "ඔබගේ පෝෂණ සහාය සහ ඉදිරි බෙදාහැරීම් නිරීක්ෂණය කරන්න",
-    loadingRecords: "ත්‍රිපෝෂ වාර්තා පූරණය වෙමින් පවතී...",
+    loadingRecords: "ත්‍රිපෝෂ රිපෝට්ස් පූරණය වෙමින් පවතී...",
     authRequired: "ඔබ සත්‍යාපනය වී නොමැත. කරුණාකර නැවත පුරනය වන්න.",
-    loadFailed: "ත්‍රිපෝෂ වාර්තා පූරණය කිරීමට අසමත් විය.",
+    loadFailed: "ත්‍රිපෝෂ රිපෝට්ස් පූරණය කිරීමට අසමත් විය.",
 
     trackingTitle: "ත්‍රිපෝෂ නිරීක්ෂණය",
     add: "+ එක් කරන්න",
-    noRecords: "ත්‍රිපෝෂ වාර්තා නොමැත.",
+    noRecords: "ත්‍රිපෝෂ රිපෝට්ස් නොමැත.",
     next: "ඊළඟ",
     packs: "පැකට්",
 
@@ -72,8 +72,8 @@ export const triposhaTranslations: Record<LanguageCode, TriposhaTranslation> = {
     addTriposha: "ත්‍රිපෝෂ එක් කරන්න",
     closePopup: "ත්‍රිපෝෂ කවුළුව වසන්න",
     closeForm: "ත්‍රිපෝෂ පෝරමය වසන්න",
-    editRecord: "ත්‍රිපෝෂ වාර්තාව සංස්කරණය කරන්න",
-    deleteRecord: "ත්‍රිපෝෂ වාර්තාව මකන්න",
+    editRecord: "ත්‍රිපෝෂ රිපෝට්ස් සංස්කරණය කරන්න",
+    deleteRecord: "ත්‍රිපෝෂ රිපෝට්ස් මකන්න",
 
     status: {
       GIVEN: "ලබා දී ඇත",
