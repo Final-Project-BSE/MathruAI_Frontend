@@ -1,19 +1,21 @@
-'use client';
+"use client";
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Sparkles,
   RefreshCw,
   User,
   Settings,
   CheckCircle2,
-} from 'lucide-react';
+} from "lucide-react";
 import type {
   RecommendationData,
   ChecklistItem,
-} from '../../../api/dailyrecommendation/types';
+} from "../../../api/dailyrecommendation/types";
+import { useLanguage } from "@/components/common/useLanguage";
+import { translateText } from "@/components/common/translateText";
 
 interface RecommendationCardProps {
   recommendation: RecommendationData | null;
@@ -30,7 +32,13 @@ interface RecommendationCardProps {
 }
 
 function toISODate(d = new Date()): string {
-  return d.toISOString().split('T')[0];
+  return d.toISOString().split("T")[0];
+}
+
+function getLocale(language: string) {
+  if (language === "si") return "si-LK";
+  if (language === "ta") return "ta-LK";
+  return "en-US";
 }
 
 function isLikelyIntro(line: string): boolean {
@@ -44,22 +52,22 @@ function isLikelyIntro(line: string): boolean {
     /tailored to your preferences/,
     /at \d+\s*weeks\b/,
   ];
-  return l.endsWith(':') || patterns.some((p) => p.test(l));
+  return l.endsWith(":") || patterns.some((p) => p.test(l));
 }
 
 function parseRecommendationToItems(text: string): string[] {
-  const raw = (text || '').trim();
+  const raw = (text || "").trim();
   if (!raw) return [];
 
   const lines = raw
-    .split('\n')
+    .split("\n")
     .map((l) => l.trim())
     .filter(Boolean);
 
   if (lines.length >= 2) {
     const cleaned = lines
-      .map((l) => l.replace(/^(\-|\*|•|\u2022)\s+/, '').trim())
-      .map((l) => l.replace(/^\d+[\).\s]+/, '').trim())
+      .map((l) => l.replace(/^(\-|\*|•|\u2022)\s+/, "").trim())
+      .map((l) => l.replace(/^\d+[\).\s]+/, "").trim())
       .filter(Boolean)
       .filter((l) => !isLikelyIntro(l));
 
@@ -67,7 +75,7 @@ function parseRecommendationToItems(text: string): string[] {
   }
 
   return raw
-    .replace(/\s+/g, ' ')
+    .replace(/\s+/g, " ")
     .split(/(?<=[.!?])\s+/)
     .map((s) => s.trim())
     .filter(Boolean)
@@ -93,23 +101,26 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
   token,
   onSaveChecklist,
 }) => {
-  const todayPretty = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+  const { language, t } = useLanguage();
+  const labels = t.dailyRecommendation;
+
+  const todayPretty = new Date().toLocaleDateString(getLocale(language), {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
 
   const recDate = recommendation?.date || toISODate();
 
   const items = useMemo(() => {
-    return parseRecommendationToItems(recommendation?.recommendation || '');
+    return parseRecommendationToItems(recommendation?.recommendation || "");
   }, [recommendation?.recommendation]);
 
-  const itemIds = useMemo(() => items.map((t) => hashText(t)), [items]);
+  const itemIds = useMemo(() => items.map((text) => hashText(text)), [items]);
 
   const recTextSig = useMemo(() => {
-    return hashText(recommendation?.recommendation || '');
+    return hashText(recommendation?.recommendation || "");
   }, [recommendation?.recommendation]);
 
   const storageKey = useMemo(() => {
@@ -118,7 +129,43 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
   }, [userId, recDate, recTextSig]);
 
   const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const [translatedItems, setTranslatedItems] = useState<string[]>([]);
+  const [translatedRecommendation, setTranslatedRecommendation] = useState("");
+  const [translatedPreferences, setTranslatedPreferences] = useState("");
+
   const saveTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const translateDynamicText = async () => {
+      if (language === "en") {
+        setTranslatedItems([]);
+        setTranslatedRecommendation("");
+        setTranslatedPreferences("");
+        return;
+      }
+
+      const [nextRecommendation, nextPreferences, nextItems] =
+        await Promise.all([
+          translateText(recommendation?.recommendation || "", language),
+          translateText(preferences || "", language),
+          Promise.all(items.map((item) => translateText(item, language))),
+        ]);
+
+      if (!cancelled) {
+        setTranslatedRecommendation(nextRecommendation);
+        setTranslatedPreferences(nextPreferences);
+        setTranslatedItems(nextItems);
+      }
+    };
+
+    void translateDynamicText();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [language, recommendation?.recommendation, preferences, items]);
 
   useEffect(() => {
     if (!recommendation || !userId) return;
@@ -133,7 +180,7 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
         const raw = localStorage.getItem(storageKey);
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (parsed && typeof parsed === 'object') {
+          if (parsed && typeof parsed === "object") {
             setChecked(parsed);
             return;
           }
@@ -144,14 +191,20 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
     }
 
     setChecked(serverMap);
-  }, [recommendation?.date, recommendation?.recommendation, userId, storageKey, recommendation]);
+  }, [
+    recommendation?.date,
+    recommendation?.recommendation,
+    userId,
+    storageKey,
+    recommendation,
+  ]);
 
   useEffect(() => {
     setChecked((prev) => {
       const allowed = new Set(itemIds);
       const next: Record<string, boolean> = {};
-      for (const [k, v] of Object.entries(prev)) {
-        if (allowed.has(k)) next[k] = v;
+      for (const [key, value] of Object.entries(prev)) {
+        if (allowed.has(key)) next[key] = value;
       }
       return next;
     });
@@ -238,7 +291,7 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
           <div className="flex items-center gap-3">
             <div>
               <h3 className="text-base font-semibold text-gray-900">
-                Today&apos;s Recommendation
+                {labels.todayRecommendation}
               </h3>
               <p className="text-xs text-gray-500">{todayPretty}</p>
             </div>
@@ -252,7 +305,7 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
               className="border-[#d04f51]/25 bg-white text-[#d04f51] hover:bg-[#d04f51]/5"
             >
               <Settings className="mr-2 h-4 w-4" />
-              Update Your Data
+              {labels.updateYourData}
             </Button>
 
             <Button
@@ -261,10 +314,10 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
               size="sm"
               className="border-[#d04f51]/25 bg-white text-red-500 hover:bg-red-200"
               disabled={loading}
-              title="Regenerate / Refresh"
+              title={labels.regenerateRefresh}
             >
               <RefreshCw
-                className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`}
+                className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
               />
             </Button>
           </div>
@@ -279,10 +332,10 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
                 <Sparkles className="h-7 w-7 text-[#d04f51]/60" />
               </div>
               <p className="text-sm font-semibold text-gray-800">
-                No recommendation available yet
+                {labels.noRecommendationTitle}
               </p>
               <p className="mt-2 text-sm text-gray-500">
-                Refresh to generate today&apos;s personalized guidance.
+                {labels.noRecommendationDescription}
               </p>
             </div>
           </div>
@@ -293,17 +346,17 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white">
                   <CheckCircle2
                     className={`h-5 w-5 ${
-                      allDone ? 'text-green-600' : 'text-green-600'
+                      allDone ? "text-green-600" : "text-green-600"
                     }`}
                   />
                 </div>
 
                 <div>
                   <p className="text-sm font-semibold text-gray-900">
-                    {completedCount}/{itemIds.length} completed
+                    {labels.completed(completedCount, itemIds.length)}
                   </p>
                   <p className="text-xs text-gray-500">
-                    Checklist saved for {recDate}
+                    {labels.checklistSavedFor(recDate)}
                   </p>
                 </div>
               </div>
@@ -316,7 +369,7 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
                   className="border-[#d04f51]/25 bg-white text-green-600 hover:bg-green-200"
                   disabled={itemIds.length === 0}
                 >
-                  Mark all done
+                  {labels.markAllDone}
                 </Button>
                 <Button
                   onClick={resetChecklist}
@@ -325,7 +378,7 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
                   className="border-gray-200 bg-white text-red-700 hover:bg-red-200"
                   disabled={itemIds.length === 0}
                 >
-                  Reset
+                  {labels.reset}
                 </Button>
               </div>
             </div>
@@ -333,7 +386,7 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
             <div className="rounded-2xl border border-[#d04f51]/15 bg-white p-5">
               {items.length === 0 ? (
                 <p className="text-sm leading-7 text-gray-700">
-                  {recommendation.recommendation}
+                  {translatedRecommendation || recommendation.recommendation}
                 </p>
               ) : (
                 <ul className="space-y-3">
@@ -346,8 +399,8 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
                         key={id}
                         className={`flex items-start gap-3 rounded-xl border p-4 transition ${
                           done
-                            ? 'border-[#d04f51]/20 bg-[#d04f51]/5'
-                            : 'border-[#d04f51]/10 bg-white hover:bg-[#d04f51]/[0.03]'
+                            ? "border-[#d04f51]/20 bg-[#d04f51]/5"
+                            : "border-[#d04f51]/10 bg-white hover:bg-[#d04f51]/[0.03]"
                         }`}
                       >
                         <input
@@ -359,10 +412,10 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
 
                         <span
                           className={`text-sm leading-6 text-gray-800 ${
-                            done ? 'opacity-70 line-through' : ''
+                            done ? "opacity-70 line-through" : ""
                           }`}
                         >
-                          {item}
+                          {translatedItems[idx] || item}
                         </span>
                       </li>
                     );
@@ -379,10 +432,10 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
 
                 <div>
                   <p className="text-sm font-semibold text-gray-900">
-                    Personalized for you
+                    {labels.personalizedForYou}
                   </p>
                   <p className="mt-1 text-sm leading-6 text-gray-600">
-                    {preferences}
+                    {translatedPreferences || preferences}
                   </p>
                 </div>
               </div>

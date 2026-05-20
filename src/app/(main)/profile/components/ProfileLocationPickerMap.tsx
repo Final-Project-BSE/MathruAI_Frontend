@@ -9,12 +9,14 @@ import {
   useMapEvents,
 } from "react-leaflet";
 import L from "leaflet";
+import { useLanguage } from "@/components/common/useLanguage";
 
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })
   ._getIconUrl;
 
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
@@ -49,10 +51,13 @@ export default function ProfileLocationPickerMap({
   longitude,
   onPick,
 }: Props) {
+  const { t } = useLanguage();
+
   const center = useMemo<[number, number]>(() => {
     if (typeof latitude === "number" && typeof longitude === "number") {
       return [latitude, longitude];
     }
+
     return SRI_LANKA_CENTER;
   }, [latitude, longitude]);
 
@@ -62,7 +67,7 @@ export default function ProfileLocationPickerMap({
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200">
       <div className="border-b bg-gray-50 px-4 py-2 text-sm text-gray-600">
-        Click on the map to choose your location
+        {t.profile.map.instruction}
       </div>
 
       <div className="h-[320px] w-full">
@@ -77,11 +82,11 @@ export default function ProfileLocationPickerMap({
           {hasMarker ? (
             <Marker position={[latitude!, longitude!]}>
               <Popup>
-                Selected Location
+                {t.profile.map.selectedLocation}
                 <br />
-                Lat: {latitude}
+                {t.profile.map.latitude}: {latitude}
                 <br />
-                Lng: {longitude}
+                {t.profile.map.longitude}: {longitude}
               </Popup>
             </Marker>
           ) : null}

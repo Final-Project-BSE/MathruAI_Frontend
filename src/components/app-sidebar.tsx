@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-
 import Image from "next/image";
 
 import { NavMain } from "@/components/nav-main";
@@ -17,6 +16,7 @@ import {
 import { useRouter } from "next/navigation";
 import { logout } from "@/lib/authentication";
 import { canAccessRoute } from "@/lib/roleConfig";
+import { useLanguage } from "@/components/common/useLanguage";
 
 const data = {
   user: {
@@ -26,105 +26,122 @@ const data = {
   },
   navMain: [
     {
-      title: "Reproductive Dashboard",
+      key: "reproductiveDashboard",
       url: "/dashboard/reproductive",
     },
     {
-      title: "Pregnancy Dashboard",
+      key: "pregnancyDashboard",
       url: "/dashboard/pregnancy",
     },
     {
-      title: "Postpartum Dashboard",
+      key: "postpartumDashboard",
       url: "/dashboard/postpartum",
     },
     {
-      title: "Cycle Tracker",
+      key: "cycleTracker",
       url: "/cycle-tracker",
     },
     {
-      title: "Health Monitoring",
+      key: "healthMonitoring",
       url: "/health-monitoring",
     },
     {
-      title: "Daily Recommendations",
+      key: "dailyRecommendations",
       url: "/daily-recommendations",
     },
     {
-      title: "Midwife Connection",
+      key: "midwifeConnection",
       url: "/midwife-assign",
     },
     {
-      title: "AI Assistant",
+      key: "aiAssistant",
       url: "/chatbot",
     },
     {
-      title: "Health Records",
+      key: "healthRecords",
       url: "/health-records",
     },
-     {
-      title: "Timeline & Milestone",
+    {
+      key: "timelineMilestone",
       url: "/timeline-milestone",
     },
     {
-      title: "Announcements",
+      key: "announcements",
       url: "/announcement",
     },
     {
-      title: "Recovery Tracking",
+      key: "recoveryTracking",
       url: "/recovery-tracking",
     },
     {
-      title: "Breastfeeding support",
+      key: "breastfeedingSupport",
       url: "/breastfeeding-support",
     },
     {
-      title: "Three Posha",
+      key: "threePosha",
       url: "/three-posha",
     },
     {
-      title: "Birth Control",
+      key: "birthControl",
       url: "/birth-control",
     },
     {
-      title: "Analytics",
+      key: "analytics",
       url: "/analytics",
     },
   ],
-};
+} as const;
 
-export function AppSidebar({ userRole, ...props }: React.ComponentProps<typeof Sidebar> & { userRole: string }) {
+type SidebarNavKey = keyof ReturnType<typeof useLanguage>["t"]["sidebar"]["nav"];
+
+export function AppSidebar({
+  userRole,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & { userRole: string }) {
   const router = useRouter();
+  const { t } = useLanguage();
+  const sidebarText = t.sidebar;
 
   const handleLogout = async () => {
+    localStorage.setItem("app-language", "en");
+    window.dispatchEvent(new Event("language:changed"));
+    
     await logout();
     router.push("/sign-in");
   };
 
-  const accessibleNavItems = data.navMain.filter((item) => canAccessRoute(userRole, item.url));
+  const accessibleNavItems = data.navMain
+    .filter((item) => canAccessRoute(userRole, item.url))
+    .map((item) => ({
+      title: sidebarText.nav[item.key as SidebarNavKey],
+      url: item.url,
+    }));
 
   return (
-    <Sidebar collapsible="offcanvas" {...props} className="border-r border-[#CFE1EE]">
-      <div
-        className="bg-[#210321] h-full w-full bg-cover bg-center bg-no-repeat"
-      >
+    <Sidebar
+      collapsible="offcanvas"
+      {...props}
+      className="border-r border-[#CFE1EE]"
+    >
+      <div className="h-full w-full bg-[#210321] bg-cover bg-center bg-no-repeat">
         <SidebarHeader className="bg-transparent">
           <SidebarMenu className="bg-transparent">
             <SidebarMenuItem className="bg-transparent">
               <SidebarMenuButton
                 asChild
-                tooltip="Logo"
-                className="bg-transparent w-full h-full flex justify-center items-center hover:bg-transparent active:bg-transparent focus:bg-transparent"
+                tooltip={sidebarText.logo}
+                className="flex h-full w-full items-center justify-center bg-transparent hover:bg-transparent active:bg-transparent focus:bg-transparent"
               >
                 <a
                   href="#"
-                  className="bg-transparent flex justify-center items-center pointer-events-auto"
+                  className="pointer-events-auto flex items-center justify-center bg-transparent"
                 >
                   <Image
                     src="/images/logo.jpeg"
-                    alt="Logo"
+                    alt={sidebarText.logo}
                     width={88}
                     height={88}
-                    className="overflow-hidden rounded-full pointer-events-none select-none"
+                    className="pointer-events-none select-none overflow-hidden rounded-full"
                     priority
                   />
                 </a>
@@ -138,28 +155,28 @@ export function AppSidebar({ userRole, ...props }: React.ComponentProps<typeof S
         </SidebarContent>
 
         <SidebarFooter className="bg-transparent">
-  <div className="px-3 pb-3">
-    <button
-      type="button"
-      onClick={handleLogout}
-      className="
-        w-full h-10
-        flex items-center gap-3
-        rounded-xl px-4
-        bg-[#3a063a] 
-        text-white
-        hover:bg-[#d04f51]
-        active:bg-[#b74446]
-        transition-colors duration-200
-        focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40
-      "
-      aria-label="Log out"
-    >
-      <i className="logout-icon size-[22px] text-white/90" />
-      <span className="text-sm font-semibold tracking-wide">Log out</span>
-    </button>
-  </div>
-</SidebarFooter>
+          <div className="px-3 pb-3">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="
+                flex h-10 w-full items-center gap-3
+                rounded-xl bg-[#3a063a] px-4
+                text-white
+                transition-colors duration-200
+                hover:bg-[#d04f51]
+                active:bg-[#b74446]
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40
+              "
+              aria-label={sidebarText.logout}
+            >
+              <i className="logout-icon size-[22px] text-white/90" />
+              <span className="text-sm font-semibold tracking-wide">
+                {sidebarText.logout}
+              </span>
+            </button>
+          </div>
+        </SidebarFooter>
       </div>
     </Sidebar>
   );

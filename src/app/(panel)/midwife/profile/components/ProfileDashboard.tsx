@@ -1,81 +1,149 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+
 import ProfileHeader from './ProfileHeader';
 import PersonalInfoCard from './PersonalInfoCard';
 import ChangePasswordCard from './ChangePasswordCard';
 import ChangeEmailCard from './ChangeEmailCard';
 import DeleteAccountCard from './DeleteAccountCard';
 import ProfileImageCard from './ProfileImageCard';
+
 import profileApi from '@/app/api/profile/api';
 import type { ProfileResponse } from '@/app/api/profile/types';
 import { getcuruser } from '@/app/api/user/api';
+import { getSession, logout } from '@/lib/authentication';
 
 const ProfileDashboard = () => {
+  const router = useRouter();
+
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
   const [token, setToken] = useState('');
   const [userId, setUserId] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchProfile = async (authToken: string, authUserId: number) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await profileApi.getProfile(authToken, authUserId);
-      setProfile(data);
-    } catch (err: any) {
-      setError(err.message);
-      setProfile(null);
-    } finally {
-      setLoading(false);
-    }
+  const isAuthError = (message: string) => {
+    const lower = message.toLowerCase();
+
+    return (
+      lower.includes('jwt') ||
+      lower.includes('signature') ||
+      lower.includes('token') ||
+      lower.includes('unauthorized') ||
+      lower.includes('forbidden') ||
+      lower.includes('authentication')
+    );
   };
 
+  const clearBadSession = useCallback(async () => {
+    try {
+      await logout();
+    } catch {
+      // Continue local cleanup even if server-side logout fails.
+    }
+
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userId');
+    }
+
+    router.replace('/sign-in');
+    router.refresh();
+  }, [router]);
+
+  const fetchProfile = useCallback(
+    async (authToken: string, authUserId: number) => {
+      if (!authToken || !authUserId) {
+        setError('Profile session is not ready. Please sign in again.');
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const data = await profileApi.getProfile(authToken, authUserId);
+        setProfile(data);
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error ? err.message : 'Failed to load profile data.';
+
+        setError(message);
+        setProfile(null);
+
+        if (isAuthError(message)) {
+          await clearBadSession();
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [clearBadSession]
+  );
+
   useEffect(() => {
+    let active = true;
+
     const init = async () => {
       try {
-        let authToken =
-          typeof window !== 'undefined' ? localStorage.getItem('token') || '' : '';
+        setLoading(true);
+        setError(null);
 
-        if (!authToken) {
-          try {
-            const { getSession } = await import('@/lib/authentication');
-            const session = await getSession();
-            authToken = session?.user?.token || '';
-          } catch {
-            // ignore
-          }
-        }
+        const session = await getSession();
+        const authToken = session?.user?.token || '';
 
         if (!authToken) {
           setError('You are not authenticated. Please sign in again.');
           setLoading(false);
+          await clearBadSession();
           return;
         }
 
-        let authUserId =
-          typeof window !== 'undefined' ? Number(localStorage.getItem('userId')) : 0;
+        const me = await getcuruser(authToken);
 
-        if (!authUserId) {
-          const me = await getcuruser(authToken);
-          authUserId = me.id;
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('userId', String(me.id));
-          }
-        }
+        if (!active) return;
 
         setToken(authToken);
-        setUserId(authUserId);
-        await fetchProfile(authToken, authUserId);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load profile data.');
+        setUserId(me.id);
+
+        /*
+          Important:
+          Do not keep using localStorage token.
+          It can become stale and cause:
+          "JWT signature does not match locally computed signature"
+        */
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('token');
+          localStorage.setItem('userId', String(me.id));
+        }
+
+        await fetchProfile(authToken, me.id);
+      } catch (err: unknown) {
+        if (!active) return;
+
+        const message =
+          err instanceof Error ? err.message : 'Failed to load profile data.';
+
+        setError(message);
+        setProfile(null);
         setLoading(false);
+
+        if (isAuthError(message)) {
+          await clearBadSession();
+        }
       }
     };
 
-    init();
-  }, []);
+    void init();
+
+    return () => {
+      active = false;
+    };
+  }, [clearBadSession, fetchProfile]);
 
   if (loading) {
     return (

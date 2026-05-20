@@ -3,6 +3,8 @@
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import L from "leaflet";
 import type { UserResponseDto } from "../../api/user-assign/types";
+import type { AssignmentTranslations } from "./assignmentLang";
+import { getStatusLabel } from "./assignmentLang";
 
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 
@@ -17,6 +19,7 @@ type Props = {
   sendingUserId: number | null;
   onSendRequest: (user: UserResponseDto) => void;
   onViewDetails?: (user: UserResponseDto) => void;
+  labels: AssignmentTranslations;
 };
 
 const DEFAULT_CENTER: [number, number] = [7.8731, 80.7718];
@@ -33,6 +36,7 @@ export default function AreaUserMap({
   sendingUserId,
   onSendRequest,
   onViewDetails,
+  labels,
 }: Props) {
   const validUsers = users.filter(hasCoordinates);
 
@@ -58,7 +62,9 @@ export default function AreaUserMap({
                     {user.firstName} {user.lastName}
                   </p>
                   <p className="text-gray-600">{user.email}</p>
-                  <p className="mt-1 text-xs font-medium text-emerald-600">AVAILABLE</p>
+                  <p className="mt-1 text-xs font-medium text-emerald-600">
+                    {getStatusLabel("AVAILABLE", labels)}
+                  </p>
                 </div>
 
                 <div className="flex gap-2">
@@ -68,7 +74,9 @@ export default function AreaUserMap({
                     disabled={sendingUserId === user.id}
                     className="rounded-lg bg-[#d04f51] px-3 py-2 text-sm text-white disabled:opacity-50"
                   >
-                    {sendingUserId === user.id ? "Sending..." : "Send Request"}
+                    {sendingUserId === user.id
+                      ? labels.common.sending
+                      : labels.common.sendRequest}
                   </button>
 
                   {onViewDetails ? (
@@ -77,7 +85,7 @@ export default function AreaUserMap({
                       onClick={() => onViewDetails(user)}
                       className="rounded-lg border border-[#d04f51] px-3 py-2 text-sm text-[#d04f51]"
                     >
-                      →
+                      {labels.common.view}
                     </button>
                   ) : null}
                 </div>

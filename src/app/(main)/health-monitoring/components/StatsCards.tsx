@@ -1,18 +1,21 @@
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+"use client";
+
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   CircleAlert,
   CircleCheckBig,
   TriangleAlert,
   Activity,
-} from 'lucide-react';
-import type { VitalsState } from '../../../api/healthmonitor/types';
+} from "lucide-react";
+import type { VitalsState } from "../../../api/healthmonitor/types";
+import { useLanguage } from "@/components/common/useLanguage";
 
 interface StatsCardsProps {
   vitals: VitalsState;
 }
 
-type Severity = 'none' | 'normal' | 'low' | 'medium' | 'high';
+type Severity = "none" | "normal" | "low" | "medium" | "high";
 
 type StatusMeta = {
   label: string;
@@ -28,85 +31,88 @@ type CardItem = {
 };
 
 const StatsCards: React.FC<StatsCardsProps> = ({ vitals }) => {
+  const { t } = useLanguage();
+  const text = t.healthMonitor.stats;
+
   const getBMIStatus = (bmi: string): StatusMeta => {
     const value = parseFloat(bmi);
-    if (!value) return { label: 'No data', severity: 'none' };
-    if (value < 18.5) return { label: 'Underweight', severity: 'medium' };
-    if (value < 25) return { label: 'Normal', severity: 'normal' };
-    if (value < 30) return { label: 'Overweight', severity: 'medium' };
-    return { label: 'Obese', severity: 'high' };
+    if (!value) return { label: text.noData, severity: "none" };
+    if (value < 18.5) return { label: text.underweight, severity: "medium" };
+    if (value < 25) return { label: text.normal, severity: "normal" };
+    if (value < 30) return { label: text.overweight, severity: "medium" };
+    return { label: text.obese, severity: "high" };
   };
 
   const getBPStatus = (systolic: string, diastolic: string): StatusMeta => {
     const sys = parseFloat(systolic);
     const dia = parseFloat(diastolic);
 
-    if (!sys || !dia) return { label: 'No data', severity: 'none' };
-    if (sys < 120 && dia < 80) return { label: 'Normal', severity: 'normal' };
+    if (!sys || !dia) return { label: text.noData, severity: "none" };
+    if (sys < 120 && dia < 80) return { label: text.normal, severity: "normal" };
     if (sys >= 120 && sys < 130 && dia < 80) {
-      return { label: 'Elevated', severity: 'medium' };
+      return { label: text.elevated, severity: "medium" };
     }
     if ((sys >= 130 && sys < 140) || (dia >= 80 && dia < 90)) {
-      return { label: 'High Stage 1', severity: 'medium' };
+      return { label: text.highStage1, severity: "medium" };
     }
-    return { label: 'High Stage 2', severity: 'high' };
+    return { label: text.highStage2, severity: "high" };
   };
 
   const getBSStatus = (bs: string): StatusMeta => {
     const value = parseFloat(bs);
-    if (!value) return { label: 'No data', severity: 'none' };
-    if (value < 70) return { label: 'Low', severity: 'medium' };
-    if (value < 100) return { label: 'Normal', severity: 'normal' };
-    if (value < 126) return { label: 'Prediabetic', severity: 'medium' };
-    return { label: 'Diabetic', severity: 'high' };
+    if (!value) return { label: text.noData, severity: "none" };
+    if (value < 70) return { label: text.low, severity: "medium" };
+    if (value < 100) return { label: text.normal, severity: "normal" };
+    if (value < 126) return { label: text.prediabetic, severity: "medium" };
+    return { label: text.diabetic, severity: "high" };
   };
 
   const getHRStatus = (hr: string): StatusMeta => {
     const value = parseFloat(hr);
-    if (!value) return { label: 'No data', severity: 'none' };
-    if (value < 60) return { label: 'Low', severity: 'medium' };
-    if (value <= 100) return { label: 'Normal', severity: 'normal' };
-    if (value <= 120) return { label: 'Elevated', severity: 'medium' };
-    return { label: 'High', severity: 'high' };
+    if (!value) return { label: text.noData, severity: "none" };
+    if (value < 60) return { label: text.low, severity: "medium" };
+    if (value <= 100) return { label: text.normal, severity: "normal" };
+    if (value <= 120) return { label: text.elevated, severity: "medium" };
+    return { label: text.high, severity: "high" };
   };
 
   const getSeverityStyles = (severity: Severity) => {
     switch (severity) {
-      case 'normal':
+      case "normal":
         return {
           icon: CircleCheckBig,
-          iconColor: 'text-green-600',
-          valueColor: 'text-green-700',
-          subtitleColor: 'text-green-600',
+          iconColor: "text-green-600",
+          valueColor: "text-green-700",
+          subtitleColor: "text-green-600",
         };
-      case 'low':
+      case "low":
         return {
           icon: Activity,
-          iconColor: 'text-red-600',
-          valueColor: 'text-red-700',
-          subtitleColor: 'text-red-600',
+          iconColor: "text-red-600",
+          valueColor: "text-red-700",
+          subtitleColor: "text-red-600",
         };
-      case 'medium':
+      case "medium":
         return {
           icon: TriangleAlert,
-          iconColor: 'text-amber-600',
-          valueColor: 'text-amber-700',
-          subtitleColor: 'text-amber-600',
+          iconColor: "text-amber-600",
+          valueColor: "text-amber-700",
+          subtitleColor: "text-amber-600",
         };
-      case 'high':
+      case "high":
         return {
           icon: CircleAlert,
-          iconColor: 'text-red-600',
-          valueColor: 'text-red-700',
-          subtitleColor: 'text-red-600',
+          iconColor: "text-red-600",
+          valueColor: "text-red-700",
+          subtitleColor: "text-red-600",
         };
-      case 'none':
+      case "none":
       default:
         return {
           icon: Activity,
-          iconColor: 'text-slate-400',
-          valueColor: 'text-slate-500',
-          subtitleColor: 'text-slate-400',
+          iconColor: "text-slate-400",
+          valueColor: "text-slate-500",
+          subtitleColor: "text-slate-400",
         };
     }
   };
@@ -118,35 +124,35 @@ const StatsCards: React.FC<StatsCardsProps> = ({ vitals }) => {
 
   const cards: CardItem[] = [
     {
-      title: 'BMI',
-      value: vitals.BMI ? parseFloat(vitals.BMI).toFixed(1) : '--',
+      title: text.bmi,
+      value: vitals.BMI ? parseFloat(vitals.BMI).toFixed(1) : "--",
       subtitle: bmi.label,
       severity: bmi.severity,
-      cardClassName: 'bg-[#ffffff] border-[#ebe7de]',
+      cardClassName: "bg-[#ffffff] border-[#ebe7de]",
     },
     {
-      title: 'Blood Pressure',
+      title: text.bloodPressure,
       value:
         vitals.SystolicBP && vitals.DiastolicBP
           ? `${vitals.SystolicBP}/${vitals.DiastolicBP}`
-          : '--',
+          : "--",
       subtitle: bp.label,
       severity: bp.severity,
-      cardClassName: 'bg-[#ffffff] border-[#f0e3d2]',
+      cardClassName: "bg-[#ffffff] border-[#f0e3d2]",
     },
     {
-      title: 'Blood Sugar',
-      value: vitals.BS ? parseFloat(vitals.BS).toFixed(0) : '--',
+      title: text.bloodSugar,
+      value: vitals.BS ? parseFloat(vitals.BS).toFixed(0) : "--",
       subtitle: bs.label,
       severity: bs.severity,
-      cardClassName: 'bg-[#ffffff] border-[#f1dddd]',
+      cardClassName: "bg-[#ffffff] border-[#f1dddd]",
     },
     {
-      title: 'Heart Rate',
-      value: vitals.HeartRate ? parseFloat(vitals.HeartRate).toFixed(0) : '--',
+      title: text.heartRate,
+      value: vitals.HeartRate ? parseFloat(vitals.HeartRate).toFixed(0) : "--",
       subtitle: hr.label,
       severity: hr.severity,
-      cardClassName: 'bg-[#ffffff] border-[#eedee7]',
+      cardClassName: "bg-[#ffffff] border-[#eedee7]",
     },
   ];
 

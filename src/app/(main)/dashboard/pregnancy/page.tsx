@@ -3,7 +3,6 @@
 import Container from "@/components/shared/container";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState } from "react";
 import { UpdateDataPopup } from "@/components/update-data-popup";
 import TopBarFeatures from "@/components/common/TopBarFeatures";
@@ -15,22 +14,24 @@ import TimelineMilestoneSummaryCard from "./components/TimelineMilestoneSummaryC
 import MidwifeConnectivityCard from "../reproductive/components/MidwifeConnectivityCard";
 import AnnouncementDashboardCard from "../reproductive/components/AnnouncementDashboardCard";
 import DashboardFeatures from "../reproductive/components/DashboardFeatures";
+import { useLanguage } from "@/components/common/useLanguage";
 
 export default function PregnancyPage() {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [kickCount, setKickCount] = useState(8);
 
   const { loading, error, stats } = usePregnancyStats();
+  const { t } = useLanguage();
 
   return (
-    <Container title="Pregnancy Dashboard">
+    <Container title={t.pregnancy.page.title}>
       <div className="min-h-screen bg-[#fed2cc] p-4 md:p-6">
         <TopBarFeatures />
 
         <DashboardTopBar
           info={{
-            title: "Pregnancy Dashboard",
-            subtitle: "Track your progress",
+            title: t.pregnancy.page.title,
+            subtitle: t.pregnancy.page.subtitle,
             ultsubtitle: "",
           }}
           stats={stats}
@@ -38,7 +39,7 @@ export default function PregnancyPage() {
 
         {loading && (
           <div className="mb-4 rounded-lg border border-[#d04f51]/20 bg-white p-3 text-sm text-[#d04f51]">
-            Loading pregnancy data...
+            {t.pregnancy.page.loading}
           </div>
         )}
 
@@ -61,9 +62,10 @@ export default function PregnancyPage() {
           <Card className="border-[#d04f51]/20 bg-white shadow-sm">
             <CardHeader>
               <CardTitle className="text-base font-semibold text-[#d04f51]">
-                Kick Counter
+                {t.pregnancy.kickCounter.title}
               </CardTitle>
             </CardHeader>
+
             <CardContent>
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -71,7 +73,7 @@ export default function PregnancyPage() {
                     {kickCount}
                   </div>
                   <div className="text-xs text-gray-600">
-                    Kicks tracked today
+                    {t.pregnancy.kickCounter.trackedToday}
                   </div>
                 </div>
 
@@ -80,7 +82,7 @@ export default function PregnancyPage() {
                     className="bg-[#d04f51] text-white hover:bg-[#b84345]"
                     onClick={() => setKickCount((prev) => prev + 1)}
                   >
-                    Add Kick
+                    {t.pregnancy.kickCounter.addKick}
                   </Button>
 
                   <Button
@@ -88,14 +90,13 @@ export default function PregnancyPage() {
                     className="border-[#d04f51] text-[#d04f51] hover:bg-[#d04f51]/5"
                     onClick={() => setKickCount(0)}
                   >
-                    Reset
+                    {t.pregnancy.kickCounter.reset}
                   </Button>
                 </div>
               </div>
 
               <div className="mt-4 rounded-lg bg-[#d04f51]/10 p-3 text-xs text-[#d04f51]">
-                Tip: Try counting kicks during the time of day when your baby is
-                usually most active.
+                {t.pregnancy.kickCounter.tip}
               </div>
             </CardContent>
           </Card>

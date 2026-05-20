@@ -23,6 +23,7 @@ import MidwivesMapPopup from "@/app/(connection)/registered-midwives-map/Midwive
 import VaccinationPopup from "@/app/(main)/vaccination/VaccinationPopup";
 import MotherAppointmentRequestDialog from "@/components/appointment/MotherAppointmentRequestDialog";
 import { appointmentApi } from "@/app/api/appointment/api";
+import { LanguageCode, useLanguage } from "./useLanguage";
 
 type TopBarFeaturesProps = {
   name?: string;
@@ -30,14 +31,16 @@ type TopBarFeaturesProps = {
   avatarUrl?: string;
 };
 
-const languages = ["EN", "සිං", "த"] as const;
+const languages: { code: LanguageCode; label: string }[] = [
+  { code: "en", label: "EN" },
+  { code: "si", label: "සිං" },
+  { code: "ta", label: "த" },
+];
 
 export default function TopBarFeatures({
   avatarUrl = "/images/reproductive/repro2.png",
 }: TopBarFeaturesProps) {
   const [me, setMe] = useState<UserResponseDto | null>(null);
-  const [selectedLanguage, setSelectedLanguage] =
-    useState<(typeof languages)[number]>("EN");
   const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
   const [isMobileFeaturesOpen, setIsMobileFeaturesOpen] = useState(false);
 
@@ -52,6 +55,11 @@ export default function TopBarFeatures({
 
   const [midwivesMapOpen, setMidwivesMapOpen] = useState(false);
   const [vaccinationOpen, setVaccinationOpen] = useState(false);
+
+  const { language, setLanguage, t } = useLanguage();
+
+  const selectedLanguageLabel =
+    languages.find((item) => item.code === language)?.label ?? "EN";
 
   useEffect(() => {
     const loadMe = async () => {
@@ -97,7 +105,6 @@ export default function TopBarFeatures({
         me.id
       );
 
-      // Filter out locally deleted appointments so the badge matches the user's view.
       const deletedKey = `deletedAppointments:${me.id}`;
       let deletedIds: string[] = [];
 
@@ -192,7 +199,9 @@ export default function TopBarFeatures({
                   </span>
                 ) : null}
                 <MessageCircle className="h-5 w-5 shrink-0 min-[1250px]:h-4 min-[1250px]:w-4" />
-                <span className="hidden min-[1250px]:inline">Chat</span>
+                <span className="hidden min-[1250px]:inline">
+                  {t.dashboard.chat}
+                </span>
               </button>
 
               <button
@@ -201,7 +210,9 @@ export default function TopBarFeatures({
                 className="inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
               >
                 <MapPinned className="h-5 w-5 shrink-0 min-[1250px]:h-4 min-[1250px]:w-4" />
-                <span className="hidden min-[1250px]:inline">Midwife Map</span>
+                <span className="hidden min-[1250px]:inline">
+                  {t.dashboard.midwifeMap}
+                </span>
               </button>
 
               <button
@@ -210,7 +221,9 @@ export default function TopBarFeatures({
                 className="inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
               >
                 <Syringe className="h-5 w-5 shrink-0 min-[1250px]:h-4 min-[1250px]:w-4" />
-                <span className="hidden min-[1250px]:inline">Vaccination</span>
+                <span className="hidden min-[1250px]:inline">
+                  {t.dashboard.vaccination}
+                </span>
               </button>
 
               {isPostPregnantMother ? (
@@ -220,7 +233,9 @@ export default function TopBarFeatures({
                   className="inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
                 >
                   <CheckSquare className="h-5 w-5 shrink-0 min-[1250px]:h-4 min-[1250px]:w-4" />
-                  <span className="hidden min-[1250px]:inline">Checklist</span>
+                  <span className="hidden min-[1250px]:inline">
+                    {t.dashboard.checklist}
+                  </span>
                 </button>
               ) : null}
 
@@ -230,7 +245,9 @@ export default function TopBarFeatures({
                 className="inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
               >
                 <Package className="h-5 w-5 shrink-0 min-[1250px]:h-4 min-[1250px]:w-4" />
-                <span className="hidden min-[1250px]:inline">Triposha</span>
+                <span className="hidden min-[1250px]:inline">
+                  {t.dashboard.triposha}
+                </span>
               </button>
 
               <button
@@ -239,7 +256,9 @@ export default function TopBarFeatures({
                 className="relative inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
               >
                 <CalendarPlus className="h-5 w-5 shrink-0 min-[1250px]:h-4 min-[1250px]:w-4" />
-                <span className="hidden min-[1250px]:inline">Appointment</span>
+                <span className="hidden min-[1250px]:inline">
+                  {t.dashboard.appointment}
+                </span>
                 {scheduledCount > 0 ? (
                   <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-[#d04f51] px-1.5 py-0.5 text-[10px] font-bold text-white">
                     {scheduledCount > 99 ? "99+" : scheduledCount}
@@ -274,7 +293,7 @@ export default function TopBarFeatures({
                       </span>
                     ) : null}
                     <MessageCircle className="h-4 w-4 shrink-0" />
-                    <span>Messages</span>
+                    <span>{t.dashboard.messages}</span>
                   </button>
 
                   <button
@@ -286,7 +305,7 @@ export default function TopBarFeatures({
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
                   >
                     <MapPinned className="h-4 w-4 shrink-0" />
-                    <span>Midwives Map</span>
+                    <span>{t.dashboard.midwifeMap}</span>
                   </button>
 
                   <button
@@ -298,7 +317,7 @@ export default function TopBarFeatures({
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
                   >
                     <Syringe className="h-4 w-4 shrink-0" />
-                    <span>Vaccination</span>
+                    <span>{t.dashboard.vaccination}</span>
                   </button>
 
                   {isPostPregnantMother ? (
@@ -308,7 +327,7 @@ export default function TopBarFeatures({
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
                     >
                       <CheckSquare className="h-4 w-4 shrink-0" />
-                      <span>Checklist</span>
+                      <span>{t.dashboard.checklist}</span>
                     </button>
                   ) : null}
 
@@ -318,7 +337,7 @@ export default function TopBarFeatures({
                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
                   >
                     <Package className="h-4 w-4 shrink-0" />
-                    <span>Triposha</span>
+                    <span>{t.dashboard.triposha}</span>
                   </button>
 
                   <button
@@ -330,7 +349,7 @@ export default function TopBarFeatures({
                     className="relative flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
                   >
                     <CalendarPlus className="h-4 w-4 shrink-0" />
-                    <span>Appointment</span>
+                    <span>{t.dashboard.appointment}</span>
                     {scheduledCount > 0 ? (
                       <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-[#d04f51] px-1.5 py-0.5 text-[10px] font-bold text-white">
                         {scheduledCount > 99 ? "99+" : scheduledCount}
@@ -348,27 +367,27 @@ export default function TopBarFeatures({
             <button
               type="button"
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-neutral-700 transition hover:bg-neutral-100 sm:h-11 sm:w-11"
-              aria-label="Notifications"
+              aria-label={t.dashboard.notifications}
             >
               <Bell className="h-5 w-5" />
             </button>
 
             <div className="hidden items-center rounded-full border border-neutral-200 bg-neutral-50 p-1 min-[1750px]:flex">
-              {languages.map((lang) => {
-                const isActive = selectedLanguage === lang;
+              {languages.map((item) => {
+                const isActive = language === item.code;
 
                 return (
                   <button
                     type="button"
-                    key={lang}
-                    onClick={() => setSelectedLanguage(lang)}
+                    key={item.code}
+                    onClick={() => setLanguage(item.code)}
                     className={
                       isActive
                         ? "rounded-full bg-[#d04f51] px-2.5 py-1.5 text-xs font-medium text-white sm:px-3"
                         : "rounded-full px-2.5 py-1.5 text-xs font-medium text-neutral-600 hover:bg-neutral-100 sm:px-3"
                     }
                   >
-                    {lang}
+                    {item.label}
                   </button>
                 );
               })}
@@ -381,20 +400,20 @@ export default function TopBarFeatures({
                 className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs font-medium text-neutral-700 transition hover:bg-neutral-100"
                 aria-label="Select language"
               >
-                {selectedLanguage}
+                {selectedLanguageLabel}
               </button>
 
               {isLanguageMenuOpen && (
                 <div className="absolute right-0 top-full z-20 mt-2 min-w-[72px] rounded-xl border border-neutral-200 bg-white p-1 shadow-md">
-                  {languages.map((lang) => {
-                    const isActive = selectedLanguage === lang;
+                  {languages.map((item) => {
+                    const isActive = language === item.code;
 
                     return (
                       <button
                         type="button"
-                        key={lang}
+                        key={item.code}
                         onClick={() => {
-                          setSelectedLanguage(lang);
+                          setLanguage(item.code);
                           setIsLanguageMenuOpen(false);
                         }}
                         className={
@@ -403,7 +422,7 @@ export default function TopBarFeatures({
                             : "w-full rounded-lg px-3 py-2 text-left text-xs font-medium text-neutral-600 hover:bg-neutral-100"
                         }
                       >
-                        {lang}
+                        {item.label}
                       </button>
                     );
                   })}

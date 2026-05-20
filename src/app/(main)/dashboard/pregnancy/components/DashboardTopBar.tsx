@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getcuruser } from "@/app/api/user/api";
 import type { UserResponseDto } from "@/app/api/user/types";
+import { useLanguage } from "@/components/common/useLanguage";
 
 type PregnancyStats = {
   pregnancyWeek: number;
@@ -22,6 +23,7 @@ type DashboardTopBarProps = {
 
 function DashboardTopBar({ info, stats }: DashboardTopBarProps) {
   const [me, setMe] = useState<UserResponseDto | null>(null);
+  const { t } = useLanguage();
 
   const topbannerImageUrl = "/images/pregnancy/preg1.png";
 
@@ -41,22 +43,22 @@ function DashboardTopBar({ info, stats }: DashboardTopBarProps) {
       }
     };
 
-    loadMe();
+    void loadMe();
   }, []);
 
   const fullname = useMemo(() => {
     if (!me) return "—";
-    return me.firstName;
+    return me.firstName || "—";
   }, [me]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
 
-    if (hour >= 5 && hour < 12) return "Good Morning";
-    if (hour >= 12 && hour < 17) return "Good Afternoon";
-    if (hour >= 17 && hour < 21) return "Good Evening";
-    return "Good Night";
-  }, []);
+    if (hour >= 5 && hour < 12) return t.dashboard.goodMorning;
+    if (hour >= 12 && hour < 17) return t.dashboard.goodAfternoon;
+    if (hour >= 17 && hour < 21) return t.dashboard.goodEvening;
+    return t.dashboard.goodNight;
+  }, [t]);
 
   const circleClass = `
     flex items-center justify-center rounded-full
@@ -86,7 +88,14 @@ function DashboardTopBar({ info, stats }: DashboardTopBarProps) {
         <h1 className="mb-1 text-xl font-bold md:text-2xl">
           {greeting}, {fullname}
         </h1>
-        <div className="text-sm opacity-90">Patient ID: RP-2025-001</div>
+
+        <div className="text-sm opacity-90">
+          {t.dashboard.patientId}: RP-2025-001
+        </div>
+
+        {info.subtitle ? (
+          <div className="mt-1 text-sm opacity-90">{info.subtitle}</div>
+        ) : null}
       </div>
 
       <div
@@ -100,23 +109,21 @@ function DashboardTopBar({ info, stats }: DashboardTopBarProps) {
       >
         <div className="flex flex-col items-center max-[1150px]:ml-[200px] max-[900px]:ml-[50px] max-[490px]:ml-[-100px]">
           <div className={circleClass}>
-            <span className={numberClass}>
-              {stats?.pregnancyWeek ?? "—"}
-            </span>
+            <span className={numberClass}>{stats?.pregnancyWeek ?? "—"}</span>
           </div>
+
           <div className="mt-2 whitespace-nowrap text-center text-xs font-medium opacity-95">
-            Current Week
+            {t.pregnancy.topbar.currentWeek}
           </div>
         </div>
 
         <div className="flex flex-col items-center">
           <div className={circleClass}>
-            <span className={numberClass}>
-              {stats?.daysLeft ?? "—"}
-            </span>
+            <span className={numberClass}>{stats?.daysLeft ?? "—"}</span>
           </div>
+
           <div className="mt-2 whitespace-nowrap text-center text-xs font-medium opacity-95">
-            Days Left
+            {t.pregnancy.topbar.daysLeft}
           </div>
         </div>
       </div>

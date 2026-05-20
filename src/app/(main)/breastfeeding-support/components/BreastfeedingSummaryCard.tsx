@@ -1,18 +1,32 @@
 import React from 'react';
 import { Activity, AlertCircle, Clock, Droplets } from 'lucide-react';
-import type { BreastfeedingSession, BreastfeedingIssue } from './BreastfeedingDashboard';
+import { useLanguage } from '@/components/common/useLanguage';
+import type {
+  BreastfeedingSessionResponseDto,
+  BreastfeedingIssueResponseDto,
+} from '@/app/api/breastfeeding/types';
 
 interface BreastfeedingSummaryCardProps {
-  sessions: BreastfeedingSession[];
-  issues: BreastfeedingIssue[];
+  sessions: BreastfeedingSessionResponseDto[];
+  issues: BreastfeedingIssueResponseDto[];
 }
+
+const LOCALE_BY_LANGUAGE = {
+  en: 'en-US',
+  si: 'si-LK',
+  ta: 'ta-LK',
+} as const;
 
 const BreastfeedingSummaryCard: React.FC<BreastfeedingSummaryCardProps> = ({
   sessions,
   issues,
 }) => {
+  const { language, t } = useLanguage();
+  const locale = LOCALE_BY_LANGUAGE[language];
+
+  const today = new Date().toISOString().split('T')[0];
+
   const todaySessions = sessions.filter((s) => {
-    const today = new Date().toISOString().split('T')[0];
     return s.feedingTime?.startsWith(today);
   });
 
@@ -30,36 +44,36 @@ const BreastfeedingSummaryCard: React.FC<BreastfeedingSummaryCardProps> = ({
 
   const stats = [
     {
-      label: "Today's Sessions",
+      label: t.breastfeeding.summary.todaySessions,
       value: todaySessions.length,
-      unit: 'sessions',
+      unit: t.breastfeeding.summary.sessionsUnit,
       icon: Activity,
       color: '#d04f51',
       bg: '#fff5f5',
       border: '#f3c7c8',
     },
     {
-      label: 'Total Duration Today',
+      label: t.breastfeeding.summary.totalDurationToday,
       value: totalDurationToday,
-      unit: 'minutes',
+      unit: t.breastfeeding.summary.minutesUnit,
       icon: Clock,
       color: '#d04f51',
       bg: '#fff5f5',
       border: '#f3c7c8',
     },
     {
-      label: 'Milk Expressed Today',
+      label: t.breastfeeding.summary.milkExpressedToday,
       value: totalMilkToday,
-      unit: 'ml',
+      unit: t.breastfeeding.summary.mlUnit,
       icon: Droplets,
       color: '#d04f51',
       bg: '#fff5f5',
       border: '#f3c7c8',
     },
     {
-      label: 'Unresolved Issues',
+      label: t.breastfeeding.summary.unresolvedIssues,
       value: unresolvedIssues,
-      unit: 'issues',
+      unit: t.breastfeeding.summary.issuesUnit,
       icon: AlertCircle,
       color: unresolvedIssues > 0 ? '#b45309' : '#d04f51',
       bg: unresolvedIssues > 0 ? '#fffbeb' : '#fff5f5',
@@ -71,10 +85,10 @@ const BreastfeedingSummaryCard: React.FC<BreastfeedingSummaryCardProps> = ({
     <div>
       <div className="mb-4 flex items-center gap-2">
         <h2 className="text-base font-semibold text-[#d04f51]">
-          Today's Overview
+          {t.breastfeeding.summary.overviewTitle}
         </h2>
         <span className="rounded-full bg-[#fff5f5] border border-[#f3c7c8] px-3 py-0.5 text-xs font-medium text-[#d04f51]">
-          {new Date().toLocaleDateString('en-US', {
+          {new Date().toLocaleDateString(locale, {
             weekday: 'long',
             month: 'long',
             day: 'numeric',
@@ -94,15 +108,10 @@ const BreastfeedingSummaryCard: React.FC<BreastfeedingSummaryCardProps> = ({
                 backgroundColor: stat.bg,
               }}
             >
-              <div
-                className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm"
-              >
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
                 <Icon className="h-5 w-5" style={{ color: stat.color }} />
               </div>
-              <p
-                className="text-3xl font-bold"
-                style={{ color: stat.color }}
-              >
+              <p className="text-3xl font-bold" style={{ color: stat.color }}>
                 {stat.value}
               </p>
               <p className="mt-1 text-xs font-medium uppercase tracking-wide text-gray-500">
@@ -114,15 +123,14 @@ const BreastfeedingSummaryCard: React.FC<BreastfeedingSummaryCardProps> = ({
         })}
       </div>
 
-      {/* Total sessions all time */}
       <div className="mt-4 rounded-2xl border border-[#f3d6d7] bg-[#fffafa] p-4">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-[#5f3a3b]">
-              Total Sessions Logged
+              {t.breastfeeding.summary.totalSessionsLogged}
             </p>
             <p className="text-xs text-[#8a4b4c]">
-              All time breastfeeding records
+              {t.breastfeeding.summary.allTimeRecords}
             </p>
           </div>
           <p className="text-3xl font-bold text-[#d04f51]">
@@ -141,7 +149,7 @@ const BreastfeedingSummaryCard: React.FC<BreastfeedingSummaryCardProps> = ({
               />
             </div>
             <p className="mt-1 text-xs text-[#8a4b4c]">
-              {todaySessions.length} of {sessions.length} sessions are from today
+              {t.breastfeeding.summary.todayProgress(todaySessions.length, sessions.length)}
             </p>
           </div>
         )}

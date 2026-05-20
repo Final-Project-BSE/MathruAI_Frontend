@@ -1,6 +1,6 @@
-import React from 'react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle } from 'lucide-react';
+import React from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CheckCircle } from "lucide-react";
 
 interface SuccessAlertProps {
   message: string | null;
@@ -13,12 +13,14 @@ const SuccessAlert: React.FC<SuccessAlertProps> = ({ message, onDismiss }) => {
   return (
     <Alert className="mb-6 border-green-200 bg-green-50">
       <CheckCircle className="h-4 w-4 text-green-600" />
-      <AlertDescription className="text-green-800 ml-2 flex justify-between items-center">
+      <AlertDescription className="ml-2 flex items-center justify-between text-green-800">
         <span>{message}</span>
         {onDismiss && (
           <button
+            type="button"
             onClick={onDismiss}
-            className="text-green-400 hover:text-green-600 text-xl"
+            className="text-xl text-green-400 hover:text-green-600"
+            aria-label="Dismiss"
           >
             ×
           </button>

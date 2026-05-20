@@ -5,9 +5,11 @@ import BirthControlPagination from "./components/BirthControlPagination";
 import TopBarFeatures from "@/components/common/TopBarFeatures";
 import { ShieldCheck } from "lucide-react";
 import { LoadingState } from "@/components/common/LoadingState";
+import { useLanguage } from "@/components/common/useLanguage";
 
 export default function Page() {
   const [pageReady, setPageReady] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     setPageReady(true);
@@ -18,7 +20,7 @@ export default function Page() {
   }
 
   return (
-    <div className="bg-[#fed2cc] min-h-screen p-4 md:p-6">
+    <div className="min-h-screen bg-[#fed2cc] p-4 md:p-6">
       <TopBarFeatures />
 
       <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-r from-[#fab0a7] to-[#d04f51] p-5 text-white shadow-lg">
@@ -29,16 +31,17 @@ export default function Page() {
 
           <div>
             <h1 className="text-xl font-bold md:text-2xl">
-              Birth Control Methods
+              {t.birthControl.pageTitle}
             </h1>
-            <p className="text-sm opacity-90 mt-0.5">
-              Learn about different methods to plan your family with confidence
+
+            <p className="mt-0.5 text-sm opacity-90">
+              {t.birthControl.pageSubtitle}
             </p>
           </div>
         </div>
       </div>
 
-      <div className="bg-gray-100 min-h-screen rounded-lg p-5">
+      <div className="min-h-screen rounded-lg bg-gray-100 p-5">
         <BirthControlPagination />
       </div>
     </div>

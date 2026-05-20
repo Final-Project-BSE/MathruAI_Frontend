@@ -7,6 +7,8 @@ import { getcuruser } from "@/app/api/user/api";
 import { triposhaApi } from "@/app/api/triposha/api";
 import type { TriposhaRecord } from "@/app/api/triposha/types";
 import TriposhaCard from "./TriposhaCard";
+import { useLanguage } from "@/components/common/useLanguage";
+import { translateText } from "@/components/common/translateText";
 
 type TriposhaPopupProps = {
   open: boolean;
@@ -17,6 +19,9 @@ export default function TriposhaPopup({ open, onClose }: TriposhaPopupProps) {
   const [records, setRecords] = useState<TriposhaRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const { language, t } = useLanguage();
+  const triposhaText = t.triposha;
 
   useEffect(() => {
     if (!open) return;
@@ -32,7 +37,7 @@ export default function TriposhaPopup({ open, onClose }: TriposhaPopupProps) {
         const jwt = session?.user?.token || "";
 
         if (!jwt) {
-          throw new Error("You are not authenticated. Please sign in again.");
+          throw new Error(triposhaText.authRequired);
         }
 
         const currentUser = await getcuruser(jwt);
@@ -48,11 +53,18 @@ export default function TriposhaPopup({ open, onClose }: TriposhaPopupProps) {
 
         if (active) {
           setRecords([]);
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Failed to load Triposha records."
+
+          const fallbackMessage =
+            err instanceof Error ? err.message : triposhaText.loadFailed;
+
+          const translatedMessage = await translateText(
+            fallbackMessage,
+            language
           );
+
+          if (active) {
+            setError(translatedMessage);
+          }
         }
       } finally {
         if (active) setLoading(false);
@@ -64,7 +76,7 @@ export default function TriposhaPopup({ open, onClose }: TriposhaPopupProps) {
     return () => {
       active = false;
     };
-  }, [open]);
+  }, [open, language, triposhaText.authRequired, triposhaText.loadFailed]);
 
   if (!open) return null;
 
@@ -78,9 +90,9 @@ export default function TriposhaPopup({ open, onClose }: TriposhaPopupProps) {
             </div>
 
             <div>
-              <h2 className="text-lg font-bold">My Triposha Records</h2>
+              <h2 className="text-lg font-bold">{triposhaText.popupTitle}</h2>
               <p className="text-sm text-white/90">
-                Track your nutrition support and upcoming allocations
+                {triposhaText.popupDescription}
               </p>
             </div>
           </div>
@@ -89,7 +101,7 @@ export default function TriposhaPopup({ open, onClose }: TriposhaPopupProps) {
             type="button"
             onClick={onClose}
             className="rounded-full p-2 text-white transition hover:bg-white/20"
-            aria-label="Close Triposha popup"
+            aria-label={triposhaText.closePopup}
           >
             <X className="h-5 w-5" />
           </button>
@@ -99,7 +111,7 @@ export default function TriposhaPopup({ open, onClose }: TriposhaPopupProps) {
           {loading ? (
             <div className="flex justify-center py-16 text-[#d04f51]">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Loading Triposha records...
+              {triposhaText.loadingRecords}
             </div>
           ) : (
             <>

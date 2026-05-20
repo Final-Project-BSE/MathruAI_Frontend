@@ -2,6 +2,8 @@
 
 import type { UserResponseDto } from "../../api/user-assign/types";
 import StatusBadge from "./StatusBadge";
+import type { AssignmentTranslations } from "./assignmentLang";
+import { getStatusLabel } from "./assignmentLang";
 import { cn } from "./utils";
 
 type Props = {
@@ -14,6 +16,7 @@ type Props = {
   onCancelAssignedMother: (motherUserId: number) => void;
   assignmentActionLoadingId?: number | "midwife" | null;
   theme: "light" | "dark";
+  labels: AssignmentTranslations;
 };
 
 export default function AssignmentSection({
@@ -26,6 +29,7 @@ export default function AssignmentSection({
   onCancelAssignedMother,
   assignmentActionLoadingId,
   theme,
+  labels,
 }: Props) {
   const isLightTheme = theme === "light";
 
@@ -37,7 +41,7 @@ export default function AssignmentSection({
           isLightTheme ? "text-gray-900" : "text-white"
         )}
       >
-        My Assignment
+        {labels.assignment.myAssignment}
       </h2>
 
       {isMotherSide ? (
@@ -71,14 +75,14 @@ export default function AssignmentSection({
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <StatusBadge status="ASSIGNED" />
+                <StatusBadge status="ASSIGNED" label={getStatusLabel("ASSIGNED", labels)} />
                 <button
                   type="button"
                   onClick={() => onCancelAssignedMidwife()}
                   disabled={assignmentActionLoadingId === "midwife"}
                   className="rounded-md bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-500 disabled:opacity-50"
                 >
-                  Cancel Assignment
+                  {labels.assignment.cancelAssignment}
                 </button>
                 <button
                   type="button"
@@ -89,6 +93,7 @@ export default function AssignmentSection({
                       ? "border-black text-black hover:bg-gray-200"
                       : "border-white/10 text-gray-300 hover:bg-white/10"
                   )}
+                  aria-label={labels.common.view}
                 >
                   →
                 </button>
@@ -97,19 +102,19 @@ export default function AssignmentSection({
           </div>
         ) : (
           <p className={cn("text-sm", isLightTheme ? "text-gray-600" : "text-gray-400")}>
-            No midwife assigned yet.
+            {labels.assignment.noMidwifeAssigned}
           </p>
         )
       ) : isMidwife ? (
         <div>
           <p className={cn("mb-4 text-xs", isLightTheme ? "text-gray-600" : "text-gray-400")}>
-            Total assigned users: {assignedUsers.length}
+            {labels.assignment.totalAssignedUsers}: {assignedUsers.length}
           </p>
 
           <div className="grid gap-4 md:grid-cols-3">
             {assignedUsers.length === 0 ? (
               <p className={cn("text-xs", isLightTheme ? "text-gray-600" : "text-gray-400")}>
-                No users assigned yet.
+                {labels.assignment.noUsersAssigned}
               </p>
             ) : (
               assignedUsers.map((user) => (
@@ -143,14 +148,14 @@ export default function AssignmentSection({
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      <StatusBadge status="ASSIGNED" />
+                      <StatusBadge status="ASSIGNED" label={getStatusLabel("ASSIGNED", labels)} />
                       <button
                         type="button"
                         onClick={() => onCancelAssignedMother(user.id)}
                         disabled={assignmentActionLoadingId === user.id}
                         className="rounded-md bg-red-600 px-3 py-2 text-xs text-white hover:bg-red-500 disabled:opacity-50"
                       >
-                        Cancel
+                        {labels.common.cancel}
                       </button>
                       <button
                         type="button"
@@ -161,6 +166,7 @@ export default function AssignmentSection({
                             ? "border-gray-200 text-gray-700 hover:bg-gray-50"
                             : "border-white/10 text-gray-300 hover:bg-white/10"
                         )}
+                        aria-label={labels.common.view}
                       >
                         →
                       </button>
@@ -173,7 +179,7 @@ export default function AssignmentSection({
         </div>
       ) : (
         <p className={cn("text-xs", isLightTheme ? "text-gray-600" : "text-gray-400")}>
-          No assignment view available.
+          {labels.assignment.noAssignmentView}
         </p>
       )}
     </section>
