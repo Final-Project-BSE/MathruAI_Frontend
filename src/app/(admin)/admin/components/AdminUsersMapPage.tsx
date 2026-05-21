@@ -1,33 +1,27 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Loader2, MapPinned, Search } from "lucide-react";
 import adminApi from "@/app/api/admin/api";
 import type { UserResponseDto } from "@/app/api/admin/types";
+
+const AdminLeafletMap = dynamic(() => import("./AdminLeafletMap"), {
+  ssr: false,
+});
 
 type Props = {
   token: string;
 };
 
-declare global {
-  interface Window {
-    google?: typeof google;
-    __mathruGoogleMapsLoading?: Promise<void>;
-  }
-}
-
 type MapFilter = "ALL" | "MIDWIFE" | "PATIENT";
+
+const DEFAULT_CENTER: [number, number] = [7.8731, 80.7718];
 
 function isPatient(user: UserResponseDto) {
   return user.roles?.some((role) =>
     ["HOPE_TO_PREGNANT_MOTHER", "PREGNANT_MOTHER", "POST_PREGNANT_MOTHER"].includes(role)
   );
-}
-
-function markerColor(user: UserResponseDto) {
-  if (user.roles?.includes("MIDWIFE")) return "#d04f51";
-  if (isPatient(user)) return "#111827";
-  return "#71717a";
 }
 
 function userType(user: UserResponseDto) {
@@ -37,39 +31,28 @@ function userType(user: UserResponseDto) {
   return "User";
 }
 
-function loadGoogleMapsScript() {
-  if (typeof window === "undefined") return Promise.resolve();
+function badgeClass(user: UserResponseDto) {
+  if (user.roles?.includes("MIDWIFE")) return "bg-[#d04f51] text-white";
+  if (isPatient(user)) return "bg-zinc-900 text-white";
+  if (user.roles?.includes("ADMIN")) return "bg-blue-600 text-white";
+  return "bg-zinc-500 text-white";
+}
 
-  if (window.google?.maps) return Promise.resolve();
+function getCoordinates(user: UserResponseDto) {
+  const latitude = Number(user.latitude);
+  const longitude = Number(user.longitude);
 
-  if (window.__mathruGoogleMapsLoading) return window.__mathruGoogleMapsLoading;
-
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-  if (!apiKey) {
-    return Promise.reject(
-      new Error("Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in your .env.local file.")
-    );
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return null;
   }
 
-  window.__mathruGoogleMapsLoading = new Promise<void>((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Failed to load Google Maps."));
-    document.head.appendChild(script);
-  });
-
-  return window.__mathruGoogleMapsLoading;
+  return {
+    latitude,
+    longitude,
+  };
 }
 
 export default function AdminUsersMapPage({ token }: Props) {
-  const mapRef = useRef<HTMLDivElement | null>(null);
-  const mapInstance = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<google.maps.Marker[]>([]);
-
   const [users, setUsers] = useState<UserResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [mapError, setMapError] = useState("");
@@ -80,13 +63,8 @@ export default function AdminUsersMapPage({ token }: Props) {
     const q = query.trim().toLowerCase();
 
     return users.filter((user) => {
-      const hasLocation =
-        typeof user.latitude === "number" &&
-        typeof user.longitude === "number" &&
-        Number.isFinite(user.latitude) &&
-        Number.isFinite(user.longitude);
-
-      if (!hasLocation) return false;
+      const coordinates = getCoordinates(user);
+      if (!coordinates) return false;
 
       const typeMatch =
         filter === "ALL" ||
@@ -95,7 +73,7 @@ export default function AdminUsersMapPage({ token }: Props) {
 
       const searchMatch =
         !q ||
-        `${user.firstName} ${user.lastName}`.toLowerCase().includes(q) ||
+        `${user.firstName ?? ""} ${user.lastName ?? ""}`.toLowerCase().includes(q) ||
         user.email?.toLowerCase().includes(q) ||
         user.district?.toLowerCase().includes(q) ||
         user.mohArea?.toLowerCase().includes(q);
@@ -104,9 +82,20 @@ export default function AdminUsersMapPage({ token }: Props) {
     });
   }, [users, query, filter]);
 
+  const center: [number, number] = useMemo(() => {
+    const firstUser = mappedUsers[0];
+    const coordinates = firstUser ? getCoordinates(firstUser) : null;
+
+    if (!coordinates) return DEFAULT_CENTER;
+
+    return [coordinates.latitude, coordinates.longitude];
+  }, [mappedUsers]);
+
   async function loadUsers() {
     try {
       setLoading(true);
+      setMapError("");
+
       const data = await adminApi.getAllUsers(token);
       setUsers(data);
     } catch (err) {
@@ -120,98 +109,6 @@ export default function AdminUsersMapPage({ token }: Props) {
     void loadUsers();
   }, [token]);
 
-  useEffect(() => {
-    if (!mapRef.current || loading || mapError) return;
-
-    let cancelled = false;
-
-    async function setupMap() {
-      try {
-        await loadGoogleMapsScript();
-
-        if (cancelled || !mapRef.current || !window.google?.maps) return;
-
-        const defaultCenter = { lat: 7.8731, lng: 80.7718 };
-
-        if (!mapInstance.current) {
-          mapInstance.current = new window.google.maps.Map(mapRef.current, {
-            center: defaultCenter,
-            zoom: 8,
-            mapTypeControl: false,
-            streetViewControl: false,
-            fullscreenControl: true,
-          });
-        }
-
-        markersRef.current.forEach((marker) => marker.setMap(null));
-        markersRef.current = [];
-
-        const bounds = new window.google.maps.LatLngBounds();
-        const infoWindow = new window.google.maps.InfoWindow();
-
-        mappedUsers.forEach((user) => {
-          const position = {
-            lat: Number(user.latitude),
-            lng: Number(user.longitude),
-          };
-
-          bounds.extend(position);
-
-          const marker = new window.google.maps.Marker({
-            position,
-            map: mapInstance.current,
-            title: `${user.firstName} ${user.lastName}`,
-            icon: {
-              path: window.google.maps.SymbolPath.CIRCLE,
-              scale: 8,
-              fillColor: markerColor(user),
-              fillOpacity: 1,
-              strokeColor: "#ffffff",
-              strokeWeight: 2,
-            },
-          });
-
-          marker.addListener("click", () => {
-            infoWindow.setContent(`
-              <div style="font-family: system-ui; min-width: 220px;">
-                <strong style="font-size: 14px;">${user.firstName} ${user.lastName}</strong>
-                <div style="font-size: 12px; color: #d04f51; font-weight: 700; margin-top: 3px;">${userType(user)}</div>
-                <div style="font-size: 12px; color: #444; margin-top: 6px;">${user.email || ""}</div>
-                <div style="font-size: 12px; color: #555; margin-top: 6px;">
-                  ${user.district || "No district"} ${user.mohArea ? ` / ${user.mohArea}` : ""}
-                </div>
-              </div>
-            `);
-            infoWindow.open(mapInstance.current, marker);
-          });
-
-          markersRef.current.push(marker);
-        });
-
-        if (mappedUsers.length > 1) {
-          mapInstance.current.fitBounds(bounds, 60);
-        } else if (mappedUsers.length === 1) {
-          mapInstance.current.setCenter({
-            lat: Number(mappedUsers[0].latitude),
-            lng: Number(mappedUsers[0].longitude),
-          });
-          mapInstance.current.setZoom(13);
-        } else {
-          mapInstance.current.setCenter(defaultCenter);
-          mapInstance.current.setZoom(8);
-        }
-      } catch (err) {
-        setMapError(err instanceof Error ? err.message : "Failed to render map.");
-      }
-    }
-
-    void setupMap();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [mappedUsers, loading, mapError]);
-
   const midwifeCount = mappedUsers.filter((user) => user.roles?.includes("MIDWIFE")).length;
   const patientCount = mappedUsers.filter(isPatient).length;
 
@@ -223,10 +120,12 @@ export default function AdminUsersMapPage({ token }: Props) {
             <p className="mb-2 inline-flex rounded-full bg-[#fff2f2] px-3 py-1 text-xs font-bold text-[#d04f51]">
               Admin / Registered Users Map
             </p>
-            <h1 className="text-2xl font-black text-zinc-950 md:text-4xl">
-              Midwives and patients on Google Maps.
+
+            <h1 className="text-xl font-black text-zinc-950 md:text-2xl">
+              Midwives and patients on map.
             </h1>
-            <p className="mt-2 max-w-2xl text-sm text-zinc-500">
+
+            <p className="mt-2 max-w-2xl text-xs text-zinc-500">
               Only users with valid latitude and longitude appear on the map.
             </p>
           </div>
@@ -236,10 +135,12 @@ export default function AdminUsersMapPage({ token }: Props) {
               <p className="text-xl font-black text-[#d04f51]">{mappedUsers.length}</p>
               <p className="text-[10px] font-bold text-zinc-500">Visible</p>
             </div>
+
             <div className="rounded-2xl bg-[#fff2f2] px-4 py-3">
               <p className="text-xl font-black text-[#d04f51]">{midwifeCount}</p>
               <p className="text-[10px] font-bold text-zinc-500">Midwives</p>
             </div>
+
             <div className="rounded-2xl bg-[#fff2f2] px-4 py-3">
               <p className="text-xl font-black text-[#d04f51]">{patientCount}</p>
               <p className="text-[10px] font-bold text-zinc-500">Patients</p>
@@ -258,6 +159,7 @@ export default function AdminUsersMapPage({ token }: Props) {
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="flex min-w-[260px] items-center rounded-2xl border border-zinc-200 px-3 py-2">
               <Search size={15} className="text-[#d04f51]" />
+
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -290,40 +192,58 @@ export default function AdminUsersMapPage({ token }: Props) {
           </div>
         ) : (
           <div className="grid min-h-[620px] lg:grid-cols-[1fr_340px]">
-            <div ref={mapRef} className="min-h-[620px] bg-[#fff2f2]" />
+            <div className="h-[620px] w-full bg-[#fff2f2]">
+              <AdminLeafletMap
+                users={mappedUsers}
+                center={center}
+                getCoordinates={getCoordinates}
+                badgeClass={badgeClass}
+                userType={userType}
+              />
+            </div>
 
             <aside className="max-h-[620px] overflow-y-auto border-t border-zinc-100 p-4 lg:border-l lg:border-t-0">
               <h3 className="mb-3 text-sm font-black">Mapped users</h3>
+
               <div className="space-y-2">
-                {mappedUsers.map((user) => (
-                  <div
-                    key={user.id}
-                    className="rounded-2xl border border-zinc-100 bg-white p-3 shadow-sm"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-sm font-bold text-zinc-950">
-                          {user.firstName} {user.lastName}
-                        </p>
-                        <p className="text-xs text-zinc-500">{user.email}</p>
+                {mappedUsers.map((user) => {
+                  const coordinates = getCoordinates(user);
+
+                  return (
+                    <div
+                      key={user.id}
+                      className="rounded-2xl border border-zinc-100 bg-white p-3 shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-bold text-zinc-950">
+                            {user.firstName} {user.lastName}
+                          </p>
+                          <p className="text-xs text-zinc-500">{user.email || "No email"}</p>
+                        </div>
+
+                        <span
+                          className={`rounded-full px-2 py-1 text-[10px] font-bold ${badgeClass(
+                            user
+                          )}`}
+                        >
+                          {userType(user)}
+                        </span>
                       </div>
 
-                      <span
-                        className="rounded-full px-2 py-1 text-[10px] font-bold text-white"
-                        style={{ backgroundColor: markerColor(user) }}
-                      >
-                        {userType(user)}
-                      </span>
-                    </div>
+                      <p className="mt-2 text-xs text-zinc-500">
+                        {user.district || "No district"}{" "}
+                        {user.mohArea ? ` / ${user.mohArea}` : ""}
+                      </p>
 
-                    <p className="mt-2 text-xs text-zinc-500">
-                      {user.district || "No district"} {user.mohArea ? ` / ${user.mohArea}` : ""}
-                    </p>
-                    <p className="mt-1 text-[10px] text-zinc-400">
-                      {user.latitude}, {user.longitude}
-                    </p>
-                  </div>
-                ))}
+                      <p className="mt-1 text-[10px] text-zinc-400">
+                        {coordinates
+                          ? `${coordinates.latitude}, ${coordinates.longitude}`
+                          : "No valid coordinates"}
+                      </p>
+                    </div>
+                  );
+                })}
 
                 {!mappedUsers.length ? (
                   <div className="rounded-2xl border border-dashed border-zinc-200 p-6 text-center text-sm text-zinc-500">

@@ -38,6 +38,7 @@ export default async function AdminLayout({
           profileImageUrl: currentUser.profileImageUrl,
         }}
       />
+
       {children}
     </div>
   );

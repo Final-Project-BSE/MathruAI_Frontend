@@ -112,10 +112,10 @@ export default function AdminKnowledgeBasePage({ token }: Props) {
         <p className="mb-2 inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-bold">
           Admin / Knowledge Base
         </p>
-        <h1 className="text-2xl font-black md:text-4xl">
+        <h1 className="text-xl font-black md:text-2xl">
           Upload approved PDF knowledge.
         </h1>
-        <p className="mt-2 max-w-2xl text-sm text-white/85">
+        <p className="mt-2 max-w-2xl text-xs text-white/85">
           Upload separate PDFs for the chatbot RAG system and the daily recommendation
           RAG system. Do not mix unfinished, duplicated, or unsafe content here.
         </p>

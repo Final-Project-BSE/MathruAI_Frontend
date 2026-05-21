@@ -195,7 +195,7 @@ export default function AdminUsersPage({ token }: Props) {
   async function deleteUser(user: UserResponseDto) {
     const name = `${user.firstName} ${user.lastName}`.trim() || user.email;
     const confirmed = confirm(
-      `Delete ${name}? This is permanent unless your backend uses soft deletes.`
+      `Delete ${name}?`
     );
 
     if (!confirmed) return;
@@ -219,12 +219,12 @@ export default function AdminUsersPage({ token }: Props) {
             <p className="mb-2 inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
               Admin / User Management
             </p>
-            <h1 className="text-2xl font-black md:text-4xl">
+            <h1 className="text-xl font-black md:text-2xl">
               Manage every registered user.
             </h1>
-            <p className="mt-2 max-w-2xl text-sm text-white/85">
+            <p className="mt-2 max-w-2xl text-xs text-white/85">
               Edit roles, contact details, service areas, and map coordinates for admins,
-              midwives, and patients.
+              midwives and patients.
             </p>
           </div>
 
