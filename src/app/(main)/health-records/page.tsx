@@ -1,13 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Container from "@/components/shared/container";
 import TopBarFeatures from "@/components/common/TopBarFeatures";
-import CategoryCard, { Category } from "@/components/health-records/CategoryCard";
-import { getCategories } from "@/app/api/health-records/api";
+import CategoryCard, {
+  Category,
+} from "@/components/health-records/CategoryCard";
 import { HealthCategoryResponseDto } from "@/app/api/health-records/types";
 import { LoadingState } from "@/components/common/LoadingState";
 import { useLanguage } from "@/components/common/useLanguage";
+
+type CategoryWithImage = HealthCategoryResponseDto & {
+  imageData?: string;
+  imageName?: string;
+};
 
 export default function HealthRecordsCategoriesPage() {
   const [categories, setCategories] = useState<HealthCategoryResponseDto[]>([]);
@@ -18,57 +24,67 @@ export default function HealthRecordsCategoriesPage() {
   const hr = t.healthRecords;
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    const controller = new AbortController();
+
+    async function fetchCategories() {
       try {
         setLoading(true);
         setError(null);
 
-        const { getSession } = await import("@/lib/authentication");
-        const session = await getSession();
-        const token = session?.user?.token;
+        const response = await fetch("/api/health-records/categories", {
+          method: "GET",
+          signal: controller.signal,
+          cache: "no-store",
+        });
 
-        if (!token) {
-          setError(hr.unauthorized);
-          return;
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          throw new Error(body?.message || hr.loadCategoriesError);
         }
 
-        const data = await getCategories(token);
-        setCategories(data);
-      } catch (err: unknown) {
+        const data = await response.json();
+
+        setCategories(Array.isArray(data) ? data : data.data ?? []);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+
         console.error("Failed to fetch categories:", err);
 
-        const errorObj = err as {
-          response?: {
-            data?: {
-              message?: string;
-            };
-            status?: number;
-          };
-          message?: string;
-        };
-
-        const errorMsg =
-          errorObj.response?.data?.message ||
-          errorObj.message ||
-          hr.loadCategoriesError;
-
-        setError(`${errorMsg} (Status: ${errorObj.response?.status || "Unknown"})`);
+        setError(err instanceof Error ? err.message : hr.loadCategoriesError);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
-    };
+    }
 
     fetchCategories();
-  }, [hr.unauthorized, hr.loadCategoriesError]);
 
-  const mappedCategories: Category[] = categories.map((cat) => ({
-    id: cat.id,
-    name: hr.categories[cat.slug] ?? cat.name,
-    recordCount: cat.recordCount,
-    icon: cat.icon,
-    color: cat.colorClass,
-    slug: cat.slug,
-  }));
+    return () => {
+      controller.abort();
+    };
+  }, [hr.loadCategoriesError]);
+
+  const mappedCategories: Category[] = useMemo(() => {
+    return categories.map((cat) => {
+      const item = cat as CategoryWithImage;
+
+      return {
+        id: cat.id,
+        name: hr.categories[cat.slug] ?? cat.name,
+        recordCount: cat.recordCount,
+        icon: cat.icon,
+        color: cat.colorClass,
+        slug: cat.slug,
+        imageData: item.imageData,
+        imageName: item.imageName,
+      };
+    });
+  }, [categories, hr.categories]);
+
+  const totalRecords = useMemo(() => {
+    return mappedCategories.reduce((sum, cat) => sum + cat.recordCount, 0);
+  }, [mappedCategories]);
 
   if (loading) {
     return <LoadingState />;
@@ -109,7 +125,7 @@ export default function HealthRecordsCategoriesPage() {
                   {hr.totalRecords}
                 </p>
                 <p className="text-2xl font-bold text-[#d04f51]">
-                  {mappedCategories.reduce((sum, cat) => sum + cat.recordCount, 0)}
+                  {totalRecords}
                 </p>
               </div>
 
@@ -123,11 +139,17 @@ export default function HealthRecordsCategoriesPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {mappedCategories.map((cat) => (
-                <CategoryCard key={cat.id} category={cat} />
-              ))}
-            </div>
+            {mappedCategories.length === 0 ? (
+              <div className="rounded-2xl bg-white/90 p-6 text-sm text-gray-500 shadow-sm">
+                No health record categories found.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {mappedCategories.map((cat) => (
+                  <CategoryCard key={cat.id} category={cat} />
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>
