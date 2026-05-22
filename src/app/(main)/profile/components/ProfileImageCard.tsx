@@ -1,9 +1,11 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import profileApi from '@/app/api/profile/api';
-import type { ProfileResponse } from '@/app/api/profile/types';
-import ProtectedImage from '../../../../lib/ProtectedImage';
+import React, { useEffect, useState } from "react";
+import profileApi from "@/app/api/profile/api";
+import type { ProfileResponse } from "@/app/api/profile/types";
+import ProtectedImage from "../../../../lib/ProtectedImage";
+import { useLanguage } from "@/components/common/useLanguage";
+import { translateText } from "@/components/common/translateText";
 
 interface Props {
   profile: ProfileResponse | null;
@@ -13,14 +15,21 @@ interface Props {
 }
 
 const MAX_SIZE_MB = 5;
-const ACCEPTED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const ACCEPTED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const ProfileImageCard = ({ profile, token, userId, onUpdate }: Props) => {
+  const { language, t } = useLanguage();
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState('');
+  const [previewUrl, setPreviewUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  const translatedMessage = useTranslatedText(message?.text || "", language);
 
   useEffect(() => {
     return () => {
@@ -35,12 +44,18 @@ const ProfileImageCard = ({ profile, token, userId, onUpdate }: Props) => {
     if (!file) return;
 
     if (!ACCEPTED_TYPES.includes(file.type)) {
-      setMessage({ type: 'error', text: 'Please select a JPG, PNG, or WEBP image.' });
+      setMessage({
+        type: "error",
+        text: t.profile.profileImage.invalidFileType,
+      });
       return;
     }
 
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      setMessage({ type: 'error', text: `Image must be smaller than ${MAX_SIZE_MB}MB.` });
+      setMessage({
+        type: "error",
+        text: t.profile.profileImage.fileTooLarge,
+      });
       return;
     }
 
@@ -55,12 +70,18 @@ const ProfileImageCard = ({ profile, token, userId, onUpdate }: Props) => {
 
   const handleUpload = async () => {
     if (!token || !userId) {
-      setMessage({ type: 'error', text: 'Profile session is not ready. Please refresh and try again.' });
+      setMessage({
+        type: "error",
+        text: t.profile.profileImage.sessionNotReady,
+      });
       return;
     }
 
     if (!selectedFile) {
-      setMessage({ type: 'error', text: 'Please choose an image first.' });
+      setMessage({
+        type: "error",
+        text: t.profile.profileImage.chooseImageFirst,
+      });
       return;
     }
 
@@ -70,20 +91,25 @@ const ProfileImageCard = ({ profile, token, userId, onUpdate }: Props) => {
     try {
       await profileApi.uploadProfileImage(token, userId, selectedFile);
 
-      setMessage({ type: 'success', text: 'Profile image updated successfully.' });
+      setMessage({
+        type: "success",
+        text: t.profile.profileImage.uploadSuccess,
+      });
+
       setSelectedFile(null);
 
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
       }
-      setPreviewUrl('');
 
+      setPreviewUrl("");
       setRefreshKey((prev) => prev + 1);
       onUpdate();
     } catch (err: unknown) {
       const errorMessage =
-        err instanceof Error ? err.message : 'Failed to upload image.';
-      setMessage({ type: 'error', text: errorMessage });
+        err instanceof Error ? err.message : t.profile.profileImage.uploadFailed;
+
+      setMessage({ type: "error", text: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -91,27 +117,29 @@ const ProfileImageCard = ({ profile, token, userId, onUpdate }: Props) => {
 
   const fallbackAvatar = (
     <div className="w-20 h-20 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-2xl font-bold border border-rose-200">
-      {profile?.firstName?.[0] ?? '?'}
+      {profile?.firstName?.[0] ?? "?"}
     </div>
   );
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-      <h2 className="text-lg font-semibold text-gray-800 mb-5">Profile Image</h2>
+      <h2 className="text-lg font-semibold text-gray-800 mb-5">
+        {t.profile.profileImage.title}
+      </h2>
 
       <div className="flex items-center gap-4 mb-4">
         {previewUrl ? (
           <img
             src={previewUrl}
-            alt="Profile preview"
+            alt={t.profile.profileImage.profilePreviewAlt}
             className="w-20 h-20 rounded-full object-cover border border-gray-200"
           />
         ) : (
           <ProtectedImage
-            key={`${profile?.profileImageUrl ?? 'no-image'}-${refreshKey}`}
+            key={`${profile?.profileImageUrl ?? "no-image"}-${refreshKey}`}
             src={profile?.profileImageUrl}
             token={token}
-            alt="Profile image"
+            alt={t.profile.profileImage.profileImageAlt}
             className="w-20 h-20 rounded-full object-cover border border-gray-200"
             fallback={fallbackAvatar}
             loadingFallback={fallbackAvatar}
@@ -120,12 +148,12 @@ const ProfileImageCard = ({ profile, token, userId, onUpdate }: Props) => {
 
         <div>
           <p className="text-xs text-gray-500">
-            Accepted formats: JPG, PNG, WEBP (max 5MB)
+            {t.profile.profileImage.acceptedFormats}
           </p>
 
           {profile?.profileImageUrl && (
             <p className="text-[11px] text-gray-400 mt-1 break-all">
-              Stored path: {profile.profileImageUrl}
+              {t.profile.profileImage.storedPath}: {profile.profileImageUrl}
             </p>
           )}
         </div>
@@ -144,11 +172,13 @@ const ProfileImageCard = ({ profile, token, userId, onUpdate }: Props) => {
           htmlFor="profile-image-upload"
           className="inline-block cursor-pointer bg-[#D04F51] hover:bg-[#BA4547] text-white font-semibold py-2 px-4 rounded-lg text-sm transition"
         >
-          Choose File
+          {t.profile.profileImage.chooseFile}
         </label>
 
         {selectedFile && (
-          <p className="text-xs text-gray-500">Selected: {selectedFile.name}</p>
+          <p className="text-xs text-gray-500">
+            {t.profile.profileImage.selected}: {selectedFile.name}
+          </p>
         )}
 
         <button
@@ -157,20 +187,57 @@ const ProfileImageCard = ({ profile, token, userId, onUpdate }: Props) => {
           disabled={loading || !selectedFile || !token || !userId}
           className="w-full bg-[#D04F51] hover:bg-[#BA4547] text-white font-semibold py-2 rounded-lg text-sm transition disabled:opacity-60"
         >
-          {loading ? 'Uploading...' : 'Upload / Update'}
+          {loading
+            ? t.profile.profileImage.uploading
+            : t.profile.profileImage.uploadUpdate}
         </button>
       </div>
 
       {message && (
         <p
-          className={`mt-3 text-xs font-medium ${message.type === 'success' ? 'text-green-600' : 'text-red-600'
-            }`}
+          className={`mt-3 text-xs font-medium ${
+            message.type === "success" ? "text-green-600" : "text-red-600"
+          }`}
         >
-          {message.text}
+          {translatedMessage || message.text}
         </p>
       )}
     </div>
   );
 };
+
+function useTranslatedText(text: string, language: "en" | "si" | "ta") {
+  const [translated, setTranslated] = useState(text);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      if (!text) {
+        setTranslated("");
+        return;
+      }
+
+      if (language === "en") {
+        setTranslated(text);
+        return;
+      }
+
+      const result = await translateText(text, language);
+
+      if (!cancelled) {
+        setTranslated(result);
+      }
+    };
+
+    void run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [text, language]);
+
+  return translated;
+}
 
 export default ProfileImageCard;

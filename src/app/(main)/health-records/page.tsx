@@ -7,11 +7,15 @@ import CategoryCard, { Category } from "@/components/health-records/CategoryCard
 import { getCategories } from "@/app/api/health-records/api";
 import { HealthCategoryResponseDto } from "@/app/api/health-records/types";
 import { LoadingState } from "@/components/common/LoadingState";
+import { useLanguage } from "@/components/common/useLanguage";
 
 export default function HealthRecordsCategoriesPage() {
   const [categories, setCategories] = useState<HealthCategoryResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const { t } = useLanguage();
+  const hr = t.healthRecords;
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -24,7 +28,7 @@ export default function HealthRecordsCategoriesPage() {
         const token = session?.user?.token;
 
         if (!token) {
-          setError("Unauthorized. Please login.");
+          setError(hr.unauthorized);
           return;
         }
 
@@ -46,7 +50,7 @@ export default function HealthRecordsCategoriesPage() {
         const errorMsg =
           errorObj.response?.data?.message ||
           errorObj.message ||
-          "Failed to load health record categories.";
+          hr.loadCategoriesError;
 
         setError(`${errorMsg} (Status: ${errorObj.response?.status || "Unknown"})`);
       } finally {
@@ -55,11 +59,11 @@ export default function HealthRecordsCategoriesPage() {
     };
 
     fetchCategories();
-  }, []);
+  }, [hr.unauthorized, hr.loadCategoriesError]);
 
   const mappedCategories: Category[] = categories.map((cat) => ({
     id: cat.id,
-    name: cat.name,
+    name: hr.categories[cat.slug] ?? cat.name,
     recordCount: cat.recordCount,
     icon: cat.icon,
     color: cat.colorClass,
@@ -71,18 +75,16 @@ export default function HealthRecordsCategoriesPage() {
   }
 
   return (
-    <Container title="Health Records">
+    <Container title={hr.title}>
       <div className="bg-[#fed2cc] min-h-screen p-4 md:p-6">
         <TopBarFeatures />
 
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-gray-900">
-              Health Records
+              {hr.title}
             </h1>
-            <p className="text-sm text-gray-500">
-              View and manage your health records by category
-            </p>
+            <p className="text-sm text-gray-500">{hr.subtitle}</p>
           </div>
         </div>
 
@@ -95,7 +97,7 @@ export default function HealthRecordsCategoriesPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
               <div className="bg-white/90 backdrop-blur rounded-2xl p-4 shadow-sm">
                 <p className="text-xs text-gray-500 mb-0.5">
-                  Total Categories
+                  {hr.totalCategories}
                 </p>
                 <p className="text-2xl font-bold text-[#d04f51]">
                   {mappedCategories.length}
@@ -103,15 +105,21 @@ export default function HealthRecordsCategoriesPage() {
               </div>
 
               <div className="bg-white/90 backdrop-blur rounded-2xl p-4 shadow-sm">
-                <p className="text-xs text-gray-500 mb-0.5">Total Records</p>
+                <p className="text-xs text-gray-500 mb-0.5">
+                  {hr.totalRecords}
+                </p>
                 <p className="text-2xl font-bold text-[#d04f51]">
                   {mappedCategories.reduce((sum, cat) => sum + cat.recordCount, 0)}
                 </p>
               </div>
 
               <div className="bg-white/90 backdrop-blur rounded-2xl p-4 shadow-sm col-span-2 sm:col-span-1">
-                <p className="text-xs text-gray-500 mb-0.5">Last Updated</p>
-                <p className="text-base font-semibold text-gray-700">Today</p>
+                <p className="text-xs text-gray-500 mb-0.5">
+                  {hr.lastUpdated}
+                </p>
+                <p className="text-base font-semibold text-gray-700">
+                  {hr.today}
+                </p>
               </div>
             </div>
 

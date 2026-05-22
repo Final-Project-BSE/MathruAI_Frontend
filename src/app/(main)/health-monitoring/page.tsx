@@ -1,13 +1,18 @@
-import React from 'react';
-import MaternalHealthDashboard from './components/MaternalHealthDashboard';
-import Container from '@/components/shared/container';
+"use client";
+
+import React from "react";
+import MaternalHealthDashboard from "./components/MaternalHealthDashboard";
+import Container from "@/components/shared/container";
+import { useLanguage } from "@/components/common/useLanguage";
 
 const HealthMonitorPage = () => {
-    return (
-      <Container title="Health Monitoring">
-        <MaternalHealthDashboard />
-      </Container>
-    );
+  const { t } = useLanguage();
+
+  return (
+    <Container title={t.healthMonitor.pageTitle}>
+      <MaternalHealthDashboard />
+    </Container>
+  );
 };
 
 export default HealthMonitorPage;

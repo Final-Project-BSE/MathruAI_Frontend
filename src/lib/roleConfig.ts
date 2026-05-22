@@ -3,6 +3,7 @@ export const ROLES = {
   PREGNANT_MOTHER: 'PREGNANT_MOTHER',
   POST_PREGNANT_MOTHER: 'POST_PREGNANT_MOTHER',
   MIDWIFE: 'MIDWIFE',
+  ADMIN: 'ADMIN',
 } as const;
 
 export type UserRole = typeof ROLES[keyof typeof ROLES];
@@ -13,6 +14,7 @@ export const ROLE_DASHBOARDS: Record<UserRole, string> = {
   [ROLES.PREGNANT_MOTHER]: '/dashboard/pregnancy',
   [ROLES.POST_PREGNANT_MOTHER]: '/dashboard/postpartum',
   [ROLES.MIDWIFE]: '/midwife/dashboard',
+  [ROLES.ADMIN]: '/admin',
 };
 
 // about which roles can access which routes
@@ -22,6 +24,7 @@ export const ROUTE_ACCESS: Record<string, UserRole[]> = {
   '/dashboard/pregnancy': [ROLES.PREGNANT_MOTHER],
   '/dashboard/postpartum': [ROLES.POST_PREGNANT_MOTHER],
   '/midwife/dashboard': [ROLES.MIDWIFE],
+  '/admin': [ROLES.ADMIN],
 
   '/cycle-tracker': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE],
   '/health-monitoring': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.MIDWIFE, ROLES.PREGNANT_MOTHER, ROLES.POST_PREGNANT_MOTHER],
@@ -36,7 +39,6 @@ export const ROUTE_ACCESS: Record<string, UserRole[]> = {
   '/recovery-tracking': [ROLES.POST_PREGNANT_MOTHER],
   '/breastfeeding-support': [ROLES.POST_PREGNANT_MOTHER],
   '/birth-control': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.POST_PREGNANT_MOTHER],
-  '/analytics': [ROLES.HOPE_TO_PREGNANT_MOTHER, ROLES.PREGNANT_MOTHER, ROLES.MIDWIFE, ROLES.POST_PREGNANT_MOTHER],
 
   '/midwife/patient-console': [ROLES.MIDWIFE],
   '/midwife/chatbot': [ROLES.MIDWIFE],

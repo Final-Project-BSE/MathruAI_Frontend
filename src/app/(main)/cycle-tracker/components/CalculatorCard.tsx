@@ -8,6 +8,15 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 
+type CalculatorLabels = {
+  title: string;
+  lastPeriodStartDate: string;
+  averageCycleLength: string;
+  calculateButton: string;
+  calculatingButton: string;
+  calculatedSuccess: string;
+};
+
 type Props = {
   lastPeriodDate: string;
   cycleLength: number;
@@ -18,6 +27,7 @@ type Props = {
   error: string | null;
   success: boolean;
   maxDate: string;
+  labels: CalculatorLabels;
 };
 
 export function CalculatorCard(props: Props) {
@@ -31,30 +41,31 @@ export function CalculatorCard(props: Props) {
     error,
     success,
     maxDate,
+    labels,
   } = props;
 
   return (
-    <div className="flex justify-center items-center  p-4 ">
+    <div className="flex justify-center items-center p-4">
       <Card className="bg-white/90 backdrop-blur-sm w-full max-w-md h-[450px] overflow-y-auto p-6 rounded-lg shadow-lg">
         <CardHeader>
-          <CardTitle className="text-center">Calculate Your Fertility Window</CardTitle>
+          <CardTitle className="text-center">{labels.title}</CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-4 mt-3">
           <div>
-            <Label  htmlFor="lastPeriod">Last Period Start Date</Label>
+            <Label htmlFor="lastPeriod">{labels.lastPeriodStartDate}</Label>
             <Input
               id="lastPeriod"
               type="date"
               value={lastPeriodDate}
               onChange={(e) => onLastPeriodDateChange(e.target.value)}
               max={maxDate}
-              className="mt-3 "
+              className="mt-3"
             />
           </div>
 
           <div>
-            <Label htmlFor="cycleLength">Average Cycle Length (days)</Label>
+            <Label htmlFor="cycleLength">{labels.averageCycleLength}</Label>
             <Input
               id="cycleLength"
               type="number"
@@ -63,7 +74,6 @@ export function CalculatorCard(props: Props) {
               value={cycleLength}
               onChange={(e) => onCycleLengthChange(Number(e.target.value))}
               className="mt-2"
-
             />
           </div>
 
@@ -75,8 +85,8 @@ export function CalculatorCard(props: Props) {
 
           {success && (
             <Alert className="bg-green-50 border-green-200">
-              <AlertDescription className="text-green-800 "  >
-                Fertility window calculated successfully!
+              <AlertDescription className="text-green-800">
+                {labels.calculatedSuccess}
               </AlertDescription>
             </Alert>
           )}
@@ -84,15 +94,15 @@ export function CalculatorCard(props: Props) {
           <Button
             onClick={onCalculate}
             disabled={loading}
-            className="w-full bg-red-500 hover:bg-red-600  mt-5"
+            className="w-full bg-red-500 hover:bg-red-600 mt-5"
           >
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Calculating...
+                {labels.calculatingButton}
               </>
             ) : (
-              "Calculate Fertility Window"
+              labels.calculateButton
             )}
           </Button>
         </CardContent>

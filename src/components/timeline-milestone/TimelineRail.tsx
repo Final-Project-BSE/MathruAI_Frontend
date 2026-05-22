@@ -1,7 +1,9 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { FETAL_DATA, TRIMESTER_RANGES } from "./fetal-data";
+import { useLanguage } from "@/components/common/useLanguage";
+import { translateText } from "@/components/common/translateText";
 
 interface TimelineRailProps {
   selectedWeek: number;
@@ -12,11 +14,19 @@ export default function TimelineRail({
   selectedWeek,
   onSelectWeek,
 }: TimelineRailProps) {
+  const { language } = useLanguage();
+
   const railRef = useRef<HTMLDivElement>(null);
   const pillRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
 
+  const [weekLabel, setWeekLabel] = useState("Week");
+  const [translatedTitles, setTranslatedTitles] = useState<Record<number, string>>(
+    {}
+  );
+
   useEffect(() => {
     const pill = pillRefs.current.get(selectedWeek);
+
     if (pill && railRef.current) {
       pill.scrollIntoView({
         behavior: "smooth",
@@ -26,13 +36,39 @@ export default function TimelineRail({
     }
   }, [selectedWeek]);
 
+  useEffect(() => {
+    let active = true;
+
+    async function loadTranslations() {
+      const [translatedWeek, titlePairs] = await Promise.all([
+        translateText("Week", language),
+        Promise.all(
+          FETAL_DATA.map(async (item) => {
+            const translated = await translateText(item.title, language);
+            return [item.week, translated] as const;
+          })
+        ),
+      ]);
+
+      if (!active) return;
+
+      setWeekLabel(translatedWeek);
+      setTranslatedTitles(Object.fromEntries(titlePairs));
+    }
+
+    void loadTranslations();
+
+    return () => {
+      active = false;
+    };
+  }, [language]);
+
   const getTrimesterColor = (trimester: 1 | 2 | 3) => {
     return TRIMESTER_RANGES[trimester - 1].color;
   };
 
   return (
     <div className="relative">
-      {/* Fade edges */}
       <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[#fed2cc] to-transparent z-10" />
       <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#fed2cc] to-transparent z-10" />
 
@@ -71,12 +107,14 @@ export default function TimelineRail({
                     }
                   : {}
               }
-              title={weekData.title}
+              title={translatedTitles[weekData.week] ?? weekData.title}
               id={`week-pill-${weekData.week}`}
+              aria-label={`${weekLabel} ${weekData.week}`}
             >
               <span className="relative text-xs font-bold">
                 W{weekData.week}
               </span>
+
               <span className="relative text-[10px] opacity-75">
                 {weekData.emoji}
               </span>

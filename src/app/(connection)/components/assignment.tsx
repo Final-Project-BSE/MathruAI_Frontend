@@ -23,6 +23,7 @@ import UserDetailsModal from "./UserDetailsModal";
 import { useAutoDismiss } from "../../../components/common/useAutoDismiss";
 import { cn, hasMidwifeRole, hasMotherRole } from "./utils";
 import TopBarFeatures from "@/components/common/TopBarFeatures";
+import { useLanguage } from "@/components/common/useLanguage";
 
 type Props = {
   userId: number;
@@ -35,6 +36,9 @@ export default function Assignment({
   token,
   roles,
 }: Props): JSX.Element {
+  const { t } = useLanguage();
+  const labels = t.assignment;
+
   const isMidwife = useMemo(() => hasMidwifeRole(roles), [roles]);
   const isMotherSide = useMemo(() => hasMotherRole(roles), [roles]);
 
@@ -136,7 +140,7 @@ export default function Assignment({
         setAssignedMidwife(null);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load data");
+      setError(err instanceof Error ? err.message : labels.messages.failedLoadData);
     } finally {
       setLoading(false);
     }
@@ -263,11 +267,11 @@ export default function Assignment({
       setSuccess("");
 
       if (method === "EMAIL" && !targetEmail.trim()) {
-        throw new Error("Target email is required.");
+        throw new Error(labels.messages.targetEmailRequired);
       }
 
       if (method === "AREA" && !targetArea.trim()) {
-        throw new Error("Target area is required.");
+        throw new Error(labels.messages.targetAreaRequired);
       }
 
       const created = await assignmentApi.sendRequest(
@@ -281,13 +285,13 @@ export default function Assignment({
         token
       );
 
-      setSuccess(`Created ${created.length} request(s) successfully.`);
+      setSuccess(labels.messages.createdRequests(created.length));
       setTargetEmail("");
       setTargetArea("");
       setMessage("");
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send request");
+      setError(err instanceof Error ? err.message : labels.messages.failedSendRequest);
     }
   }
 
@@ -299,8 +303,8 @@ export default function Assignment({
       setError("");
       setSuccess("");
 
-      if (!searchForm.district.trim()) throw new Error("District is required.");
-      if (!searchForm.mohArea.trim()) throw new Error("MOH area is required.");
+      if (!searchForm.district.trim()) throw new Error(labels.messages.districtRequired);
+      if (!searchForm.mohArea.trim()) throw new Error(labels.messages.mohAreaRequired);
 
       const results = await assignmentApi.searchUsersByDistrictAndMohArea(
         userId,
@@ -313,10 +317,10 @@ export default function Assignment({
 
       setSearchResults(results);
       setSearchPopupOpen(true);
-      setSuccess(`Found ${results.length} user(s).`);
+      setSuccess(labels.messages.foundUsers(results.length));
     } catch (err) {
       setSearchResults([]);
-      setError(err instanceof Error ? err.message : "Failed to search users");
+      setError(err instanceof Error ? err.message : labels.messages.failedSearchUsers);
     } finally {
       setSearching(false);
     }
@@ -330,8 +334,8 @@ export default function Assignment({
       setError("");
       setSuccess("");
 
-      if (!mapSearchForm.district.trim()) throw new Error("District is required.");
-      if (!mapSearchForm.mohArea.trim()) throw new Error("MOH area is required.");
+      if (!mapSearchForm.district.trim()) throw new Error(labels.messages.districtRequired);
+      if (!mapSearchForm.mohArea.trim()) throw new Error(labels.messages.mohAreaRequired);
 
       const results = await assignmentApi.searchMappableUsersByDistrictAndMohArea(
         userId,
@@ -343,10 +347,10 @@ export default function Assignment({
       );
 
       setMapUsers(results);
-      setSuccess(`Found ${results.length} mappable user(s).`);
+      setSuccess(labels.messages.foundMappableUsers(results.length));
     } catch (err) {
       setMapUsers([]);
-      setError(err instanceof Error ? err.message : "Failed to search map users");
+      setError(err instanceof Error ? err.message : labels.messages.failedSearchMapUsers);
     } finally {
       setMapSearching(false);
     }
@@ -358,17 +362,19 @@ export default function Assignment({
       setError("");
       setSuccess("");
 
+      const name = `${receiver.firstName} ${receiver.lastName}`;
+
       const created = await assignmentApi.sendRequest(
         userId,
         {
           method: "EMAIL",
           targetEmail: receiver.email,
-          message: `Connection request sent to ${receiver.firstName} ${receiver.lastName}`,
+          message: labels.messages.connectionRequestTo(name),
         },
         token
       );
 
-      setSuccess(`Created ${created.length} request(s) successfully.`);
+      setSuccess(labels.messages.createdRequests(created.length));
 
       setSearchResults((prev) => prev.filter((u) => u.id !== receiver.id));
       setMapUsers((prev) => prev.filter((u) => u.id !== receiver.id));
@@ -379,7 +385,7 @@ export default function Assignment({
 
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send request");
+      setError(err instanceof Error ? err.message : labels.messages.failedSendRequest);
     } finally {
       setSendingSearchUserId(null);
     }
@@ -392,11 +398,11 @@ export default function Assignment({
       setSuccess("");
 
       await assignmentApi.approveRequest(requestId, userId, token);
-      setSuccess("Request approved successfully.");
+      setSuccess(labels.messages.requestApproved);
       await loadData();
       setSelectedRequest(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to approve request");
+      setError(err instanceof Error ? err.message : labels.messages.failedApproveRequest);
     } finally {
       setActionLoadingId(null);
     }
@@ -409,14 +415,14 @@ export default function Assignment({
       setSuccess("");
 
       await assignmentApi.rejectRequest(requestId, userId, token);
-      setSuccess("Request rejected successfully.");
+      setSuccess(labels.messages.requestRejected);
       await loadData();
 
       if (selectedRequest?.id === requestId) {
         setSelectedRequest(null);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to reject request");
+      setError(err instanceof Error ? err.message : labels.messages.failedRejectRequest);
     } finally {
       setActionLoadingId(null);
     }
@@ -429,14 +435,14 @@ export default function Assignment({
       setSuccess("");
 
       await assignmentApi.cancelRequest(requestId, userId, token);
-      setSuccess("Request cancelled successfully.");
+      setSuccess(labels.messages.requestCancelled);
       await loadData();
 
       if (selectedRequest?.id === requestId) {
         setSelectedRequest(null);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to cancel request");
+      setError(err instanceof Error ? err.message : labels.messages.failedCancelRequest);
     } finally {
       setActionLoadingId(null);
     }
@@ -449,11 +455,11 @@ export default function Assignment({
       setSuccess("");
 
       await assignmentApi.cancelAssignedMidwifeForMother(userId, userId, token);
-      setSuccess("Assigned midwife cancelled successfully.");
+      setSuccess(labels.messages.assignedMidwifeCancelled);
       setAssignedMidwife(null);
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to cancel assigned midwife");
+      setError(err instanceof Error ? err.message : labels.messages.failedCancelAssignedMidwife);
     } finally {
       setAssignmentActionLoadingId(null);
     }
@@ -466,7 +472,7 @@ export default function Assignment({
       setSuccess("");
 
       await assignmentApi.cancelAssignedMotherForMidwife(userId, motherUserId, token);
-      setSuccess("Assigned mother cancelled successfully.");
+      setSuccess(labels.messages.assignedMotherCancelled);
       await loadData();
 
       if (selectedUserForDetails?.id === motherUserId) {
@@ -474,7 +480,7 @@ export default function Assignment({
         setSelectedUserStatus(undefined);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to cancel assigned mother");
+      setError(err instanceof Error ? err.message : labels.messages.failedCancelAssignedMother);
     } finally {
       setAssignmentActionLoadingId(null);
     }
@@ -484,7 +490,7 @@ export default function Assignment({
     e.preventDefault();
 
     if (!selectedMotherId) {
-      setError("Select an assigned user first.");
+      setError(labels.messages.selectAssignedUserFirst);
       return;
     }
 
@@ -511,7 +517,7 @@ export default function Assignment({
         token
       );
 
-      setSuccess("Assigned user's profile updated successfully.");
+      setSuccess(labels.messages.assignedUserUpdated);
       setUpdateForm({
         firstName: "",
         lastName: "",
@@ -525,17 +531,17 @@ export default function Assignment({
       });
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update assigned user");
+      setError(err instanceof Error ? err.message : labels.messages.failedUpdateAssignedUser);
     }
   }
 
   const topTabs: Array<{ key: MainTab; label: string; hidden?: boolean }> = [
-    { key: "search-connect", label: "Search & Connect" },
-    { key: "assignment", label: "My Assignment" },
-    { key: "requests", label: "Received & Sent Requests" },
+    { key: "search-connect", label: labels.tabs.searchConnect },
+    { key: "assignment", label: labels.tabs.assignment },
+    { key: "requests", label: labels.tabs.requests },
     {
       key: "update-profile",
-      label: "Update Assigned Mother Profile",
+      label: labels.tabs.updateProfile,
       hidden: !isMidwife,
     },
   ];
@@ -548,12 +554,12 @@ export default function Assignment({
       )}
     >
       <div className="mx-auto max-w-7xl p-4 md:p-6">
-
         {isMotherSide ? <TopBarFeatures /> : null}
         <AssignmentPageHeader
           isMidwife={isMidwife}
           isMotherSide={isMotherSide}
           theme={theme}
+          labels={labels.header}
         />
 
         {visibleError ? (
@@ -629,6 +635,7 @@ export default function Assignment({
               setSelectedUserStatus(status);
             }}
             theme={theme}
+            labels={labels}
           />
         ) : null}
 
@@ -648,6 +655,7 @@ export default function Assignment({
             }
             assignmentActionLoadingId={assignmentActionLoadingId}
             theme={theme}
+            labels={labels}
           />
         ) : null}
 
@@ -664,6 +672,7 @@ export default function Assignment({
             onCancelSentRequest={(requestId) => void handleCancelSentRequest(requestId)}
             actionLoadingId={actionLoadingId}
             theme={theme}
+            labels={labels}
           />
         ) : null}
 
@@ -676,38 +685,41 @@ export default function Assignment({
             setUpdateForm={setUpdateForm}
             onSubmit={handleUpdateAssignedMother}
             theme={theme}
+            labels={labels}
           />
         ) : null}
+
+        <UserDetailsModal
+          user={selectedUserForDetails}
+          open={!!selectedUserForDetails}
+          onClose={() => {
+            setSelectedUserForDetails(null);
+            setSelectedUserStatus(undefined);
+          }}
+          onSendRequest={
+            selectedUserStatus === "AVAILABLE"
+              ? (user) => void handleSendRequestToSearchedUser(user)
+              : undefined
+          }
+          sendingUserId={sendingSearchUserId}
+          statusLabel={selectedUserStatus}
+          theme={theme}
+          labels={labels}
+        />
+
+        <RequestDetailsModal
+          request={selectedRequest}
+          open={!!selectedRequest}
+          onClose={() => setSelectedRequest(null)}
+          type={selectedRequestType}
+          onApprove={(requestId) => void handleApprove(requestId)}
+          onReject={(requestId) => void handleReject(requestId)}
+          onCancel={(requestId) => void handleCancelSentRequest(requestId)}
+          actionLoadingId={actionLoadingId}
+          theme={theme}
+          labels={labels}
+        />
       </div>
-
-      <UserDetailsModal
-        user={selectedUserForDetails}
-        open={!!selectedUserForDetails}
-        onClose={() => {
-          setSelectedUserForDetails(null);
-          setSelectedUserStatus(undefined);
-        }}
-        onSendRequest={
-          selectedUserStatus === "AVAILABLE"
-            ? (user) => void handleSendRequestToSearchedUser(user)
-            : undefined
-        }
-        sendingUserId={sendingSearchUserId}
-        statusLabel={selectedUserStatus}
-        theme={theme}
-      />
-
-      <RequestDetailsModal
-        request={selectedRequest}
-        open={!!selectedRequest}
-        onClose={() => setSelectedRequest(null)}
-        type={selectedRequestType}
-        onApprove={(requestId) => void handleApprove(requestId)}
-        onReject={(requestId) => void handleReject(requestId)}
-        onCancel={(requestId) => void handleCancelSentRequest(requestId)}
-        actionLoadingId={actionLoadingId}
-        theme={theme}
-      />
     </div>
   );
 }

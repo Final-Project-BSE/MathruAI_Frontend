@@ -2,12 +2,16 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useLanguage } from "@/components/common/useLanguage";
 
 interface ProgressCardProps {
   pregnancyWeek: number;
 }
 
 const ProgressCard: React.FC<ProgressCardProps> = ({ pregnancyWeek }) => {
+  const { t } = useLanguage();
+  const labels = t.dailyRecommendation;
+
   const safeWeek = Math.max(0, Math.min(pregnancyWeek, 40));
   const progress = Math.min((safeWeek / 40) * 100, 100);
   const trimester = safeWeek <= 12 ? 1 : safeWeek <= 28 ? 2 : 3;
@@ -24,16 +28,16 @@ const ProgressCard: React.FC<ProgressCardProps> = ({ pregnancyWeek }) => {
             </div>
             <div>
               <h3 className="text-base font-semibold text-gray-900">
-                Pregnancy Progress
+                {labels.progressTitle}
               </h3>
               <p className="text-xs font-normal text-gray-500">
-                Track your current journey and remaining time
+                {labels.progressDescription}
               </p>
             </div>
           </div>
 
           <Badge className="border-[#d04f51]/20 bg-[#d04f51]/10 text-[#d04f51] hover:bg-[#d04f51]/10">
-            Trimester {trimester}
+            {labels.trimester(trimester)}
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -43,10 +47,10 @@ const ProgressCard: React.FC<ProgressCardProps> = ({ pregnancyWeek }) => {
           <div className="mb-3 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">
-                Week {safeWeek} of 40
+                {labels.weekOfForty(safeWeek)}
               </p>
               <p className="text-xs text-gray-500">
-                Pregnancy completion progress
+                {labels.pregnancyCompletionProgress}
               </p>
             </div>
             <div className="text-right">
@@ -68,21 +72,25 @@ const ProgressCard: React.FC<ProgressCardProps> = ({ pregnancyWeek }) => {
           <div className="rounded-2xl border border-[#d04f51]/15 bg-white p-4 text-center shadow-sm">
             <p className="text-3xl font-bold text-[#d04f51]">{safeWeek}</p>
             <p className="mt-2 text-xs font-medium uppercase tracking-wide text-gray-500">
-              Current Week
+              {labels.currentWeek}
             </p>
           </div>
 
           <div className="rounded-2xl border border-[#d04f51]/15 bg-white p-4 text-center shadow-sm">
-            <p className="text-3xl font-bold text-[#d04f51]">{weeksRemaining}</p>
+            <p className="text-3xl font-bold text-[#d04f51]">
+              {weeksRemaining}
+            </p>
             <p className="mt-2 text-xs font-medium uppercase tracking-wide text-gray-500">
-              Weeks to Go
+              {labels.weeksToGo}
             </p>
           </div>
 
           <div className="rounded-2xl border border-[#d04f51]/15 bg-white p-4 text-center shadow-sm">
-            <p className="text-3xl font-bold text-[#d04f51]">{daysRemaining}</p>
+            <p className="text-3xl font-bold text-[#d04f51]">
+              {daysRemaining}
+            </p>
             <p className="mt-2 text-xs font-medium uppercase tracking-wide text-gray-500">
-              Days Left
+              {labels.daysLeft}
             </p>
           </div>
         </div>

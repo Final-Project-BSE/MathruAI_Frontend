@@ -1,35 +1,52 @@
+"use client";
 
+import { useParams } from "next/navigation";
 import methods from "../../../api/birth-Controler/data/methods";
 import { Method } from "../../../../../types/methods";
+import { useLanguage } from "@/components/common/useLanguage";
+import { getBirthControlMethodTranslation } from "../components/birthControlLang";
 
-interface Props {
-  params: { id: string };
-}
+export default function DetailsPage() {
+  const params = useParams<{ id: string }>();
+  const { language, t } = useLanguage();
 
-export default function DetailsPage({ params }: Props) {
   const method: Method | undefined = methods.find(
-    (m) => m.id === params.id
+    (item) => item.id === params.id
   );
 
   if (!method) {
-    return <div className="p-10 text-center">Not found</div>;
+    return (
+      <div className="p-10 text-center text-lg font-medium">
+        {t.birthControl.notFound}
+      </div>
+    );
   }
 
+  const translatedMethod = getBirthControlMethodTranslation(
+    method.id,
+    language
+  );
+
+  const title = translatedMethod?.title ?? method.title;
+  const description = translatedMethod?.description ?? method.description;
+
   return (
-    <div className="p-10">
-      <img
-        src={method.image}
-        alt={method.title}
-        className="w-full max-w-xl mx-auto rounded-xl"
-      />
+    <div className="min-h-screen bg-[#fed2cc] p-4 md:p-10">
+      <div className="mx-auto max-w-4xl rounded-2xl bg-white p-5 shadow-lg md:p-8">
+        <img
+          src={method.image}
+          alt={title}
+          className="mx-auto w-full max-w-xl rounded-xl object-cover"
+        />
 
-      <h1 className="text-3xl font-bold mt-5 text-center">
-        {method.title}
-      </h1>
+        <h1 className="mt-5 text-center text-3xl font-bold">
+          {title}
+        </h1>
 
-      <p className="text-center text-gray-600 mt-3">
-        {method.description}
-      </p>
+        <p className="mx-auto mt-3 max-w-2xl text-center text-gray-600">
+          {description}
+        </p>
+      </div>
     </div>
   );
 }

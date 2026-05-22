@@ -14,6 +14,7 @@ import {
 import NewAppointmentForm from "./NewAppointmentForm";
 import CurrentAppointmentsList from "./CurrentAppointmentsList";
 import type { AppointmentResponseDto } from "@/app/api/appointment/types";
+import { useLanguage } from "@/components/common/useLanguage";
 
 type MotherAppointmentRequestDialogProps = {
   open: boolean;
@@ -45,8 +46,15 @@ export default function MotherAppointmentRequestDialog({
   const [loadingAppointments, setLoadingAppointments] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
+  const { t } = useLanguage();
+  const appointmentText = t.appointment;
+
   const refreshUnavailableDates = useCallback(async () => {
-    const data = await appointmentApi.getUnavailableDates(token, midwifeId, userId);
+    const data = await appointmentApi.getUnavailableDates(
+      token,
+      midwifeId,
+      userId
+    );
     setUnavailableDates(data.dates || []);
     setReasonByDate(data.reasonByDate || {});
   }, [token, midwifeId, userId]);
@@ -61,7 +69,12 @@ export default function MotherAppointmentRequestDialog({
 
       setSlotLoading(true);
       try {
-        const data = await appointmentApi.getBookedSlots(token, midwifeId, userId, targetDate);
+        const data = await appointmentApi.getBookedSlots(
+          token,
+          midwifeId,
+          userId,
+          targetDate
+        );
         setBookedSlots(data.bookedSlots || []);
       } finally {
         setSlotLoading(false);
@@ -93,7 +106,11 @@ export default function MotherAppointmentRequestDialog({
         }
       } catch (err) {
         if (!active) return;
-        setError(err instanceof Error ? err.message : "Failed to load appointment request data.");
+        setError(
+          err instanceof Error
+            ? err.message
+            : appointmentText.failedToLoadRequestData
+        );
       }
     }
 
@@ -102,7 +119,13 @@ export default function MotherAppointmentRequestDialog({
     return () => {
       active = false;
     };
-  }, [open, refreshBookedSlots, refreshUnavailableDates, selectedDateIso]);
+  }, [
+    open,
+    refreshBookedSlots,
+    refreshUnavailableDates,
+    selectedDateIso,
+    appointmentText.failedToLoadRequestData,
+  ]);
 
   useEffect(() => {
     if (!open) return;
@@ -113,7 +136,11 @@ export default function MotherAppointmentRequestDialog({
     async function loadAppointments() {
       try {
         setLoadingAppointments(true);
-        const rows = await appointmentApi.getPatientAppointments(token, midwifeId, userId);
+        const rows = await appointmentApi.getPatientAppointments(
+          token,
+          midwifeId,
+          userId
+        );
         if (!active) return;
 
         // filter out appointments the user deleted locally (persisted in localStorage)
@@ -130,7 +157,11 @@ export default function MotherAppointmentRequestDialog({
         setAppointments(filtered);
       } catch (err) {
         if (!active) return;
-        setError(err instanceof Error ? err.message : "Failed to load appointments.");
+        setError(
+          err instanceof Error
+            ? err.message
+            : appointmentText.failedToLoadAppointments
+        );
       } finally {
         if (active) setLoadingAppointments(false);
       }
@@ -141,7 +172,14 @@ export default function MotherAppointmentRequestDialog({
     return () => {
       active = false;
     };
-  }, [open, mode, token, midwifeId, userId]);
+  }, [
+    open,
+    mode,
+    token,
+    midwifeId,
+    userId,
+    appointmentText.failedToLoadAppointments,
+  ]);
 
   async function handleCancel(row: AppointmentResponseDto) {
     try {
@@ -149,13 +187,24 @@ export default function MotherAppointmentRequestDialog({
       setError("");
       setSuccess("");
 
-      const updated = await appointmentApi.cancelAppointment(token, midwifeId, userId, row.id);
+      const updated = await appointmentApi.cancelAppointment(
+        token,
+        midwifeId,
+        userId,
+        row.id
+      );
 
-      setAppointments((prev) => prev.map((item) => (item.id === row.id ? updated : item)));
-      setSuccess("Appointment canceled.");
+      setAppointments((prev) =>
+        prev.map((item) => (item.id === row.id ? updated : item))
+      );
+      setSuccess(appointmentText.appointmentCanceled);
       window.dispatchEvent(new Event("appointments:changed"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to cancel appointment.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : appointmentText.failedToCancelAppointment
+      );
     } finally {
       setActionLoadingId(null);
     }
@@ -167,13 +216,24 @@ export default function MotherAppointmentRequestDialog({
       setError("");
       setSuccess("");
 
-      const updated = await appointmentApi.completeAppointment(token, midwifeId, userId, row.id);
+      const updated = await appointmentApi.completeAppointment(
+        token,
+        midwifeId,
+        userId,
+        row.id
+      );
 
-      setAppointments((prev) => prev.map((item) => (item.id === row.id ? updated : item)));
-      setSuccess("Appointment marked as completed.");
+      setAppointments((prev) =>
+        prev.map((item) => (item.id === row.id ? updated : item))
+      );
+      setSuccess(appointmentText.appointmentCompleted);
       window.dispatchEvent(new Event("appointments:changed"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to complete appointment.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : appointmentText.failedToCompleteAppointment
+      );
     } finally {
       setActionLoadingId(null);
     }
@@ -215,10 +275,18 @@ export default function MotherAppointmentRequestDialog({
       }
 
       setAppointments((prev) => prev.filter((item) => item.id !== row.id));
-      setSuccess(serverDeleted ? "Appointment deleted." : "Appointment removed locally.");
+      setSuccess(
+        serverDeleted
+          ? appointmentText.appointmentDeleted
+          : appointmentText.appointmentRemovedLocally
+      );
       window.dispatchEvent(new Event("appointments:changed"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete appointment.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : appointmentText.failedToDeleteAppointment
+      );
     } finally {
       setActionLoadingId(null);
     }
@@ -230,24 +298,37 @@ export default function MotherAppointmentRequestDialog({
       setError("");
       setSuccess("");
 
-      await appointmentApi.createAppointmentRequest(token, midwifeId, userId, payload);
+      await appointmentApi.createAppointmentRequest(
+        token,
+        midwifeId,
+        userId,
+        payload
+      );
 
       await Promise.all([
         refreshUnavailableDates(),
         refreshBookedSlots(payload.appointmentDate),
       ]);
 
-      setSuccess("Appointment request submitted successfully.");
+      setSuccess(appointmentText.appointmentSubmitted);
       window.dispatchEvent(new Event("appointments:changed"));
       window.dispatchEvent(new Event("appointment-requests:changed"));
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to submit appointment request.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : appointmentText.failedToSubmitRequest
+      );
       await Promise.all([refreshUnavailableDates(), refreshBookedSlots()]);
     } finally {
       setSaving(false);
     }
   }
+
+  const scheduledCount = appointments.filter(
+    (a) => a.status === "SCHEDULED"
+  ).length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -264,7 +345,7 @@ export default function MotherAppointmentRequestDialog({
                     : "rounded-full bg-[#d04f51]/20 px-4 py-2 text-sm font-medium text-white hover:bg-[#d04f51]/30"
                 }
               >
-                Request Appointment
+                {appointmentText.requestAppointment}
               </button>
 
               <button
@@ -276,7 +357,7 @@ export default function MotherAppointmentRequestDialog({
                     : "relative rounded-full bg-[#d04f51]/20 px-4 py-2 text-sm font-medium text-white hover:bg-[#d04f51]/30"
                 }
               >
-                Scheduled Appointments
+                {appointmentText.scheduledAppointments}
                 {appointments.length > 0 && (
                   <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
                     {appointments.length}
@@ -287,11 +368,16 @@ export default function MotherAppointmentRequestDialog({
           </div>
 
           <div>
-            <DialogTitle className="mt-0 text-lg font-semibold text-zinc-900">{mode === "request" ? "Request Appointment" : "Scheduled Appointments"}</DialogTitle>
+            <DialogTitle className="mt-0 text-lg font-semibold text-zinc-900">
+              {mode === "request"
+                ? appointmentText.requestAppointment
+                : appointmentText.scheduledAppointments}
+            </DialogTitle>
+
             <DialogDescription className="mt-1 text-zinc-600">
               {mode === "request"
-                ? "Submit an appointment request to your midwife."
-                : "View your scheduled appointments from your midwife."}
+                ? appointmentText.requestDescription
+                : appointmentText.scheduledDescription}
             </DialogDescription>
           </div>
         </DialogHeader>
@@ -335,8 +421,9 @@ export default function MotherAppointmentRequestDialog({
         ) : (
           <div className="space-y-3">
             <p className="text-xs text-zinc-600">
-              Current scheduled appointments: {appointments.filter((a) => a.status === "SCHEDULED").length}
+              {appointmentText.currentScheduledAppointments}: {scheduledCount}
             </p>
+
             <CurrentAppointmentsList
               appointments={appointments}
               loading={loadingAppointments}

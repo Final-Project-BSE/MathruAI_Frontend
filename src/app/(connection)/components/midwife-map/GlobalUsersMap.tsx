@@ -3,6 +3,8 @@
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import L from "leaflet";
 import type { MapUserResponseDto } from "../../../api/user-assign/types";
+import type { AssignmentTranslations } from "../assignmentLang";
+import { getStatusLabel } from "../assignmentLang";
 
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 
@@ -21,6 +23,7 @@ type Props = {
   onSendRequest: (user: MapUserResponseDto) => void;
   onViewDetails: (user: MapUserResponseDto) => void;
   mode: "patient-midwives" | "midwife-patients";
+  labels: AssignmentTranslations;
 };
 
 const DEFAULT_CENTER: [number, number] = [7.8731, 80.7718];
@@ -45,6 +48,7 @@ export default function GlobalUsersMap({
   onSendRequest,
   onViewDetails,
   mode,
+  labels,
 }: Props) {
   const validUsers = users.filter(hasCoordinates);
 
@@ -81,33 +85,33 @@ export default function GlobalUsersMap({
                         status
                       )}`}
                     >
-                      {status}
+                      {getStatusLabel(status, labels)}
                     </span>
                   </div>
 
                   <div className="space-y-1 text-[11px] text-gray-700">
                     <p>
-                      <span className="font-medium">Address:</span>{" "}
-                      {user.address || "-"}
+                      <span className="font-medium">{labels.common.address}:</span>{" "}
+                      {user.address || labels.common.unavailable}
                     </p>
                     <p>
-                      <span className="font-medium">District:</span>{" "}
-                      {user.district || "-"}
+                      <span className="font-medium">{labels.common.district}:</span>{" "}
+                      {user.district || labels.common.unavailable}
                     </p>
                     <p>
-                      <span className="font-medium">MOH Area:</span>{" "}
-                      {user.mohArea || "-"}
+                      <span className="font-medium">{labels.common.mohArea}:</span>{" "}
+                      {user.mohArea || labels.common.unavailable}
                     </p>
 
                     {mode === "patient-midwives" ? (
                       <p>
-                        <span className="font-medium">Midwife Name:</span>{" "}
+                        <span className="font-medium">{labels.details.midwifeName}:</span>{" "}
                         {`${user.firstName} ${user.lastName}`}
                       </p>
                     ) : (
                       <p>
-                        <span className="font-medium">Assigned Midwife:</span>{" "}
-                        {user.assignedMidwifeName || "-"}
+                        <span className="font-medium">{labels.details.assignedMidwife}:</span>{" "}
+                        {user.assignedMidwifeName || labels.common.unavailable}
                       </p>
                     )}
                   </div>
@@ -119,7 +123,9 @@ export default function GlobalUsersMap({
                       disabled={!canSend || sendingUserId === user.id}
                       className="rounded-lg bg-[#d04f51] px-3 py-2 text-sm text-white disabled:opacity-50"
                     >
-                      {sendingUserId === user.id ? "Sending..." : "Send Request"}
+                      {sendingUserId === user.id
+                        ? labels.common.sending
+                        : labels.common.sendRequest}
                     </button>
 
                     <button
@@ -127,7 +133,7 @@ export default function GlobalUsersMap({
                       onClick={() => onViewDetails(user)}
                       className="rounded-lg border border-[#d04f51] px-3 py-2 text-sm text-[#d04f51]"
                     >
-                      View
+                      {labels.common.view}
                     </button>
                   </div>
                 </div>

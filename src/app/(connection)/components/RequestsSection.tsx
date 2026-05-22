@@ -2,6 +2,8 @@
 
 import type { ConnectionRequestResponseDto } from "../../api/user-assign/types";
 import StatusBadge from "./StatusBadge";
+import type { AssignmentTranslations } from "./assignmentLang";
+import { getStatusLabel } from "./assignmentLang";
 import { cn } from "./utils";
 
 type Props = {
@@ -16,6 +18,7 @@ type Props = {
   onCancelSentRequest: (requestId: number) => void;
   actionLoadingId?: number | null;
   theme: "light" | "dark";
+  labels: AssignmentTranslations;
 };
 
 export default function RequestsSection({
@@ -27,6 +30,7 @@ export default function RequestsSection({
   onCancelSentRequest,
   actionLoadingId,
   theme,
+  labels,
 }: Props) {
   const isLightTheme = theme === "light";
 
@@ -53,12 +57,12 @@ export default function RequestsSection({
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <section className={sectionClass}>
-        <h2 className={titleClass}>Received Requests</h2>
+        <h2 className={titleClass}>{labels.requests.receivedRequests}</h2>
 
         {loading ? (
-          <p className={mutedClass}>Loading...</p>
+          <p className={mutedClass}>{labels.common.loading}</p>
         ) : receivedRequests.length === 0 ? (
-          <p className={mutedClass}>No received requests.</p>
+          <p className={mutedClass}>{labels.requests.noReceivedRequests}</p>
         ) : (
           <div className="space-y-3">
             {receivedRequests.map((req) => {
@@ -76,7 +80,10 @@ export default function RequestsSection({
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      <StatusBadge status={req.status} />
+                      <StatusBadge
+                        status={req.status}
+                        label={getStatusLabel(req.status, labels)}
+                      />
                       {isPending ? (
                         <button
                           type="button"
@@ -84,13 +91,14 @@ export default function RequestsSection({
                           disabled={isLoading}
                           className="rounded-md bg-red-600 px-3 py-2 text-xs text-white hover:bg-red-500 disabled:opacity-50"
                         >
-                          Reject
+                          {labels.common.reject}
                         </button>
                       ) : null}
                       <button
                         type="button"
                         onClick={() => onViewRequest(req, "received")}
                         className={actionClass}
+                        aria-label={labels.common.view}
                       >
                         →
                       </button>
@@ -104,12 +112,12 @@ export default function RequestsSection({
       </section>
 
       <section className={sectionClass}>
-        <h2 className={titleClass}>Sent Requests</h2>
+        <h2 className={titleClass}>{labels.requests.sentRequests}</h2>
 
         {loading ? (
-          <p className={mutedClass}>Loading...</p>
+          <p className={mutedClass}>{labels.common.loading}</p>
         ) : sentRequests.length === 0 ? (
-          <p className={mutedClass}>No sent requests.</p>
+          <p className={mutedClass}>{labels.requests.noSentRequests}</p>
         ) : (
           <div className="space-y-3">
             {sentRequests.map((req) => {
@@ -127,7 +135,10 @@ export default function RequestsSection({
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      <StatusBadge status={req.status} />
+                      <StatusBadge
+                        status={req.status}
+                        label={getStatusLabel(req.status, labels)}
+                      />
                       {isPending ? (
                         <button
                           type="button"
@@ -135,13 +146,14 @@ export default function RequestsSection({
                           disabled={isLoading}
                           className="rounded-md bg-red-600 px-3 py-2 text-xs text-white hover:bg-red-500 disabled:opacity-50"
                         >
-                          Cancel
+                          {labels.common.cancel}
                         </button>
                       ) : null}
                       <button
                         type="button"
                         onClick={() => onViewRequest(req, "sent")}
                         className={actionClass}
+                        aria-label={labels.common.view}
                       >
                         →
                       </button>

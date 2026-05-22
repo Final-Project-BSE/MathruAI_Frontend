@@ -1,22 +1,58 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { PasswordInput } from '@/components/ui/password-input';
-import profileApi from '@/app/api/profile/api';
+import React, { useEffect, useState } from "react";
+import { PasswordInput } from "@/components/ui/password-input";
+import profileApi from "@/app/api/profile/api";
+import { useLanguage } from "@/components/common/useLanguage";
+import { translateText } from "@/components/common/translateText";
 
 interface Props {
   token: string;
   userId: number;
 }
 
+type PasswordField = "currentPassword" | "newPassword" | "confirmNewPassword";
+
 const ChangePasswordCard = ({ token, userId }: Props) => {
+  const { language, t } = useLanguage();
+
   const [form, setForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmNewPassword: '',
+    currentPassword: "",
+    newPassword: "",
+    confirmNewPassword: "",
   });
+
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  const translatedMessage = useTranslatedText(message?.text || "", language);
+
+  const labels = t.profile.changePassword;
+
+  const fieldConfig: Array<{
+    name: PasswordField;
+    label: string;
+    placeholder: string;
+  }> = [
+    {
+      name: "currentPassword",
+      label: labels.currentPassword,
+      placeholder: labels.currentPasswordPlaceholder,
+    },
+    {
+      name: "newPassword",
+      label: labels.newPassword,
+      placeholder: labels.newPasswordPlaceholder,
+    },
+    {
+      name: "confirmNewPassword",
+      label: labels.confirmNewPassword,
+      placeholder: labels.confirmNewPasswordPlaceholder,
+    },
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,14 +61,18 @@ const ChangePasswordCard = ({ token, userId }: Props) => {
 
     try {
       const msg = await profileApi.changePassword(token, userId, form);
-      setMessage({ type: 'success', text: msg });
+      setMessage({ type: "success", text: msg });
+
       setForm({
-        currentPassword: '',
-        newPassword: '',
-        confirmNewPassword: '',
+        currentPassword: "",
+        newPassword: "",
+        confirmNewPassword: "",
       });
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.message });
+      setMessage({
+        type: "error",
+        text: err.message || labels.failedToChangePassword,
+      });
     } finally {
       setLoading(false);
     }
@@ -41,30 +81,28 @@ const ChangePasswordCard = ({ token, userId }: Props) => {
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
       <h2 className="mb-5 flex items-center gap-2 text-lg font-semibold text-gray-800">
-        Change Password
+        {labels.title}
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
-        {[
-          'currentPassword',
-          'newPassword',
-          'confirmNewPassword',
-        ].map((field) => (
-          <div key={field}>
+        {fieldConfig.map((field) => (
+          <div key={field.name}>
             <label className="mb-1 block text-xs font-medium capitalize text-gray-500">
-              {field.replace(/([A-Z])/g, ' $1')}
+              {field.label}
             </label>
 
             <PasswordInput
-              name={field}
-              placeholder={`Enter ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`}
+              name={field.name}
+              placeholder={field.placeholder}
               className="w-full"
               autoComplete={
-                field === 'currentPassword' ? 'current-password' : 'new-password'
+                field.name === "currentPassword"
+                  ? "current-password"
+                  : "new-password"
               }
-              value={form[field as keyof typeof form]}
+              value={form[field.name]}
               onChange={(e) =>
-                setForm({ ...form, [field]: e.target.value })
+                setForm({ ...form, [field.name]: e.target.value })
               }
             />
           </div>
@@ -73,10 +111,10 @@ const ChangePasswordCard = ({ token, userId }: Props) => {
         {message && (
           <p
             className={`text-xs font-medium ${
-              message.type === 'success' ? 'text-green-500' : 'text-red-500'
+              message.type === "success" ? "text-green-500" : "text-red-500"
             }`}
           >
-            {message.text}
+            {translatedMessage || message.text}
           </p>
         )}
 
@@ -85,11 +123,45 @@ const ChangePasswordCard = ({ token, userId }: Props) => {
           disabled={loading}
           className="w-full rounded-lg bg-[#D04F51] py-2 text-sm font-semibold text-white transition hover:bg-[#BA4547] disabled:opacity-60"
         >
-          {loading ? 'Updating...' : 'Update Password'}
+          {loading ? labels.updating : labels.updatePassword}
         </button>
       </form>
     </div>
   );
 };
+
+function useTranslatedText(text: string, language: "en" | "si" | "ta") {
+  const [translated, setTranslated] = useState(text);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      if (!text) {
+        setTranslated("");
+        return;
+      }
+
+      if (language === "en") {
+        setTranslated(text);
+        return;
+      }
+
+      const result = await translateText(text, language);
+
+      if (!cancelled) {
+        setTranslated(result);
+      }
+    };
+
+    void run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [text, language]);
+
+  return translated;
+}
 
 export default ChangePasswordCard;

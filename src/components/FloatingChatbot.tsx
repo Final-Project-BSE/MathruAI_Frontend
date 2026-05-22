@@ -55,7 +55,7 @@ export function FloatingChatbot() {
       const session = await getSession()
       if (session?.user?.token) {
         setToken(session.user.token)
-        console.log("✅ JWT token loaded for FloatingChatbot")
+        console.log("JWT token loaded for FloatingChatbot")
         createNewSession()
       } else {
         console.warn("⚠️ No session found — user needs to log in")
@@ -329,7 +329,7 @@ export function FloatingChatbot() {
                             className={cn(
                               "max-w-[80%] rounded-lg px-4 py-2 text-sm break-words whitespace-pre-wrap",
                               message.sender === 'user'
-                                ? "bg-pink-600 text-white"
+                                ? "bg-[#d04f51] text-white"
                                 : "bg-gray-100 text-gray-800"
                             )}
                           >

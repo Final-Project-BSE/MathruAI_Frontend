@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import Link from 'next/link';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronDown,
   Bell,
@@ -17,44 +17,42 @@ import {
   Menu,
   LogOut,
   MessageSquare,
-} from "lucide-react";
-import Logo from "@/components/common/Logo";
-import { logout, getSession } from "@/lib/authentication";
-import { useRouter } from "next/navigation";
-import MessagesPopup from "../../../(connection)/messages/MessagesPopup";
-import { getcuruser } from "@/app/api/user/api";
-import type { UserResponseDto } from "@/app/api/user/types";
-import { chatApi } from "@/app/api/chat/api";
-import ProtectedImage from "@/lib/ProtectedImage";
+} from 'lucide-react';
+import Logo from '@/components/common/Logo';
+import { logout, getSession } from '@/lib/authentication';
+import { useRouter } from 'next/navigation';
+import MessagesPopup from '../../../(connection)/messages/MessagesPopup';
+import { getcuruser } from '@/app/api/user/api';
+import type { UserResponseDto } from '@/app/api/user/types';
+import { chatApi } from '@/app/api/chat/api';
+import ProtectedImage from '@/lib/ProtectedImage';
 
 const navLinks = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutGrid },
-  { name: "Sample", href: "#", icon: BarChart3 },
-  { name: "Checklist", href: "/midwife/checklist", icon: Activity },
-  { name: "Three Posha", href: "#", icon: FileText },
-  { name: "Analytics", href: "#", icon: Wallet },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutGrid },
+  { name: 'Checklist', href: '/midwife/checklist', icon: Activity },
 ];
 
 function getFullName(user: UserResponseDto | null) {
-  if (!user) return "Loading...";
-  const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
-  return fullName || "User";
+  if (!user) return 'Loading...';
+
+  const fullName = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
+  return fullName || 'User';
 }
 
 function getInitials(user: UserResponseDto | null) {
-  if (!user) return "?";
+  if (!user) return '?';
 
-  const first = user.firstName?.trim()?.[0] ?? "";
-  const last = user.lastName?.trim()?.[0] ?? "";
+  const first = user.firstName?.trim()?.[0] ?? '';
+  const last = user.lastName?.trim()?.[0] ?? '';
 
-  return `${first}${last}`.toUpperCase() || "U";
+  return `${first}${last}`.toUpperCase() || 'U';
 }
 
 export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const searchRef = useRef<HTMLDivElement | null>(null);
@@ -64,14 +62,14 @@ export default function Navbar() {
   const router = useRouter();
 
   const [messagesOpen, setMessagesOpen] = useState(false);
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState('');
   const [me, setMe] = useState<UserResponseDto | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const fullName = useMemo(() => getFullName(me), [me]);
   const initials = useMemo(() => getInitials(me), [me]);
-  const userEmail = me?.email || "No email";
-  const profileImageUrl = me?.profileImageUrl || "";
+  const userEmail = me?.email || 'No email';
+  const profileImageUrl = me?.profileImageUrl || '';
 
   const avatarFallback = (
     <div className="flex h-full w-full items-center justify-center bg-[#2a3145] text-[10px] font-semibold text-white">
@@ -81,6 +79,7 @@ export default function Navbar() {
 
   const filteredItems = useMemo(() => {
     const q = query.trim().toLowerCase();
+
     if (!q) return navLinks;
 
     return navLinks.filter((item) => item.name.toLowerCase().includes(q));
@@ -110,8 +109,9 @@ export default function Navbar() {
       }
     }
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -119,16 +119,16 @@ export default function Navbar() {
   }, [query]);
 
   useEffect(() => {
-    document.body.style.overflow = mobileMenuOpen ? "hidden" : "";
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
 
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     };
   }, [mobileMenuOpen]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         setSearchOpen(false);
         setMobileMenuOpen(false);
         setProfileDropdownOpen(false);
@@ -136,8 +136,9 @@ export default function Navbar() {
       }
     }
 
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener('keydown', onKeyDown);
+
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
   useEffect(() => {
@@ -146,7 +147,7 @@ export default function Navbar() {
     async function loadCurrentUser() {
       try {
         const session = await getSession();
-        const jwt = session?.user?.token || "";
+        const jwt = session?.user?.token || '';
 
         if (!jwt) return;
 
@@ -158,10 +159,20 @@ export default function Navbar() {
         setToken(jwt);
         setMe(user);
         setUnreadCount(unread.unreadCount || 0);
+
+        /*
+          Keep only userId if you still need it somewhere.
+          Do not store JWT in localStorage.
+        */
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('token');
+          localStorage.setItem('userId', String(user.id));
+        }
       } catch (error) {
-        console.error("Failed to load navbar user:", error);
+        console.error('Failed to load navbar user:', error);
 
         if (!active) return;
+
         setUnreadCount(0);
       }
     }
@@ -176,8 +187,13 @@ export default function Navbar() {
   async function refreshUnreadCount() {
     if (!token || !me?.id) return;
 
-    const unread = await chatApi.getUnreadCount(me.id, token);
-    setUnreadCount(unread.unreadCount || 0);
+    try {
+      const unread = await chatApi.getUnreadCount(me.id, token);
+      setUnreadCount(unread.unreadCount || 0);
+    } catch (error) {
+      console.error('Failed to refresh unread count:', error);
+      setUnreadCount(0);
+    }
   }
 
   function handleSearchToggle() {
@@ -188,7 +204,7 @@ export default function Navbar() {
     setSearchOpen(false);
     setMobileMenuOpen(false);
     setProfileDropdownOpen(false);
-    setQuery("");
+    setQuery('');
     setSelectedIndex(0);
     router.push(href);
   }
@@ -197,31 +213,40 @@ export default function Navbar() {
     setProfileDropdownOpen(false);
     setMobileMenuOpen(false);
 
-    await logout();
-    router.push("/sign-in");
+    try {
+      await logout();
+    } finally {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+      }
+
+      router.push('/sign-in');
+      router.refresh();
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (!filteredItems.length) return;
 
-    if (e.key === "ArrowDown") {
+    if (e.key === 'ArrowDown') {
       e.preventDefault();
       setSelectedIndex((prev) =>
-        prev < filteredItems.length - 1 ? prev + 1 : prev,
+        prev < filteredItems.length - 1 ? prev + 1 : prev
       );
     }
 
-    if (e.key === "ArrowUp") {
+    if (e.key === 'ArrowUp') {
       e.preventDefault();
       setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
     }
 
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       e.preventDefault();
       handleSelectItem(filteredItems[selectedIndex].href);
     }
 
-    if (e.key === "Escape") {
+    if (e.key === 'Escape') {
       setSearchOpen(false);
       setSelectedIndex(0);
     }
@@ -290,7 +315,7 @@ export default function Navbar() {
                   <ChevronDown
                     size={12}
                     className={`text-white/70 transition-transform ${
-                      profileDropdownOpen ? "rotate-180" : ""
+                      profileDropdownOpen ? 'rotate-180' : ''
                     }`}
                   />
                 </button>
@@ -301,7 +326,7 @@ export default function Navbar() {
                       type="button"
                       onClick={() => {
                         setProfileDropdownOpen(false);
-                        router.push("/midwife/profile");
+                        router.push('/midwife/profile');
                       }}
                       className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-white/75 transition hover:bg-white/5 hover:text-white"
                     >
@@ -333,7 +358,7 @@ export default function Navbar() {
 
               <button
                 type="button"
-                onClick={() => router.push("/midwife/vaccinations")}
+                onClick={() => router.push('/midwife/vaccinations')}
                 className="inline-flex items-center gap-2 rounded-xl bg-[#d9c2ff] px-5 py-2 text-[12px] font-medium text-[#121212] shadow-[0_0_0_1px_rgba(255,255,255,0.08)] transition hover:brightness-105"
               >
                 <span>Vaccination</span>
@@ -353,8 +378,8 @@ export default function Navbar() {
                     href={item.href}
                     className={`shrink-0 rounded-full px-4 py-2 text-center text-[11px] font-medium transition ${
                       active
-                        ? "bg-white/10 text-white"
-                        : "text-white/55 hover:bg-white/5 hover:text-white"
+                        ? 'bg-white/10 text-white'
+                        : 'text-white/55 hover:bg-white/5 hover:text-white'
                     }`}
                     title={item.name}
                   >
@@ -368,21 +393,11 @@ export default function Navbar() {
           <div className="ml-auto flex h-[52px] shrink-0 items-center gap-2 bg-black px-1 sm:gap-3 sm:px-2 lg:px-4">
             <button
               type="button"
-              onClick={() => router.push("/midwife/vaccinations")}
+              onClick={() => router.push('/midwife/vaccinations')}
               className="hidden items-center gap-2 rounded-xl bg-[#d9c2ff] px-3 py-2 text-[11px] font-medium text-[#121212] transition hover:brightness-105 md:inline-flex lg:hidden"
             >
               <span>Vaccination</span>
               <Syringe size={12} strokeWidth={2.2} />
-            </button>
-
-            <button
-              type="button"
-              className="relative flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/80 transition hover:bg-white/[0.06] hover:text-white"
-            >
-              <Bell size={14} />
-              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#8b5cf6] px-1 text-[8px] font-semibold text-white">
-                2
-              </span>
             </button>
 
             <button
@@ -395,7 +410,7 @@ export default function Navbar() {
 
               {unreadCount > 0 ? (
                 <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-600 px-1 text-[8px] font-semibold text-white">
-                  {unreadCount > 99 ? "99+" : unreadCount}
+                  {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               ) : null}
             </button>
@@ -404,13 +419,13 @@ export default function Navbar() {
               <div
                 className={`absolute right-0 top-1/2 -translate-y-1/2 overflow-hidden transition-all duration-300 ease-out ${
                   searchOpen
-                    ? "w-[min(320px,calc(100vw-24px))] opacity-100"
-                    : "pointer-events-none w-9 opacity-0 sm:w-10"
+                    ? 'w-[min(320px,calc(100vw-24px))] opacity-100'
+                    : 'pointer-events-none w-9 opacity-0 sm:w-10'
                 }`}
               >
                 <div
                   className={`flex h-10 items-center rounded-full border border-white/10 bg-black shadow-[0_12px_40px_rgba(0,0,0,0.35)] transition-all duration-300 ease-out ${
-                    searchOpen ? "translate-x-0 scale-100" : "translate-x-3 scale-95"
+                    searchOpen ? 'translate-x-0 scale-100' : 'translate-x-3 scale-95'
                   }`}
                 >
                   <button
@@ -434,7 +449,7 @@ export default function Navbar() {
                   {query && (
                     <button
                       type="button"
-                      onClick={() => setQuery("")}
+                      onClick={() => setQuery('')}
                       className="mr-2 flex h-6 w-6 items-center justify-center rounded-full text-white/50 transition hover:bg-white/10 hover:text-white"
                       aria-label="Clear search"
                     >
@@ -446,8 +461,8 @@ export default function Navbar() {
                 <div
                   className={`absolute right-0 top-12 w-full rounded-2xl border border-white/10 bg-black p-2 shadow-[0_12px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-all duration-300 ease-out ${
                     searchOpen
-                      ? "translate-y-0 opacity-100"
-                      : "pointer-events-none -translate-y-2 opacity-0"
+                      ? 'translate-y-0 opacity-100'
+                      : 'pointer-events-none -translate-y-2 opacity-0'
                   }`}
                 >
                   <div className="mb-2 px-2 pt-1 text-[10px] uppercase tracking-[0.18em] text-white/35">
@@ -468,8 +483,8 @@ export default function Navbar() {
                             onMouseEnter={() => setSelectedIndex(index)}
                             className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition ${
                               active
-                                ? "bg-white/10 text-white"
-                                : "text-white/75 hover:bg-white/5 hover:text-white"
+                                ? 'bg-white/10 text-white'
+                                : 'text-white/75 hover:bg-white/5 hover:text-white'
                             }`}
                           >
                             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5">
@@ -508,7 +523,7 @@ export default function Navbar() {
 
             <button
               type="button"
-              onClick={() => router.push("/midwife/profile")}
+              onClick={() => router.push('/midwife/profile')}
               className="hidden h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 text-white/80 transition hover:bg-white/[0.06] hover:text-white sm:flex"
             >
               <span className="text-[10px]">Settings</span>
@@ -520,19 +535,19 @@ export default function Navbar() {
 
       <div
         className={`fixed inset-0 z-50 lg:hidden ${
-          mobileMenuOpen ? "pointer-events-auto" : "pointer-events-none"
+          mobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'
         }`}
       >
         <div
           onClick={() => setMobileMenuOpen(false)}
           className={`absolute inset-0 bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 ${
-            mobileMenuOpen ? "opacity-100" : "opacity-0"
+            mobileMenuOpen ? 'opacity-100' : 'opacity-0'
           }`}
         />
 
         <aside
           className={`absolute left-0 top-0 h-full w-[88%] max-w-[360px] border-r border-white/10 bg-black shadow-[0_20px_80px_rgba(0,0,0,0.45)] transition-transform duration-300 ease-out ${
-            mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+            mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
           <div className="flex h-full flex-col">
@@ -563,7 +578,7 @@ export default function Navbar() {
                 type="button"
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  router.push("/midwife/profile");
+                  router.push('/midwife/profile');
                 }}
                 className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 transition hover:bg-white/[0.05]"
               >
@@ -602,7 +617,7 @@ export default function Navbar() {
 
               <button
                 type="button"
-                onClick={() => router.push("/midwife/vaccinations")}
+                onClick={() => router.push('/midwife/vaccinations')}
                 className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#d9c2ff] px-4 py-3 text-[13px] font-medium text-[#121212] transition hover:brightness-105"
               >
                 <span>Vaccination</span>
@@ -623,8 +638,8 @@ export default function Navbar() {
                       onClick={() => handleSelectItem(item.href)}
                       className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition ${
                         active
-                          ? "bg-white/10 text-white"
-                          : "text-white/70 hover:bg-white/5 hover:text-white"
+                          ? 'bg-white/10 text-white'
+                          : 'text-white/70 hover:bg-white/5 hover:text-white'
                       }`}
                     >
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/5">
@@ -650,7 +665,7 @@ export default function Navbar() {
                 type="button"
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  router.push("/midwife/profile");
+                  router.push('/midwife/profile');
                 }}
                 className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-[13px] text-white/80 transition hover:bg-white/[0.06] hover:text-white"
               >

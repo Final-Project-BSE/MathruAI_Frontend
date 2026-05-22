@@ -1,38 +1,41 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Heart, AlertTriangle } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Heart, AlertTriangle } from "lucide-react";
 
-import DashboardHeader from './DashboardHeader';
-import ErrorAlert from './ErrorAlert';
-import SuccessAlert from './SuccessAlert';
-import ProgressCard from './ProgressCard';
-import RecommendationCard from './RecommendationCard';
-import HistorySection from './HistorySection';
-import SettingsModal from './SettingsModal';
+import DashboardHeader from "./DashboardHeader";
+import ErrorAlert from "./ErrorAlert";
+import SuccessAlert from "./SuccessAlert";
+import ProgressCard from "./ProgressCard";
+import RecommendationCard from "./RecommendationCard";
+import HistorySection from "./HistorySection";
+import SettingsModal from "./SettingsModal";
 
 import type {
   UserData,
   RecommendationData,
   HistoryItem,
   ChecklistItem,
-} from '../../../api/dailyrecommendation/types';
+} from "../../../api/dailyrecommendation/types";
 
-import apis from '../../../api/dailyrecommendation/api';
-import { LoadingState } from '@/components/common/LoadingState';
-import TopBarFeatures from '@/components/common/TopBarFeatures';
-
-const PRIMARY = '#d04f51';
+import apis from "../../../api/dailyrecommendation/api";
+import { LoadingState } from "@/components/common/LoadingState";
+import TopBarFeatures from "@/components/common/TopBarFeatures";
+import { useLanguage } from "@/components/common/useLanguage";
 
 const DailyRecommendationDashboard = () => {
+  const { t } = useLanguage();
+  const labels = t.dailyRecommendation;
+
   const [token, setToken] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
 
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [recommendation, setRecommendation] = useState<RecommendationData | null>(null);
+  const [recommendation, setRecommendation] =
+    useState<RecommendationData | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
   const [loading, setLoading] = useState(false);
@@ -41,18 +44,20 @@ const DailyRecommendationDashboard = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
 
-  const [activePanel, setActivePanel] = useState<'checklist' | 'history'>('checklist');
+  const [activePanel, setActivePanel] = useState<"checklist" | "history">(
+    "checklist"
+  );
 
   useEffect(() => {
     const initialize = async () => {
       try {
-        const { getSession } = await import('@/lib/authentication');
+        const { getSession } = await import("@/lib/authentication");
         const session = await getSession();
 
         const jwt = session?.user?.token;
 
         if (!jwt) {
-          setError('Please log in to access the daily recommendations dashboard.');
+          setError(labels.loginRequiredError);
           setIsAuthenticated(false);
           setLoadingData(false);
           return;
@@ -68,7 +73,8 @@ const DailyRecommendationDashboard = () => {
           const raw = (me.user_id ?? me.id) as unknown;
 
           if (raw !== undefined && raw !== null) {
-            const parsed = typeof raw === 'number' ? raw : parseInt(String(raw), 10);
+            const parsed =
+              typeof raw === "number" ? raw : parseInt(String(raw), 10);
             if (!Number.isNaN(parsed)) uid = parsed;
           }
         } catch {
@@ -76,7 +82,7 @@ const DailyRecommendationDashboard = () => {
         }
 
         if (!uid) {
-          setError('Authenticated, but could not resolve your user ID. Please log in again.');
+          setError(labels.authUserIdError);
           setIsAuthenticated(false);
           setLoadingData(false);
           return;
@@ -86,7 +92,7 @@ const DailyRecommendationDashboard = () => {
         await loadAllData(jwt, uid);
         setError(null);
       } catch {
-        setError('Authentication error. Please log in again.');
+        setError(labels.authError);
         setIsAuthenticated(false);
       } finally {
         setLoadingData(false);
@@ -94,10 +100,10 @@ const DailyRecommendationDashboard = () => {
     };
 
     initialize();
-  }, []);
+  }, [labels]);
 
   useEffect(() => {
-    if (activePanel === 'history' && token && userId) {
+    if (activePanel === "history" && token && userId) {
       void loadHistory(token, userId);
     }
   }, [activePanel, token, userId]);
@@ -113,8 +119,9 @@ const DailyRecommendationDashboard = () => {
       ]);
       setError(null);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load data';
-      if (!String(message).includes('No data')) {
+      const message =
+        err instanceof Error ? err.message : labels.loadDataFailed;
+      if (!String(message).includes("No data")) {
         setError(message);
       }
     } finally {
@@ -156,7 +163,7 @@ const DailyRecommendationDashboard = () => {
 
   const handleRefresh = async () => {
     if (!token || !userId) {
-      setError('Authentication required to refresh recommendation.');
+      setError(labels.refreshAuthError);
       return;
     }
 
@@ -166,17 +173,20 @@ const DailyRecommendationDashboard = () => {
     try {
       const rec = await apis.refreshRecommendation(token, userId);
       setRecommendation(rec);
-      setSuccess('Recommendation refreshed successfully.');
+      setSuccess(labels.refreshSuccess);
       setTimeout(() => setSuccess(null), 3000);
       await loadHistory(token, userId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to refresh recommendation.');
+      setError(err instanceof Error ? err.message : labels.refreshFailed);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSaveChecklist = async (payload: { date: string; items: ChecklistItem[] }) => {
+  const handleSaveChecklist = async (payload: {
+    date: string;
+    items: ChecklistItem[];
+  }) => {
     if (!token || !userId) return;
 
     await apis.saveChecklist(token, userId, payload);
@@ -194,9 +204,12 @@ const DailyRecommendationDashboard = () => {
     await loadHistory(token, userId);
   };
 
-  const handleUpdateSettings = async (pregnancyWeek: number, preferences: string) => {
+  const handleUpdateSettings = async (
+    pregnancyWeek: number,
+    preferences: string
+  ) => {
     if (!token || !userId) {
-      setError('Authentication required to update settings.');
+      setError(labels.updateAuthError);
       return;
     }
 
@@ -223,7 +236,7 @@ const DailyRecommendationDashboard = () => {
       if (data?.new_recommendation) {
         setRecommendation({
           user_id: userId,
-          date: new Date().toISOString().split('T')[0],
+          date: new Date().toISOString().split("T")[0],
           recommendation: data.new_recommendation,
           regenerated: true,
           checklist: [],
@@ -231,12 +244,12 @@ const DailyRecommendationDashboard = () => {
       }
 
       setShowSettings(false);
-      setSuccess('Settings updated and recommendation regenerated.');
+      setSuccess(labels.updateSuccess);
       setTimeout(() => setSuccess(null), 3000);
 
       await loadAllData(token, userId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update settings.');
+      setError(err instanceof Error ? err.message : labels.updateFailed);
     } finally {
       setLoading(false);
     }
@@ -249,7 +262,7 @@ const DailyRecommendationDashboard = () => {
     setUserData(null);
     setRecommendation(null);
     setHistory([]);
-    window.location.href = '/login';
+    window.location.href = "/login";
   };
 
   if (loadingData) {
@@ -267,7 +280,7 @@ const DailyRecommendationDashboard = () => {
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center justify-center gap-2 text-center text-xl font-semibold text-[#d04f51]">
               <Heart className="h-6 w-6" />
-              Authentication Required
+              {labels.authRequiredTitle}
             </CardTitle>
           </CardHeader>
 
@@ -275,7 +288,7 @@ const DailyRecommendationDashboard = () => {
             <Alert className="rounded-2xl border border-[#f3c7c8] bg-[#fff5f5]">
               <AlertTriangle className="h-4 w-4 text-[#d04f51]" />
               <AlertDescription className="ml-2 text-sm text-[#7a2d2f]">
-                Please log in to access the Daily Recommendations Dashboard.
+                {labels.authRequiredMessage}
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -290,7 +303,7 @@ const DailyRecommendationDashboard = () => {
         <div className="rounded-[32px] bg-white/40 p-4 shadow-[0_20px_70px_rgba(0,0,0,0.06)] backdrop-blur-sm md:p-6 lg:p-8">
           <TopBarFeatures />
           <DashboardHeader
-            userName={userData?.name || 'User'}
+            userName={userData?.name || "User"}
             pregnancyWeek={userData?.pregnancy_week || 0}
             onRefresh={handleRefresh}
             onLogout={handleLogout}
@@ -314,28 +327,28 @@ const DailyRecommendationDashboard = () => {
             <div className="inline-flex w-full rounded-2xl border border-[#efc6c7] bg-white p-1.5 shadow-sm md:w-auto">
               <button
                 type="button"
-                onClick={() => setActivePanel('checklist')}
+                onClick={() => setActivePanel("checklist")}
                 className={[
-                  'min-w-[140px] rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200',
-                  activePanel === 'checklist'
-                    ? 'bg-[#d04f51] text-white shadow-[0_10px_25px_rgba(208,79,81,0.28)]'
-                    : 'text-[#7a2d2f] hover:bg-[#fff5f5]',
-                ].join(' ')}
+                  "min-w-[140px] rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200",
+                  activePanel === "checklist"
+                    ? "bg-[#d04f51] text-white shadow-[0_10px_25px_rgba(208,79,81,0.28)]"
+                    : "text-[#7a2d2f] hover:bg-[#fff5f5]",
+                ].join(" ")}
               >
-                Checklist
+                {labels.checklist}
               </button>
 
               <button
                 type="button"
-                onClick={() => setActivePanel('history')}
+                onClick={() => setActivePanel("history")}
                 className={[
-                  'min-w-[140px] rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200',
-                  activePanel === 'history'
-                    ? 'bg-[#d04f51] text-white shadow-[0_10px_25px_rgba(208,79,81,0.28)]'
-                    : 'text-[#7a2d2f] hover:bg-[#fff5f5]',
-                ].join(' ')}
+                  "min-w-[140px] rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200",
+                  activePanel === "history"
+                    ? "bg-[#d04f51] text-white shadow-[0_10px_25px_rgba(208,79,81,0.28)]"
+                    : "text-[#7a2d2f] hover:bg-[#fff5f5]",
+                ].join(" ")}
               >
-                History
+                {labels.history}
               </button>
             </div>
           </div>
@@ -343,7 +356,9 @@ const DailyRecommendationDashboard = () => {
           <div className="mt-6 overflow-hidden">
             <div
               className={`flex w-[200%] transition-transform duration-500 ease-in-out ${
-                activePanel === 'checklist' ? 'translate-x-0' : '-translate-x-1/2'
+                activePanel === "checklist"
+                  ? "translate-x-0"
+                  : "-translate-x-1/2"
               }`}
             >
               <div className="w-1/2 pr-0 md:pr-3">
@@ -373,7 +388,7 @@ const DailyRecommendationDashboard = () => {
         {showSettings && userData && (
           <SettingsModal
             currentWeek={userData.pregnancy_week}
-            currentPreferences={userData.preferences || ''}
+            currentPreferences={userData.preferences || ""}
             onSave={handleUpdateSettings}
             onClose={() => setShowSettings(false)}
             loading={loading}

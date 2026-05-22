@@ -16,18 +16,38 @@ import {
   getLatestFertility,
   type FertilityResponseDto,
 } from "@/app/api/cycletracker/api";
+import {
+  LanguageCode,
+  useLanguage,
+} from "../../../../../components/common/useLanguage";
 
-function formatDate(dateStr?: string | null) {
-  if (!dateStr) return "Not calculated";
+function getDateLocale(language: LanguageCode) {
+  switch (language) {
+    case "si":
+      return "si-LK";
+    case "ta":
+      return "ta-LK";
+    default:
+      return "en-US";
+  }
+}
+
+function formatDate(
+  dateStr: string | null | undefined,
+  language: LanguageCode,
+  fallback: string,
+  invalidFallback: string
+) {
+  if (!dateStr) return fallback;
 
   try {
-    return new Date(dateStr).toLocaleDateString("en-US", {
+    return new Date(dateStr).toLocaleDateString(getDateLocale(language), {
       month: "short",
       day: "numeric",
       year: "numeric",
     });
   } catch {
-    return "Invalid date";
+    return invalidFallback;
   }
 }
 
@@ -49,29 +69,34 @@ export default function CycleTrackerDashboardCard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { language, t } = useLanguage();
+
   useEffect(() => {
     async function loadLatestCycleData() {
       try {
+        setLoading(true);
+        setError(null);
+
         const { getSession } = await import("@/lib/authentication");
         const session = await getSession();
         const token = session?.user?.token;
 
         if (!token) {
-          setError("Please log in to view your cycle tracker.");
+          setError(t.reproductive.cycle.loginRequired);
           return;
         }
 
         const latest = await getLatestFertility(token);
         setFertilityData(latest);
       } catch {
-        setError("Failed to load cycle tracker data.");
+        setError(t.reproductive.cycle.failed);
       } finally {
         setLoading(false);
       }
     }
 
     loadLatestCycleData();
-  }, []);
+  }, [t]);
 
   const nextPeriodDays = daysBetween(fertilityData?.nextPeriodDate);
   const ovulationDays = daysBetween(fertilityData?.ovulationDate);
@@ -82,7 +107,7 @@ export default function CycleTrackerDashboardCard() {
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-black text-base md:text-lg">
             <HeartPulse className="h-5 w-5 text-[#d04f51]" />
-            Cycle Tracker
+            {t.reproductive.cycle.title}
           </CardTitle>
 
           <Link href="/cycle-tracker">
@@ -90,7 +115,7 @@ export default function CycleTrackerDashboardCard() {
               size="sm"
               className="bg-[#d04f51] hover:bg-[#d63c3e] text-white text-xs"
             >
-              View Details
+              {t.dashboard.viewDetails}
             </Button>
           </Link>
         </div>
@@ -100,7 +125,7 @@ export default function CycleTrackerDashboardCard() {
         {loading && (
           <div className="flex items-center justify-center py-10 text-[#d04f51]">
             <Loader2 className="h-5 w-5 animate-spin mr-2" />
-            Loading cycle data...
+            {t.reproductive.cycle.loading}
           </div>
         )}
 
@@ -114,15 +139,15 @@ export default function CycleTrackerDashboardCard() {
           <div className="rounded-xl bg-pink-50 p-5 text-center">
             <CalendarDays className="mx-auto h-9 w-9 text-[#d04f51] mb-3" />
             <h3 className="font-semibold text-gray-900">
-              No cycle data available
+              {t.reproductive.cycle.noData}
             </h3>
             <p className="text-xs text-gray-600 mt-1">
-              Calculate your fertility window to see your cycle summary here.
+              {t.reproductive.cycle.noDataDesc}
             </p>
 
             <Link href="/cycle-tracker">
               <Button className="mt-4 bg-[#d04f51] text-white">
-                Calculate Now
+                {t.dashboard.calculateNow}
               </Button>
             </Link>
           </div>
@@ -132,23 +157,32 @@ export default function CycleTrackerDashboardCard() {
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg bg-pink-50 pl-4 pr-4 pb-1 pt-3">
-                <p className="text-xs text-gray-500">Next Period</p>
+                <p className="text-xs text-gray-500">
+                  {t.reproductive.cycle.nextPeriod}
+                </p>
                 <p className="text-md font-bold text-[#d04f51]">
                   {nextPeriodDays !== null && nextPeriodDays >= 0
-                    ? `${nextPeriodDays} days`
-                    : "Due"}
+                    ? `${nextPeriodDays} ${t.dashboard.days}`
+                    : t.dashboard.due}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {formatDate(fertilityData.nextPeriodDate)}
+                  {formatDate(
+                    fertilityData.nextPeriodDate,
+                    language,
+                    t.reproductive.cycle.notCalculated,
+                    t.reproductive.cycle.invalidDate
+                  )}
                 </p>
               </div>
 
               <div className="rounded-xl bg-purple-50 pl-4 pr-4 pb-1 pt-3">
-                <p className="text-xs text-gray-500">Cycle Length</p>
-                <p className="text-md font-bold text-[#d04f51]">
-                  {fertilityData.averageCycleLength} days
+                <p className="text-xs text-gray-500">
+                  {t.reproductive.cycle.cycleLength}
                 </p>
-                <p className="text-xs text-gray-500">Average</p>
+                <p className="text-md font-bold text-[#d04f51]">
+                  {fertilityData.averageCycleLength} {t.dashboard.days}
+                </p>
+                <p className="text-xs text-gray-500">{t.dashboard.average}</p>
               </div>
             </div>
 
@@ -159,12 +193,18 @@ export default function CycleTrackerDashboardCard() {
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-900">
-                    Ovulation
+                    {t.reproductive.cycle.ovulation}
                   </p>
                   <p className="text-xs text-gray-600">
-                    Expected on {formatDate(fertilityData.ovulationDate)}
+                    {t.reproductive.cycle.expectedOn}{" "}
+                    {formatDate(
+                      fertilityData.ovulationDate,
+                      language,
+                      t.reproductive.cycle.notCalculated,
+                      t.reproductive.cycle.invalidDate
+                    )}
                     {ovulationDays !== null && ovulationDays >= 0
-                      ? ` • in ${ovulationDays} days`
+                      ? ` • ${t.reproductive.cycle.in} ${ovulationDays} ${t.dashboard.days}`
                       : ""}
                   </p>
                 </div>
@@ -178,11 +218,22 @@ export default function CycleTrackerDashboardCard() {
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-900">
-                    Fertile Window
+                    {t.reproductive.cycle.fertileWindow}
                   </p>
                   <p className="text-xs text-gray-600">
-                    {formatDate(fertilityData.fertileWindowStart)} -{" "}
-                    {formatDate(fertilityData.fertileWindowEnd)}
+                    {formatDate(
+                      fertilityData.fertileWindowStart,
+                      language,
+                      t.reproductive.cycle.notCalculated,
+                      t.reproductive.cycle.invalidDate
+                    )}{" "}
+                    -{" "}
+                    {formatDate(
+                      fertilityData.fertileWindowEnd,
+                      language,
+                      t.reproductive.cycle.notCalculated,
+                      t.reproductive.cycle.invalidDate
+                    )}
                   </p>
                 </div>
               </div>

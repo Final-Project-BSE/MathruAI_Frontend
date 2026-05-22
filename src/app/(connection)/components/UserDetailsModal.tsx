@@ -3,6 +3,8 @@
 import type { UserResponseDto } from "../../api/user-assign/types";
 import Modal from "./Modal";
 import StatusBadge from "./StatusBadge";
+import type { AssignmentTranslations } from "./assignmentLang";
+import { getStatusLabel } from "./assignmentLang";
 import { cn, getReadableRoleLabel } from "./utils";
 
 type Props = {
@@ -13,6 +15,7 @@ type Props = {
   sendingUserId?: number | null;
   statusLabel?: string;
   theme: "light" | "dark";
+  labels: AssignmentTranslations;
 };
 
 export default function UserDetailsModal({
@@ -23,13 +26,20 @@ export default function UserDetailsModal({
   sendingUserId,
   statusLabel,
   theme,
+  labels,
 }: Props) {
   if (!user) return null;
 
   const isLightTheme = theme === "light";
 
   return (
-    <Modal open={open} title="User Details" onClose={onClose} theme={theme}>
+    <Modal
+      open={open}
+      title={labels.details.userDetails}
+      onClose={onClose}
+      theme={theme}
+      closeLabel={labels.common.close}
+    >
       <div className="space-y-4">
         <div
           className={cn(
@@ -54,7 +64,9 @@ export default function UserDetailsModal({
               </p>
             </div>
 
-            {statusLabel ? <StatusBadge status={statusLabel} /> : null}
+            {statusLabel ? (
+              <StatusBadge status={statusLabel} label={getStatusLabel(statusLabel, labels)} />
+            ) : null}
           </div>
 
           <div
@@ -65,43 +77,43 @@ export default function UserDetailsModal({
           >
             <p>
               <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
-                Role:
+                {labels.common.role}:
               </span>{" "}
-              {getReadableRoleLabel(user.roles)}
+              {getReadableRoleLabel(user.roles, labels)}
             </p>
             <p>
               <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
-                District:
+                {labels.common.district}:
               </span>{" "}
-              {user.district || "-"}
+              {user.district || labels.common.unavailable}
             </p>
             <p>
               <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
-                MOH Area:
+                {labels.common.mohArea}:
               </span>{" "}
-              {user.mohArea || "-"}
+              {user.mohArea || labels.common.unavailable}
             </p>
             <p>
               <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
-                Area:
+                {labels.common.area}:
               </span>{" "}
-              {user.area || "-"}
+              {user.area || labels.common.unavailable}
             </p>
             <p>
               <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
-                Latitude:
+                {labels.common.latitude}:
               </span>{" "}
-              {user.latitude ?? "-"}
+              {user.latitude ?? labels.common.unavailable}
             </p>
             <p>
               <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
-                Longitude:
+                {labels.common.longitude}:
               </span>{" "}
-              {user.longitude ?? "-"}
+              {user.longitude ?? labels.common.unavailable}
             </p>
             <p className="md:col-span-2">
               <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
-                Roles:
+                {labels.common.roles}:
               </span>{" "}
               {user.roles.join(", ")}
             </p>
@@ -114,7 +126,7 @@ export default function UserDetailsModal({
               disabled={sendingUserId === user.id}
               className="mt-5 rounded-2xl bg-[#d04f51] px-4 py-1 text-sm text-white hover:bg-[#e86466] disabled:opacity-50"
             >
-              {sendingUserId === user.id ? "Sending..." : "Send Request"}
+              {sendingUserId === user.id ? labels.common.sending : labels.common.sendRequest}
             </button>
           ) : null}
         </div>

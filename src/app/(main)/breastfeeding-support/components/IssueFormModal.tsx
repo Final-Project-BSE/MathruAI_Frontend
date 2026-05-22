@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { AlertCircle, Loader2 } from 'lucide-react';
+import { useLanguage } from '@/components/common/useLanguage';
 import type {
   BreastfeedingIssueResponseDto,
   BreastfeedingIssueRequestDto,
@@ -22,25 +23,24 @@ interface IssueFormModalProps {
   onSaved: () => void;
 }
 
-const ISSUE_TYPES: { value: IssueType; label: string }[] = [
-  { value: 'PAIN',          label: '🔴 Pain' },
-  { value: 'LATCH_PROBLEM', label: '🟠 Latch Problem' },
-  { value: 'LOW_SUPPLY',    label: '🟡 Low Supply' },
-  { value: 'ENGORGEMENT',   label: '🟣 Engorgement' },
-  { value: 'MASTITIS',      label: '⚫ Mastitis' },
-  { value: 'OTHER',         label: '🔵 Other' },
+const ISSUE_TYPES: IssueType[] = [
+  'PAIN',
+  'LATCH_PROBLEM',
+  'LOW_SUPPLY',
+  'ENGORGEMENT',
+  'MASTITIS',
+  'OTHER',
 ];
 
 const SEVERITY_LEVELS: {
   value: SeverityLevel;
-  label: string;
   bg: string;
   border: string;
   active: string;
 }[] = [
-  { value: 'MILD',     label: 'Mild',     bg: '#f0fdf4', border: '#bbf7d0', active: '#15803d' },
-  { value: 'MODERATE', label: 'Moderate', bg: '#fffbeb', border: '#fde68a', active: '#b45309' },
-  { value: 'SEVERE',   label: 'Severe',   bg: '#fff5f5', border: '#f3c7c8', active: '#d04f51' },
+  { value: 'MILD', bg: '#f0fdf4', border: '#bbf7d0', active: '#15803d' },
+  { value: 'MODERATE', bg: '#fffbeb', border: '#fde68a', active: '#b45309' },
+  { value: 'SEVERE', bg: '#fff5f5', border: '#f3c7c8', active: '#d04f51' },
 ];
 
 const IssueFormModal: React.FC<IssueFormModalProps> = ({
@@ -49,6 +49,8 @@ const IssueFormModal: React.FC<IssueFormModalProps> = ({
   onClose,
   onSaved,
 }) => {
+  const { t } = useLanguage();
+
   const [issueType, setIssueType] = useState<IssueType>('PAIN');
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState<SeverityLevel>('MILD');
@@ -91,10 +93,10 @@ const IssueFormModal: React.FC<IssueFormModalProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (!description.trim()) {
-      newErrors.description = 'Please describe the issue.';
+      newErrors.description = t.breastfeeding.issueForm.validationDescription;
     }
     if (!reportedAt) {
-      newErrors.reportedAt = 'Please select a reported date and time.';
+      newErrors.reportedAt = t.breastfeeding.issueForm.validationReportedAt;
     }
 
     setErrors(newErrors);
@@ -112,7 +114,7 @@ const IssueFormModal: React.FC<IssueFormModalProps> = ({
         issueType,
         description,
         severity,
-        reportedAt: new Date(reportedAt).toISOString().slice(0, 19), // strips .000Z
+        reportedAt: new Date(reportedAt).toISOString().slice(0, 19),
         resolved,
         midwifeNotes,
       };
@@ -128,7 +130,7 @@ const IssueFormModal: React.FC<IssueFormModalProps> = ({
       setError(
         err instanceof Error
           ? err.message
-          : 'Failed to save issue. Please try again.'
+          : t.breastfeeding.issueForm.saveFailed
       );
     } finally {
       setLoading(false);
@@ -143,12 +145,15 @@ const IssueFormModal: React.FC<IssueFormModalProps> = ({
             <div className="flex items-center gap-2 text-[#d04f51]">
               <AlertCircle className="h-5 w-5" />
               <span className="text-lg font-semibold">
-                {editingIssue ? 'Edit Issue' : 'Report Issue'}
+                {editingIssue
+                  ? t.breastfeeding.issueForm.editTitle
+                  : t.breastfeeding.issueForm.createTitle}
               </span>
             </div>
             <button
               onClick={onClose}
               className="text-2xl text-[#8a4b4c] transition-colors hover:text-[#d04f51]"
+              aria-label="Close"
             >
               ×
             </button>
@@ -156,42 +161,40 @@ const IssueFormModal: React.FC<IssueFormModalProps> = ({
         </CardHeader>
 
         <CardContent className="space-y-5 pt-5">
-
-          {/* Error */}
           {error && (
             <div className="rounded-2xl border border-[#f3c7c8] bg-[#fff5f5] px-4 py-3 text-sm text-[#7a2d2f]">
               {error}
             </div>
           )}
 
-          {/* Issue Type */}
           <div>
             <Label className="text-sm font-medium text-[#5f3a3b]">
-              Issue Type <span className="text-[#d04f51]">*</span>
+              {t.breastfeeding.issueForm.issueType}{' '}
+              <span className="text-[#d04f51]">*</span>
             </Label>
             <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {ISSUE_TYPES.map((type) => (
                 <button
-                  key={type.value}
+                  key={type}
                   type="button"
-                  onClick={() => setIssueType(type.value)}
+                  onClick={() => setIssueType(type)}
                   className={[
                     'rounded-xl border px-3 py-2.5 text-left text-sm font-semibold transition-all duration-200',
-                    issueType === type.value
+                    issueType === type
                       ? 'border-[#d04f51] bg-[#d04f51] text-white shadow-[0_8px_20px_rgba(208,79,81,0.25)]'
                       : 'border-[#f3d6d7] bg-white text-[#5f3a3b] hover:bg-[#fff5f5]',
                   ].join(' ')}
                 >
-                  {type.label}
+                  {t.breastfeeding.labels.issueTypes[type]}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Severity */}
           <div>
             <Label className="text-sm font-medium text-[#5f3a3b]">
-              Severity <span className="text-[#d04f51]">*</span>
+              {t.breastfeeding.issueForm.severity}{' '}
+              <span className="text-[#d04f51]">*</span>
             </Label>
             <div className="mt-2 flex gap-3">
               {SEVERITY_LEVELS.map((level) => (
@@ -217,20 +220,20 @@ const IssueFormModal: React.FC<IssueFormModalProps> = ({
                         }
                   }
                 >
-                  {level.label}
+                  {t.breastfeeding.labels.severity[level.value]}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Description */}
           <div>
             <Label className="text-sm font-medium text-[#5f3a3b]">
-              Description <span className="text-[#d04f51]">*</span>
+              {t.breastfeeding.issueForm.description}{' '}
+              <span className="text-[#d04f51]">*</span>
             </Label>
             <Textarea
               rows={3}
-              placeholder="Describe your issue in detail..."
+              placeholder={t.breastfeeding.issueForm.descriptionPlaceholder}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className={`mt-1 resize-none rounded-xl border-[#f3d6d7] focus:border-[#d04f51] focus:ring-[#d04f51] ${
@@ -242,10 +245,10 @@ const IssueFormModal: React.FC<IssueFormModalProps> = ({
             )}
           </div>
 
-          {/* Reported At */}
           <div>
             <Label className="text-sm font-medium text-[#5f3a3b]">
-              Reported At <span className="text-[#d04f51]">*</span>
+              {t.breastfeeding.issueForm.reportedAt}{' '}
+              <span className="text-[#d04f51]">*</span>
             </Label>
             <Input
               type="datetime-local"
@@ -260,30 +263,31 @@ const IssueFormModal: React.FC<IssueFormModalProps> = ({
             )}
           </div>
 
-          {/* Midwife Notes - READ ONLY for mother */}
-<div>
-  <Label className="text-sm font-medium text-[#5f3a3b]">
-    Midwife Notes{' '}
-    <span className="text-xs font-normal text-[#8a4b4c]">
-      — added by your midwife
-    </span>
-  </Label>
-  <div className="mt-1 min-h-[60px] rounded-xl border border-[#f3d6d7] bg-[#fffafa] px-3 py-2 text-sm text-[#8a4b4c]">
-    {midwifeNotes
-      ? midwifeNotes
-      : <span className="italic text-[#c0a0a0]">No midwife notes yet.</span>
-    }
-  </div>
-</div>
+          <div>
+            <Label className="text-sm font-medium text-[#5f3a3b]">
+              {t.breastfeeding.issueForm.midwifeNotes}{' '}
+              <span className="text-xs font-normal text-[#8a4b4c]">
+                {t.breastfeeding.issueForm.addedByMidwife}
+              </span>
+            </Label>
+            <div className="mt-1 min-h-[60px] rounded-xl border border-[#f3d6d7] bg-[#fffafa] px-3 py-2 text-sm text-[#8a4b4c]">
+              {midwifeNotes ? (
+                midwifeNotes
+              ) : (
+                <span className="italic text-[#c0a0a0]">
+                  {t.breastfeeding.issueForm.noMidwifeNotes}
+                </span>
+              )}
+            </div>
+          </div>
 
-          {/* Resolved Toggle */}
           <div className="flex items-center justify-between rounded-2xl border border-[#f3d6d7] bg-[#fffafa] px-4 py-3">
             <div>
               <p className="text-sm font-semibold text-[#5f3a3b]">
-                Mark as Resolved
+                {t.breastfeeding.issueForm.markResolved}
               </p>
               <p className="text-xs text-[#8a4b4c]">
-                Toggle if this issue has been resolved
+                {t.breastfeeding.issueForm.markResolvedDescription}
               </p>
             </div>
             <button
@@ -296,21 +300,20 @@ const IssueFormModal: React.FC<IssueFormModalProps> = ({
             >
               <span
                 className={[
-                  'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200',
-                  resolved ? 'translate-x-6' : 'translate-x-1',
+                  'inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-200',
+                  resolved ? 'translate-x-5' : 'translate-x-1',
                 ].join(' ')}
               />
             </button>
           </div>
 
-          {/* Buttons */}
           <div className="flex gap-3 pt-2">
             <Button
               onClick={onClose}
               variant="outline"
-              className="flex-1 rounded-xl border-[#f3d6d7] text-[#5f3a3b] hover:bg-[#fff5f5]"
+              className="flex-1 rounded-xl border-[#f3d6d7] text-[#7a2d2f] hover:bg-[#fff5f5]"
             >
-              Cancel
+              {t.breastfeeding.issueForm.cancel}
             </Button>
             <Button
               onClick={handleSubmit}
@@ -320,16 +323,15 @@ const IssueFormModal: React.FC<IssueFormModalProps> = ({
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  {t.breastfeeding.issueForm.saving}
                 </>
               ) : editingIssue ? (
-                'Update Issue'
+                t.breastfeeding.issueForm.updateIssue
               ) : (
-                'Report Issue'
+                t.breastfeeding.issueForm.reportIssue
               )}
             </Button>
           </div>
-
         </CardContent>
       </Card>
     </div>
