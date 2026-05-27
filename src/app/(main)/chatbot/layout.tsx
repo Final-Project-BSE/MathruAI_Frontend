@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useRef } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ChatSidebar, ChatSidebarRef } from "@/components/chat-sidebar";
-
+import { AppSidebar } from "@/components/app-sidebar";
 interface ChatContextType {
   activeSessionId: number | null;
   setActiveSessionId: (id: number | null) => void;
@@ -32,10 +32,6 @@ export default function ChatbotLayout({
     await sidebarRef.current?.refreshChatHistory();
   };
 
-  const handleNewChat = () => {
-    setActiveSessionId(null);
-  };
-
   return (
     <ChatContext.Provider
       value={{
@@ -49,7 +45,6 @@ export default function ChatbotLayout({
           ref={sidebarRef}
           activeSessionId={activeSessionId}
           onSessionSelect={setActiveSessionId}
-          onNewChat={handleNewChat}
         />
         <main className="w-full">{children}</main>
       </SidebarProvider>

@@ -1,0 +1,136 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Container from "@/components/shared/container";
+import TopBarFeatures from "@/components/common/TopBarFeatures";
+import CategoryCard, { Category } from "@/components/health-records/CategoryCard";
+import { getCategories } from "@/app/api/health-records/api";
+import { HealthCategoryResponseDto } from "@/app/api/health-records/types";
+import { LoadingState } from "@/components/common/LoadingState";
+import { useLanguage } from "@/components/common/useLanguage";
+
+export default function HealthRecordsCategoriesPage() {
+  const [categories, setCategories] = useState<HealthCategoryResponseDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const { t } = useLanguage();
+  const hr = t.healthRecords;
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const { getSession } = await import("@/lib/authentication");
+        const session = await getSession();
+        const token = session?.user?.token;
+
+        if (!token) {
+          setError(hr.unauthorized);
+          return;
+        }
+
+        const data = await getCategories(token);
+        setCategories(data);
+      } catch (err: unknown) {
+        console.error("Failed to fetch categories:", err);
+
+        const errorObj = err as {
+          response?: {
+            data?: {
+              message?: string;
+            };
+            status?: number;
+          };
+          message?: string;
+        };
+
+        const errorMsg =
+          errorObj.response?.data?.message ||
+          errorObj.message ||
+          hr.loadCategoriesError;
+
+        setError(`${errorMsg} (Status: ${errorObj.response?.status || "Unknown"})`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, [hr.unauthorized, hr.loadCategoriesError]);
+
+  const mappedCategories: Category[] = categories.map((cat) => ({
+    id: cat.id,
+    name: hr.categories[cat.slug] ?? cat.name,
+    recordCount: cat.recordCount,
+    icon: cat.icon,
+    color: cat.colorClass,
+    slug: cat.slug,
+  }));
+
+  if (loading) {
+    return <LoadingState />;
+  }
+
+  return (
+    <Container title={hr.title}>
+      <div className="bg-[#fed2cc] min-h-screen p-4 md:p-6">
+        <TopBarFeatures />
+
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+              {hr.title}
+            </h1>
+            <p className="text-sm text-gray-500">{hr.subtitle}</p>
+          </div>
+        </div>
+
+        {error ? (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
+            {error}
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+              <div className="bg-white/90 backdrop-blur rounded-2xl p-4 shadow-sm">
+                <p className="text-xs text-gray-500 mb-0.5">
+                  {hr.totalCategories}
+                </p>
+                <p className="text-2xl font-bold text-[#d04f51]">
+                  {mappedCategories.length}
+                </p>
+              </div>
+
+              <div className="bg-white/90 backdrop-blur rounded-2xl p-4 shadow-sm">
+                <p className="text-xs text-gray-500 mb-0.5">
+                  {hr.totalRecords}
+                </p>
+                <p className="text-2xl font-bold text-[#d04f51]">
+                  {mappedCategories.reduce((sum, cat) => sum + cat.recordCount, 0)}
+                </p>
+              </div>
+
+              <div className="bg-white/90 backdrop-blur rounded-2xl p-4 shadow-sm col-span-2 sm:col-span-1">
+                <p className="text-xs text-gray-500 mb-0.5">
+                  {hr.lastUpdated}
+                </p>
+                <p className="text-base font-semibold text-gray-700">
+                  {hr.today}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {mappedCategories.map((cat) => (
+                <CategoryCard key={cat.id} category={cat} />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </Container>
+  );
+}

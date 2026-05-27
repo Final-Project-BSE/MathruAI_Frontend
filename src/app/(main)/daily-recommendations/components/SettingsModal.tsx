@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Settings, Loader2 } from 'lucide-react';
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Settings, Loader2 } from "lucide-react";
+import { useLanguage } from "@/components/common/useLanguage";
 
 interface SettingsModalProps {
   currentWeek: number;
@@ -19,8 +20,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   currentPreferences,
   onSave,
   onClose,
-  loading
+  loading,
 }) => {
+  const { t } = useLanguage();
+  const labels = t.dailyRecommendation;
+
   const [pregnancyWeek, setPregnancyWeek] = useState(currentWeek);
   const [preferences, setPreferences] = useState(currentPreferences);
   const [errors, setErrors] = useState<{ week?: string }>({});
@@ -28,7 +32,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const validate = (): boolean => {
     const newErrors: { week?: string } = {};
     if (pregnancyWeek < 1 || pregnancyWeek > 42) {
-      newErrors.week = 'Week must be between 1 and 42';
+      newErrors.week = labels.weekValidation;
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -47,7 +51,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center">
               <Settings className="h-5 w-5 mr-2 text-purple-500" />
-              Update Settings
+              {labels.updateSettings}
             </div>
             <button
               onClick={onClose}
@@ -57,10 +61,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             </button>
           </CardTitle>
         </CardHeader>
+
         <CardContent className="space-y-4">
           <div>
             <Label htmlFor="week" className="text-sm font-medium text-gray-700">
-              Pregnancy Week *
+              {labels.pregnancyWeek}
             </Label>
             <Input
               id="week"
@@ -69,7 +74,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               max="42"
               value={pregnancyWeek}
               onChange={(e) => setPregnancyWeek(parseInt(e.target.value) || 1)}
-              className={`mt-1 ${errors.week ? 'border-red-500' : ''}`}
+              className={`mt-1 ${errors.week ? "border-red-500" : ""}`}
             />
             {errors.week && (
               <p className="text-red-500 text-sm mt-1">{errors.week}</p>
@@ -77,29 +82,28 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="preferences" className="text-sm font-medium text-gray-700">
-              Preferences & Interests
+            <Label
+              htmlFor="preferences"
+              className="text-sm font-medium text-gray-700"
+            >
+              {labels.preferencesInterests}
             </Label>
             <Textarea
               id="preferences"
               value={preferences}
               onChange={(e) => setPreferences(e.target.value)}
-              placeholder="e.g., vegetarian, yoga enthusiast, first-time mom"
+              placeholder={labels.preferencesPlaceholder}
               className="mt-1"
               rows={4}
             />
             <p className="text-xs text-gray-500 mt-1">
-              Tell us about your lifestyle and dietary preferences
+              {labels.preferencesHelp}
             </p>
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Button
-              onClick={onClose}
-              variant="outline"
-              className="flex-1"
-            >
-              Cancel
+            <Button onClick={onClose} variant="outline" className="flex-1">
+              {labels.cancel}
             </Button>
             <Button
               onClick={handleSave}
@@ -109,10 +113,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  {labels.saving}
                 </>
               ) : (
-                'Save & Regenerate'
+                labels.saveRegenerate
               )}
             </Button>
           </div>

@@ -1,59 +1,97 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, Baby } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Activity } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { useLanguage } from "@/components/common/useLanguage";
 
 interface ProgressCardProps {
   pregnancyWeek: number;
 }
 
 const ProgressCard: React.FC<ProgressCardProps> = ({ pregnancyWeek }) => {
-  const progress = Math.min((pregnancyWeek / 40) * 100, 100);
-  const trimester = pregnancyWeek <= 12 ? 1 : pregnancyWeek <= 28 ? 2 : 3;
-  const weeksRemaining = Math.max(40 - pregnancyWeek, 0);
+  const { t } = useLanguage();
+  const labels = t.dailyRecommendation;
+
+  const safeWeek = Math.max(0, Math.min(pregnancyWeek, 40));
+  const progress = Math.min((safeWeek / 40) * 100, 100);
+  const trimester = safeWeek <= 12 ? 1 : safeWeek <= 28 ? 2 : 3;
+  const weeksRemaining = Math.max(40 - safeWeek, 0);
   const daysRemaining = weeksRemaining * 7;
 
   return (
-    <Card className="shadow-md bg-white">
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold flex items-center justify-between">
-          <div className="flex items-center">
-            <Activity className="h-5 w-5 mr-2 text-purple-500" />
-            Pregnancy Progress
+    <Card className="border border-[#d04f51]/15 bg-white shadow-sm">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#d04f51]/10">
+              <Activity className="h-5 w-5 text-[#d04f51]" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-gray-900">
+                {labels.progressTitle}
+              </h3>
+              <p className="text-xs font-normal text-gray-500">
+                {labels.progressDescription}
+              </p>
+            </div>
           </div>
-          <Badge variant="outline" className="text-purple-600 border-purple-300">
-            Trimester {trimester}
+
+          <Badge className="border-[#d04f51]/20 bg-[#d04f51]/10 text-[#d04f51] hover:bg-[#d04f51]/10">
+            {labels.trimester(trimester)}
           </Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="mb-6">
-          <div className="flex justify-between text-sm text-gray-600 mb-3">
-            <span className="font-medium">Week {pregnancyWeek} of 40</span>
-            <span className="font-semibold text-purple-600">
-              {Math.round(progress)}%
-            </span>
+
+      <CardContent className="space-y-6">
+        <div className="rounded-2xl border border-[#d04f51]/10 bg-[#d04f51]/5 p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                {labels.weekOfForty(safeWeek)}
+              </p>
+              <p className="text-xs text-gray-500">
+                {labels.pregnancyCompletionProgress}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold text-[#d04f51]">
+                {Math.round(progress)}%
+              </p>
+            </div>
           </div>
-          <div className="relative w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+
+          <div className="h-3 w-full overflow-hidden rounded-full bg-white">
             <div
-              className="absolute top-0 left-0 h-full bg-green-600 rounded-full transition-all duration-1000 ease-out"
+              className="h-full rounded-full bg-[#d04f51] transition-all duration-700 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
-          <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200">
-            <p className="text-3xl font-bold text-purple-600">{pregnancyWeek}</p>
-            <p className="text-xs text-gray-600 mt-2 font-medium">Current Week</p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="rounded-2xl border border-[#d04f51]/15 bg-white p-4 text-center shadow-sm">
+            <p className="text-3xl font-bold text-[#d04f51]">{safeWeek}</p>
+            <p className="mt-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+              {labels.currentWeek}
+            </p>
           </div>
-          <div className="text-center p-4 bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl border border-pink-200">
-            <p className="text-3xl font-bold text-pink-600">{weeksRemaining}</p>
-            <p className="text-xs text-gray-600 mt-2 font-medium">Weeks to Go</p>
+
+          <div className="rounded-2xl border border-[#d04f51]/15 bg-white p-4 text-center shadow-sm">
+            <p className="text-3xl font-bold text-[#d04f51]">
+              {weeksRemaining}
+            </p>
+            <p className="mt-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+              {labels.weeksToGo}
+            </p>
           </div>
-          <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200">
-            <p className="text-3xl font-bold text-blue-600">{daysRemaining}</p>
-            <p className="text-xs text-gray-600 mt-2 font-medium">Days Left</p>
+
+          <div className="rounded-2xl border border-[#d04f51]/15 bg-white p-4 text-center shadow-sm">
+            <p className="text-3xl font-bold text-[#d04f51]">
+              {daysRemaining}
+            </p>
+            <p className="mt-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+              {labels.daysLeft}
+            </p>
           </div>
         </div>
       </CardContent>

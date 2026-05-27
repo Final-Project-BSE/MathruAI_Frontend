@@ -11,11 +11,19 @@ import type { Message, SystemStats } from "../../../api/chatbot/types";
 const WELCOME_MESSAGE: Message = {
   id: "1",
   content:
-    "Hello! I'm your pregnancy advisor assistant. I'm here to help answer your questions about pregnancy, provide guidance, and support you through this wonderful journey. How can I assist you today?",
+    "Hello! I'm your pregnancy advisor assistant. I'm here to help answer your questions about pregnancy, provide guidance and support you through this wonderful journey. How can I assist you today?",
   isUser: false,
   timestamp: new Date(),
   status: "sent",
 };
+
+function generateChatTitle(message: string) {
+  const cleaned = message.replace(/\s+/g, " ").trim();
+
+  if (!cleaned) return "New chat";
+
+  return cleaned.length > 45 ? `${cleaned.slice(0, 45)}...` : cleaned;
+}
 
 export function useChatbotController() {
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
@@ -32,7 +40,6 @@ export function useChatbotController() {
   const { activeSessionId, setActiveSessionId, refreshChatHistory } =
     useChatContext();
 
-  // prevent stale welcome timestamp (not critical, but nice)
   const welcomeRef = useRef<Message>({
     ...WELCOME_MESSAGE,
     timestamp: new Date(),
@@ -74,11 +81,9 @@ export function useChatbotController() {
     }
   };
 
-  const loadSessionMessages = async (sessionId: number) => {
-    if (!token) return;
-
+  const loadSessionMessages = async (sessionId: number, jwtToken: string) => {
     try {
-      const data = await apis.getChatMessages(token, sessionId);
+      const data = await apis.getChatMessages(jwtToken, sessionId);
 
       if (data?.status === "success") {
         const formattedMessages: Message[] = [];
@@ -99,6 +104,7 @@ export function useChatbotController() {
                 status: "sent",
               });
             }
+
             if (m.response) {
               formattedMessages.push({
                 id: `${m.id}_bot`,
@@ -121,16 +127,20 @@ export function useChatbotController() {
   const sendMessage = async (messageContent: string) => {
     if (!messageContent.trim() || isLoading || !token) return;
 
+    const trimmedMessage = messageContent.trim();
+    const sessionIdToUse = activeSessionId ?? currentSessionId;
+    const isFirstUserMessageInSession = messages.filter((m) => m.isUser).length === 0;
+
     const userMessage: Message = {
-      id: Date.now().toString() + "_user",
-      content: messageContent,
+      id: `${Date.now()}_user`,
+      content: trimmedMessage,
       isUser: true,
       timestamp: new Date(),
       status: "sent",
     };
 
     const botMessage: Message = {
-      id: Date.now().toString() + "_bot",
+      id: `${Date.now()}_bot`,
       content: "",
       isUser: false,
       timestamp: new Date(),
@@ -143,17 +153,23 @@ export function useChatbotController() {
 
     try {
       const data: ApiChatResponse = await apis.chat(token, {
-        message: messageContent,
-        session_id: currentSessionId,
+        message: trimmedMessage,
+        session_id: sessionIdToUse,
         top_k: 3,
         similarity_threshold: 0.1,
       });
 
       if (data?.status === "success") {
-        if (data.session_id && !currentSessionId) {
-          setCurrentSessionId(data.session_id);
-          setActiveSessionId?.(data.session_id);
-          await refreshChatHistory?.();
+        const resolvedSessionId = Number(
+          data.session_id ?? sessionIdToUse ?? null
+        );
+
+        if (resolvedSessionId && resolvedSessionId !== currentSessionId) {
+          setCurrentSessionId(resolvedSessionId);
+        }
+
+        if (resolvedSessionId && resolvedSessionId !== activeSessionId) {
+          setActiveSessionId(resolvedSessionId);
         }
 
         setMessages((prev) =>
@@ -163,6 +179,20 @@ export function useChatbotController() {
               : msg
           )
         );
+
+        if (resolvedSessionId && isFirstUserMessageInSession) {
+          const generatedTitle = generateChatTitle(trimmedMessage);
+
+          try {
+            await apis.updateChat(resolvedSessionId, token, {
+              session_name: generatedTitle,
+            });
+          } catch (titleError) {
+            console.error("Failed to update chat title:", titleError);
+          }
+        }
+
+        await refreshChatHistory();
       } else {
         throw new Error(data?.response || "Failed to get response");
       }
@@ -185,16 +215,17 @@ export function useChatbotController() {
     }
   };
 
-  // Init token + health/stats
   useEffect(() => {
     const initialize = async () => {
       try {
         const session = await getSession();
+
         if (session?.user?.token) {
-          setToken(session.user.token);
+          const jwt = session.user.token;
+          setToken(jwt);
           console.log("✅ JWT token loaded for ChatBot");
-          checkSystemHealth(session.user.token);
-          fetchSystemStats(session.user.token);
+          checkSystemHealth(jwt);
+          fetchSystemStats(jwt);
         } else {
           console.warn("⚠️ No session found — please log in first.");
           setConnectionError("Please log in to access the chatbot.");
@@ -206,20 +237,17 @@ export function useChatbotController() {
     };
 
     initialize();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Handle session switch from sidebar
   useEffect(() => {
     if (!token) return;
 
-    if (activeSessionId && activeSessionId !== currentSessionId) {
+    if (activeSessionId !== null) {
       setCurrentSessionId(activeSessionId);
-      loadSessionMessages(activeSessionId);
-    } else if (activeSessionId === null) {
+      loadSessionMessages(activeSessionId, token);
+    } else {
       resetToNewChat();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSessionId, token]);
 
   const retryHealth = () => {
@@ -227,7 +255,6 @@ export function useChatbotController() {
   };
 
   return {
-    // state
     messages,
     inputMessage,
     isLoading,
@@ -235,11 +262,7 @@ export function useChatbotController() {
     systemStats,
     connectionError,
     token,
-
-    // session
     currentSessionId,
-
-    // actions
     setInputMessage,
     sendMessage,
     resetToNewChat,

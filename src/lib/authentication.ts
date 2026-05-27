@@ -20,6 +20,7 @@ type Session = {
 };
 
 async function encrypt(payload: Session): Promise<string> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return await new SignJWT(payload as any)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -32,6 +33,7 @@ async function decrypt(input: string): Promise<Session | null> {
     const { payload } = await jwtVerify(input, key, {
       algorithms: ["HS256"],
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return payload as any;
   } catch {
     return null;
@@ -52,7 +54,6 @@ export async function login(data: {
 
     console.log("Auth library received:", JSON.stringify(res, null, 2));
 
-    // Check if login failed
     if (res.status === "FAIL" || !res.data) {
       return {
         status: "FAIL" as const,
@@ -61,7 +62,6 @@ export async function login(data: {
       };
     }
 
-    // Validate required fields
     if (!res.data.email || !res.data.token || !res.data.roles || res.data.roles.length === 0) {
       console.error("Invalid data structure:", res.data);
       return {
@@ -87,11 +87,9 @@ export async function login(data: {
 
     const createdAt = new Date();
     
-    // Create session
     const session: Session = { user, expires, createdAt };
     const sessionToken = await encrypt(session);
 
-    // Set cookie
     const cookiesStore = await cookies();
     cookiesStore.set("session-admin-getJob", sessionToken, {
       expires,
@@ -132,7 +130,6 @@ export async function getSession(): Promise<Session | null> {
   return await decrypt(sessionCookie);
 }
 
-// Get primary user role
 export async function getUserRole(): Promise<string | null> {
   const session = await getSession();
   if (!session?.user?.roles || session.user.roles.length === 0) {
@@ -141,14 +138,12 @@ export async function getUserRole(): Promise<string | null> {
   return session.user.roles[0];
 }
 
-// Check if user has specific role
 export async function hasRole(role: string): Promise<boolean> {
   const session = await getSession();
   if (!session?.user?.roles) return false;
   return session.user.roles.includes(role);
 }
 
-// Get all user roles
 export async function getUserRoles(): Promise<string[]> {
   const session = await getSession();
   return session?.user?.roles || [];

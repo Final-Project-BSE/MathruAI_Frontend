@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-
 import Image from "next/image";
 
 import { NavMain } from "@/components/nav-main";
@@ -17,6 +16,7 @@ import {
 import { useRouter } from "next/navigation";
 import { logout } from "@/lib/authentication";
 import { canAccessRoute } from "@/lib/roleConfig";
+import { useLanguage } from "@/components/common/useLanguage";
 
 const data = {
   user: {
@@ -26,68 +26,92 @@ const data = {
   },
   navMain: [
     {
-      title: "Reproductive Dashboard",
+      key: "reproductiveDashboard",
       url: "/dashboard/reproductive",
     },
-        {
-      title: "Pregnancy Dashboard",
+    {
+      key: "pregnancyDashboard",
       url: "/dashboard/pregnancy",
     },
-        {
-      title: "Postpartum Dashboard",
+    {
+      key: "postpartumDashboard",
       url: "/dashboard/postpartum",
     },
     {
-      title: "Cycle Tracker",
+      key: "cycleTracker",
       url: "/cycle-tracker",
     },
     {
-      title: "Health Monitoring",
+      key: "healthMonitoring",
       url: "/health-monitoring",
     },
     {
-      title: "Daily Recommendations",
+      key: "dailyRecommendations",
       url: "/daily-recommendations",
     },
     {
-      title: "Midwife Connection",
-      url: "/midwife-connection",
+      key: "midwifeConnection",
+      url: "/midwife-assign",
     },
     {
-      title: "AI Assistant",
+      key: "aiAssistant",
       url: "/chatbot",
     },
     {
-      title: "Notifications",
-      url: "/notifications",
+      key: "healthRecords",
+      url: "/health-records",
     },
     {
-      title: "Announcements",
+      key: "timelineMilestone",
+      url: "/timeline-milestone",
+    },
+    {
+      key: "announcements",
       url: "/announcement",
     },
-    // {
-    //   title: "Settings",
-    //   url: "/settings",
-    // },
-    // {
-    //   title: "Upgrade Stage",
-    //   url: "/upgrade-stage",
-    // },
+    {
+      key: "recoveryTracking",
+      url: "/recovery-tracking",
+    },
+    {
+      key: "breastfeedingSupport",
+      url: "/breastfeeding-support",
+    },
+    {
+      key: "threePosha",
+      url: "/three-posha",
+    },
+    {
+      key: "birthControl",
+      url: "/birth-control",
+    },
   ],
-};
+} as const;
 
-export function AppSidebar({ userRole, ...props }: React.ComponentProps<typeof Sidebar> & {userRole:string}) {
+type SidebarNavKey = keyof ReturnType<typeof useLanguage>["t"]["sidebar"]["nav"];
 
+export function AppSidebar({
+  userRole,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & { userRole: string }) {
   const router = useRouter();
+  const { t } = useLanguage();
+  const sidebarText = t.sidebar;
 
-const handleLogout = async () => {
-  await logout();
-  router.push("/sign-in");
-}; 
+  const handleLogout = async () => {
+    localStorage.setItem("app-language", "en");
+    window.dispatchEvent(new Event("language:changed"));
+    
+    await logout();
+    router.push("/sign-in");
+  };
 
-const accessibleNavItems = data.navMain.filter(item => {
-  return canAccessRoute(userRole, item.url)
-})
+  const accessibleNavItems = data.navMain
+    .filter((item) => canAccessRoute(userRole, item.url))
+    .map((item) => ({
+      title: sidebarText.nav[item.key as SidebarNavKey],
+      url: item.url,
+    }));
 
   return (
     <Sidebar
@@ -95,46 +119,61 @@ const accessibleNavItems = data.navMain.filter(item => {
       {...props}
       className="border-r border-[#CFE1EE]"
     >
-      <SidebarHeader className="!bg-white">
-        <SidebarMenu className="!bg-white">
-          <SidebarMenuItem className="!bg-white">
-            <SidebarMenuButton
-              asChild
-              className="!bg-white w-full h-full flex justify-center items-center"
-            >
-              <a
-                href="#"
-                className="!bg-white flex justify-center items-center"
+      <div className="h-full w-full bg-[#210321] bg-cover bg-center bg-no-repeat">
+        <SidebarHeader className="bg-transparent">
+          <SidebarMenu className="bg-transparent">
+            <SidebarMenuItem className="bg-transparent">
+              <SidebarMenuButton
+                asChild
+                tooltip={sidebarText.logo}
+                className="flex h-full w-full items-center justify-center bg-transparent hover:bg-transparent active:bg-transparent focus:bg-transparent"
               >
-                <Image
-                  src="/images/logo.jpeg"
-                  alt="Logo"
-                  width={88}
-                  height={88}
-                  className="overflow-hidden rounded-full"
-                />
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      <SidebarContent className="!bg-white">
-        <NavMain items={accessibleNavItems} />
-      </SidebarContent>
-      <SidebarFooter className="!bg-white">
-        {/* <NavUser user={data.user} /> */}
-        <div className="h-[48px] w-full flex flex-row items-center gap-[10px] px-[16px]">
-          <i className="logout-icon size-[28px] text-[#757575]" />
-              <button
-            type="button"
-            onClick={handleLogout}
-            className="text-[#26262B] cursor-pointer text-[18px] font-[700]"
-          >
-           Log Out
-          </button>
-       
-        </div>
-      </SidebarFooter>
+                <a
+                  href="#"
+                  className="pointer-events-auto flex items-center justify-center bg-transparent"
+                >
+                  <Image
+                    src="/images/logo.jpeg"
+                    alt={sidebarText.logo}
+                    width={88}
+                    height={88}
+                    className="pointer-events-none select-none overflow-hidden rounded-full"
+                    priority
+                  />
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
+
+        <SidebarContent className="bg-transparent">
+          <NavMain items={accessibleNavItems} />
+        </SidebarContent>
+
+        <SidebarFooter className="bg-transparent">
+          <div className="px-3 pb-3">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="
+                flex h-10 w-full items-center gap-3
+                rounded-xl bg-[#3a063a] px-4
+                text-white
+                transition-colors duration-200
+                hover:bg-[#d04f51]
+                active:bg-[#b74446]
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40
+              "
+              aria-label={sidebarText.logout}
+            >
+              <i className="logout-icon size-[22px] text-white/90" />
+              <span className="text-sm font-semibold tracking-wide">
+                {sidebarText.logout}
+              </span>
+            </button>
+          </div>
+        </SidebarFooter>
+      </div>
     </Sidebar>
   );
 }

@@ -4,16 +4,18 @@ import React, { useEffect, useMemo, useState } from "react";
 import { LoadingState } from "../../../components/common/LoadingState";
 import { AuthRequired } from "./components/AuthRequired";
 import { CalculatorCard } from "./components/CalculatorCard";
-import { StatsGrid, type CycleStats } from "./components/StatsGrid";
+import { StatsGrid } from "./components/StatsGrid";
 import { CycleCalendar, type CycleDay } from "./components/CycleCalendar";
 import { CycleInsights } from "./components/CycleInsights";
-import Container from "@/components/shared/container"
-
+import Container from "@/components/shared/container";
+import { calcStats, generateFutureCycles } from "@/lib/cycleTrackerStats";
 import {
   calculateFertility,
   getLatestFertility,
   type FertilityResponseDto,
 } from "../../api/cycletracker/api";
+import TopBarFeatures from "@/components/common/TopBarFeatures";
+import { useLanguage } from "@/components/common/useLanguage";
 
 function formatDateForApi(date: Date): string {
   const year = date.getFullYear();
@@ -22,103 +24,111 @@ function formatDateForApi(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-function deriveLastPeriod(nextPeriodISO: string, len: number) {
-  const d = new Date(nextPeriodISO);
-  d.setDate(d.getDate() - len);
-  return d;
+function parseLocalDate(dateStr?: string | null): Date | null {
+  if (!dateStr) return null;
+
+  const [year, month, day] = dateStr.split("-").map(Number);
+
+  if (!year || !month || !day) return null;
+
+  return new Date(year, month - 1, day);
 }
 
-function buildCalendarDays(params: {
+export function buildCalendarDays(params: {
   year: number;
-  month: number; // 0-based
-  fertilityData: FertilityResponseDto;
-  lastPeriodDate: string; // optional
+  month: number;
+  lastPeriodDate: string;
   cycleLength: number;
+  periodDuration?: number;
+  safeStart1?: string;
+  safeEnd1?: string;
+  safeStart2?: string;
+  safeEnd2?: string;
+  fertileStart?: string;
+  fertileEnd?: string;
+  ovulationDate?: string;
 }): CycleDay[] {
-  const { year, month, fertilityData, lastPeriodDate, cycleLength } = params;
+  const {
+    year,
+    month,
+    lastPeriodDate,
+    cycleLength,
+    periodDuration = 1,
+    safeStart1,
+    safeEnd1,
+    safeStart2,
+    safeEnd2,
+    fertileStart,
+    fertileEnd,
+    ovulationDate,
+  } = params;
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  const periodDuration = 5;
-
-  const nextPeriod = new Date(fertilityData.nextPeriodDate);
-
-  const lastPeriodStart = lastPeriodDate
-    ? new Date(`${lastPeriodDate}T00:00:00`) // avoids timezone shift
-    : deriveLastPeriod(fertilityData.nextPeriodDate, cycleLength);
-
-  const fertileStart = new Date(fertilityData.fertileWindowStart);
-  const fertileEnd = new Date(fertilityData.fertileWindowEnd);
-  const ovulation = new Date(fertilityData.ovulationDate);
-
-  const addDays = (d: Date, n: number) => new Date(d.getTime() + n * 24 * 60 * 60 * 1000);
-
-  const lastPeriodEnd = addDays(lastPeriodStart, periodDuration);
-  const nextPeriodEnd = addDays(nextPeriod, periodDuration);
-
+  const futurePeriods = generateFutureCycles(lastPeriodDate, cycleLength);
   const days: CycleDay[] = [];
+
+  const addDays = (date: Date, n: number) =>
+    new Date(date.getTime() + n * 86400000);
+
+  const safeStartDate1 = parseLocalDate(safeStart1);
+  const safeEndDate1 = parseLocalDate(safeEnd1);
+  const safeStartDate2 = parseLocalDate(safeStart2);
+  const safeEndDate2 = parseLocalDate(safeEnd2);
+  const fertileStartDate = parseLocalDate(fertileStart);
+  const fertileEndDate = parseLocalDate(fertileEnd);
+  const ovulationDateObj = parseLocalDate(ovulationDate);
 
   for (let i = 1; i <= daysInMonth; i++) {
     const currentDate = new Date(year, month, i);
 
-    const isPeriod =
-      (currentDate >= lastPeriodStart && currentDate < lastPeriodEnd) ||
-      (currentDate >= nextPeriod && currentDate < nextPeriodEnd);
+    const isPeriod = futurePeriods.some(
+      (fp) => currentDate >= fp && currentDate < addDays(fp, periodDuration)
+    );
 
-    const isFertile = currentDate >= fertileStart && currentDate <= fertileEnd;
-    const isOvulation = currentDate.toDateString() === ovulation.toDateString();
+    const isFertile =
+      fertileStartDate &&
+      fertileEndDate &&
+      currentDate >= fertileStartDate &&
+      currentDate <= fertileEndDate;
+
+    const isOvulation =
+      ovulationDateObj &&
+      currentDate.toDateString() === ovulationDateObj.toDateString();
+
+    const isSafe =
+      (safeStartDate1 &&
+        safeEndDate1 &&
+        currentDate >= safeStartDate1 &&
+        currentDate <= safeEndDate1) ||
+      (safeStartDate2 &&
+        safeEndDate2 &&
+        currentDate >= safeStartDate2 &&
+        currentDate <= safeEndDate2);
+
     const isToday = currentDate.toDateString() === today.toDateString();
 
     days.push({
       date: i,
       isPeriod,
-      isFertile,
-      isOvulation,
+      isFertile: Boolean(isFertile),
+      isOvulation: Boolean(isOvulation),
       isToday,
+      isSafe: Boolean(isSafe),
     });
   }
 
   return days;
 }
 
-function calcStats(params: {
-  fertilityData: FertilityResponseDto;
-  lastPeriodDate: string;
-  cycleLength: number;
-}): CycleStats {
-  const { fertilityData, lastPeriodDate, cycleLength } = params;
-
-  const today = new Date();
-
-  const lastPeriod = lastPeriodDate
-    ? new Date(`${lastPeriodDate}T00:00:00`) // avoid timezone shift
-    : deriveLastPeriod(fertilityData.nextPeriodDate, cycleLength);
-
-  const nextPeriod = new Date(fertilityData.nextPeriodDate);
-  const fertileEnd = new Date(fertilityData.fertileWindowEnd);
-
-  const currentDay =
-    Math.floor((today.getTime() - lastPeriod.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-
-  const daysToNextPeriod = Math.ceil((nextPeriod.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  const daysToFertileEnd = Math.max(
-    0,
-    Math.ceil((fertileEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-  );
-
-  return {
-    currentDay: Math.max(0, currentDay),
-    cycleLength,
-    nextPeriod: Math.max(0, daysToNextPeriod),
-    fertile: daysToFertileEnd,
-  };
-}
-
 export default function CycleTrackerPage() {
+  const { language, t } = useLanguage();
+  const cycleText = t.cycleTracker;
+
   const [token, setToken] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -126,20 +136,19 @@ export default function CycleTrackerPage() {
 
   const [lastPeriodDate, setLastPeriodDate] = useState("");
   const [cycleLength, setCycleLength] = useState(28);
-
-  const [fertilityData, setFertilityData] = useState<FertilityResponseDto | null>(null);
+  const [fertilityData, setFertilityData] =
+    useState<FertilityResponseDto | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [calendarDays, setCalendarDays] = useState<CycleDay[]>([]);
 
-  // Load local persisted inputs
   useEffect(() => {
     const savedLast = localStorage.getItem("ct_lastPeriodDate");
     const savedLen = localStorage.getItem("ct_cycleLength");
+
     if (savedLast) setLastPeriodDate(savedLast);
     if (savedLen) setCycleLength(Number(savedLen));
   }, []);
 
-  // Auth + load latest from backend
   useEffect(() => {
     const initialize = async () => {
       try {
@@ -151,28 +160,35 @@ export default function CycleTrackerPage() {
           setIsAuthenticated(true);
 
           const latest = await getLatestFertility(session.user.token);
+
           if (latest) {
             setFertilityData(latest);
-            setError(null);
+            setLastPeriodDate(latest.lastPeriodDate);
+            setCycleLength(latest.averageCycleLength);
+
+            localStorage.setItem("ct_lastPeriodDate", latest.lastPeriodDate);
+            localStorage.setItem(
+              "ct_cycleLength",
+              String(latest.averageCycleLength)
+            );
           }
         } else {
-          setError("Please log in to access the cycle tracker.");
+          setError(cycleText.authLoginMessage);
           setIsAuthenticated(false);
         }
       } catch {
-        setError("Authentication error. Please log in again.");
+        setError(cycleText.authErrorMessage);
         setIsAuthenticated(false);
       } finally {
         setLoadingData(false);
       }
     };
 
-    initialize();
-  }, []);
+    void initialize();
+  }, [cycleText.authErrorMessage, cycleText.authLoginMessage]);
 
-  // Build calendar when month/data changes
   useEffect(() => {
-    if (!fertilityData) return;
+    if (!lastPeriodDate) return;
 
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
@@ -181,37 +197,76 @@ export default function CycleTrackerPage() {
       buildCalendarDays({
         year,
         month,
-        fertilityData,
         lastPeriodDate,
         cycleLength,
+        safeStart1: fertilityData?.safeStart1,
+        safeEnd1: fertilityData?.safeEnd1,
+        safeStart2: fertilityData?.safeStart2,
+        safeEnd2: fertilityData?.safeEnd2,
+        fertileStart: fertilityData?.fertileWindowStart,
+        fertileEnd: fertilityData?.fertileWindowEnd,
+        ovulationDate: fertilityData?.ovulationDate,
       })
     );
-  }, [fertilityData, currentMonth, lastPeriodDate, cycleLength]);
+  }, [lastPeriodDate, cycleLength, currentMonth, fertilityData]);
 
   const stats = useMemo(() => {
     if (!fertilityData) {
-      return { currentDay: 0, cycleLength, nextPeriod: 0, fertile: 0 };
+      return {
+        currentDay: 0,
+        cycleLength,
+        nextPeriod: 0,
+        fertile: 0,
+      };
     }
+
     return calcStats({ fertilityData, lastPeriodDate, cycleLength });
   }, [fertilityData, lastPeriodDate, cycleLength]);
 
-  const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
-  ];
-  const displayMonth = `${monthNames[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`;
+  const locale = useMemo(() => {
+    if (language === "si") return "si-LK";
+    if (language === "ta") return "ta-LK";
+    return "en-US";
+  }, [language]);
 
-  const leadingEmptyDays = useMemo(() => {
-    return new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
-  }, [currentMonth]);
+  const displayMonth = useMemo(
+    () =>
+      `${currentMonth.toLocaleString(locale, {
+        month: "long",
+      })} ${currentMonth.getFullYear()}`,
+    [currentMonth, locale]
+  );
+
+  const leadingEmptyDays = useMemo(
+    () =>
+      new Date(
+        currentMonth.getFullYear(),
+        currentMonth.getMonth(),
+        1
+      ).getDay(),
+    [currentMonth]
+  );
+
+  const formatDisplayDate = (value?: string | null) => {
+    const date = parseLocalDate(value);
+
+    if (!date) return cycleText.notAvailable;
+
+    return date.toLocaleDateString(locale, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
   async function handleCalculate() {
     if (!lastPeriodDate) {
-      setError("Please enter your last period date");
+      setError(cycleText.enterLastPeriodDate);
       return;
     }
+
     if (!token) {
-      setError("Please log in to calculate fertility window");
+      setError(cycleText.loginToCalculate);
       return;
     }
 
@@ -226,13 +281,21 @@ export default function CycleTrackerPage() {
       });
 
       setFertilityData(data);
-      localStorage.setItem("ct_lastPeriodDate", lastPeriodDate);
-      localStorage.setItem("ct_cycleLength", String(cycleLength));
+      setLastPeriodDate(data.lastPeriodDate);
+      setCycleLength(data.averageCycleLength);
+
+      localStorage.setItem("ct_lastPeriodDate", data.lastPeriodDate);
+      localStorage.setItem(
+        "ct_cycleLength",
+        String(data.averageCycleLength)
+      );
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to calculate fertility window");
+      setError(
+        err instanceof Error ? err.message : cycleText.calculationFailed
+      );
     } finally {
       setLoading(false);
     }
@@ -241,63 +304,130 @@ export default function CycleTrackerPage() {
   function handleRecalculate() {
     setFertilityData(null);
     setLastPeriodDate("");
+    setCalendarDays([]);
+    setError(null);
+    setSuccess(false);
+
+    localStorage.removeItem("ct_lastPeriodDate");
+    localStorage.removeItem("ct_cycleLength");
   }
 
   if (loadingData) return <LoadingState />;
 
   if (!isAuthenticated) {
-    return <AuthRequired message={error || "Please log in to access the Cycle Tracker"} />;
+    return (
+      <AuthRequired
+        title={cycleText.authRequiredTitle}
+        message={error || cycleText.authRequiredDefaultMessage}
+        defaultMessage={cycleText.authRequiredDefaultMessage}
+      />
+    );
   }
 
   return (
-    <Container title="Cycle Tracker">
-    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-pink-200 to-pink-300 p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Cycle Tracker</h1>
-        <p className="text-gray-700">Track your cycle and fertility window</p>
-      </div>
+    <Container title={cycleText.pageTitle}>
+      <div className="min-h-screen bg-[#fed2cc] p-6">
+        <TopBarFeatures />
 
-      {!fertilityData && (
-        <CalculatorCard
-          lastPeriodDate={lastPeriodDate}
-          cycleLength={cycleLength}
-          onLastPeriodDateChange={setLastPeriodDate}
-          onCycleLengthChange={setCycleLength}
-          onCalculate={handleCalculate}
-          loading={loading}
-          error={error}
-          success={success}
-          maxDate={formatDateForApi(new Date())}
-        />
-      )}
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          {cycleText.pageTitle}
+        </h1>
 
-      {fertilityData && (
-        <>
-          <StatsGrid stats={stats} />
+        <p className="text-gray-700 mb-6">{cycleText.pageSubtitle}</p>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <CycleCalendar
-                displayMonth={displayMonth}
-                leadingEmptyDays={leadingEmptyDays}
-                days={calendarDays}
-                onPrevMonth={() =>
-                  setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))
-                }
-                onNextMonth={() =>
-                  setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))
-                }
-                onRecalculate={handleRecalculate}
+        {!fertilityData && (
+          <CalculatorCard
+            lastPeriodDate={lastPeriodDate}
+            cycleLength={cycleLength}
+            onLastPeriodDateChange={setLastPeriodDate}
+            onCycleLengthChange={setCycleLength}
+            onCalculate={handleCalculate}
+            loading={loading}
+            error={error}
+            success={success}
+            maxDate={formatDateForApi(new Date())}
+            labels={{
+              title: cycleText.calculatorTitle,
+              lastPeriodStartDate: cycleText.lastPeriodStartDate,
+              averageCycleLength: cycleText.averageCycleLength,
+              calculateButton: cycleText.calculateButton,
+              calculatingButton: cycleText.calculatingButton,
+              calculatedSuccess: cycleText.calculatedSuccess,
+            }}
+          />
+        )}
+
+        {fertilityData && (
+          <>
+            <StatsGrid
+              stats={stats}
+              labels={{
+                currentDay: cycleText.currentDay,
+                periodOfCycle: cycleText.periodOfCycle,
+                cycleLength: cycleText.cycleLength,
+                average: cycleText.average,
+                nextPeriod: cycleText.nextPeriod,
+                daysLeft: cycleText.daysLeft,
+                fertileDays: cycleText.fertileDays,
+                remaining: cycleText.remaining,
+              }}
+            />
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <CycleCalendar
+                  displayMonth={displayMonth}
+                  leadingEmptyDays={leadingEmptyDays}
+                  days={calendarDays}
+                  onPrevMonth={() =>
+                    setCurrentMonth(
+                      new Date(
+                        currentMonth.getFullYear(),
+                        currentMonth.getMonth() - 1
+                      )
+                    )
+                  }
+                  onNextMonth={() =>
+                    setCurrentMonth(
+                      new Date(
+                        currentMonth.getFullYear(),
+                        currentMonth.getMonth() + 1
+                      )
+                    )
+                  }
+                  onRecalculate={handleRecalculate}
+                  labels={{
+                    calendar: cycleText.calendar,
+                    recalculate: cycleText.recalculate,
+                    weekdays: cycleText.weekdays,
+                    period: cycleText.period,
+                    fertileWindow: cycleText.fertileWindow,
+                    ovulation: cycleText.ovulation,
+                    today: cycleText.today,
+                  }}
+                />
+              </div>
+
+              <CycleInsights
+                fertilityData={fertilityData}
+                formatDate={formatDisplayDate}
+                labels={{
+                  cycleInsights: cycleText.cycleInsights,
+                  ovulationTitle: cycleText.ovulationTitle,
+                  expectedOn: cycleText.expectedOn,
+                  fertileWindowTitle: cycleText.fertileWindowTitle,
+                  nextPeriodTitle: cycleText.nextPeriodTitle,
+                  expectedAround: cycleText.expectedAround,
+                  safeDaysTitle: cycleText.safeDaysTitle,
+                  pregnancyTestTitle: cycleText.pregnancyTestTitle,
+                  bestToTestAfter: cycleText.bestToTestAfter,
+                  notAvailable: cycleText.notAvailable,
+                }}
               />
             </div>
-
-            <div className="space-y-6">
-              <CycleInsights fertilityData={fertilityData} />
-            </div>
-          </div>
-        </>
-      )}
-    </div>
+          </>
+        )}
+      </div>
     </Container>
   );
 }

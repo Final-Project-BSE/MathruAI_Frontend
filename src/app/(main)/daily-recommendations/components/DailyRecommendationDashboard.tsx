@@ -1,132 +1,128 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Heart, Loader2, AlertTriangle } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Heart, AlertTriangle } from "lucide-react";
 
-// Import components
-import DashboardHeader from './DashboardHeader';
-import ErrorAlert from './ErrorAlert';
-import SuccessAlert from './SuccessAlert';
-import ProgressCard from './ProgressCard';
-import RecommendationCard from './RecommendationCard';
-import HistorySection from './HistorySection';
-import SettingsModal from './SettingsModal';
+import DashboardHeader from "./DashboardHeader";
+import ErrorAlert from "./ErrorAlert";
+import SuccessAlert from "./SuccessAlert";
+import ProgressCard from "./ProgressCard";
+import RecommendationCard from "./RecommendationCard";
+import HistorySection from "./HistorySection";
+import SettingsModal from "./SettingsModal";
 
-// Import types
-import type { UserData, RecommendationData, HistoryItem } from '../../../api/dailyrecommendation/types';
+import type {
+  UserData,
+  RecommendationData,
+  HistoryItem,
+  ChecklistItem,
+} from "../../../api/dailyrecommendation/types";
 
-// Import APIs (axios)
-import apis from '../../../api/dailyrecommendation/api';
-import { LoadingState } from '@/components/common/LoadingState';
+import apis from "../../../api/dailyrecommendation/api";
+import { LoadingState } from "@/components/common/LoadingState";
+import TopBarFeatures from "@/components/common/TopBarFeatures";
+import { useLanguage } from "@/components/common/useLanguage";
 
 const DailyRecommendationDashboard = () => {
-  // Auth state
+  const { t } = useLanguage();
+  const labels = t.dailyRecommendation;
+
   const [token, setToken] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
 
-  // Data state
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [recommendation, setRecommendation] = useState<RecommendationData | null>(null);
+  const [recommendation, setRecommendation] =
+    useState<RecommendationData | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
-  // UI state
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [showHistory, setShowHistory] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+
+  const [activePanel, setActivePanel] = useState<"checklist" | "history">(
+    "checklist"
+  );
 
   useEffect(() => {
     const initialize = async () => {
       try {
-        const { getSession } = await import('@/lib/authentication');
+        const { getSession } = await import("@/lib/authentication");
         const session = await getSession();
 
-        if (!session?.user?.token) {
-          console.warn('⚠️ No session found — please log in first.');
-          setError('Please log in to access the daily recommendations dashboard.');
+        const jwt = session?.user?.token;
+
+        if (!jwt) {
+          setError(labels.loginRequiredError);
           setIsAuthenticated(false);
           setLoadingData(false);
           return;
         }
 
-        const jwt = session.user.token;
         setToken(jwt);
         setIsAuthenticated(true);
-        console.log('✅ JWT token loaded for Daily Recommendation Dashboard');
 
-        // Decode JWT to extract user information
+        let uid: number | null = null;
+
         try {
-          const tokenParts = jwt.split('.');
-          if (tokenParts.length !== 3) throw new Error('Invalid JWT token format');
+          const me = await apis.me(jwt);
+          const raw = (me.user_id ?? me.id) as unknown;
 
-          const payload = JSON.parse(atob(tokenParts[1]));
-          console.log('Decoded JWT payload:', payload);
-
-          // Try multiple possible field names for user ID
-          let uid = payload.user_id || payload.userId || payload.id || payload.uid;
-
-          // Fallback: fetch /auth/me if no uid found in token
-          if (!uid && payload.sub) {
-            console.warn('No user_id in JWT token, will try /auth/me');
-            try {
-              const me = await apis.me(jwt);
-              uid = me.user_id || me.id;
-            } catch (fetchError) {
-              console.error('Could not fetch user info from backend:', fetchError);
-            }
+          if (raw !== undefined && raw !== null) {
+            const parsed =
+              typeof raw === "number" ? raw : parseInt(String(raw), 10);
+            if (!Number.isNaN(parsed)) uid = parsed;
           }
-
-          if (!uid) {
-            throw new Error(
-              'No user ID found in JWT token. Please ensure your authentication token includes user_id.'
-            );
-          }
-
-          const parsedUserId = typeof uid === 'number' ? uid : parseInt(uid.toString(), 10);
-          if (Number.isNaN(parsedUserId)) throw new Error('Invalid user ID format in token');
-
-          setUserId(parsedUserId);
-          console.log('User ID extracted:', parsedUserId);
-
-          await loadAllData(jwt, parsedUserId);
-        } catch (decodeError) {
-          console.error('Failed to decode JWT or extract user ID:', decodeError);
-          setError(
-            `Authentication error: ${
-              decodeError instanceof Error ? decodeError.message : 'Failed to extract user information'
-            }`
-          );
-          setIsAuthenticated(false);
-        } finally {
-          setLoadingData(false);
+        } catch {
+          uid = null;
         }
-      } catch (e) {
-        console.error('Failed to get session:', e);
-        setError('Authentication error. Please log in again.');
+
+        if (!uid) {
+          setError(labels.authUserIdError);
+          setIsAuthenticated(false);
+          setLoadingData(false);
+          return;
+        }
+
+        setUserId(uid);
+        await loadAllData(jwt, uid);
+        setError(null);
+      } catch {
+        setError(labels.authError);
         setIsAuthenticated(false);
+      } finally {
         setLoadingData(false);
       }
     };
 
     initialize();
-  }, []);
+  }, [labels]);
 
-  // Load all data
+  useEffect(() => {
+    if (activePanel === "history" && token && userId) {
+      void loadHistory(token, userId);
+    }
+  }, [activePanel, token, userId]);
+
   const loadAllData = async (jwtToken: string, uid: number) => {
     setLoadingData(true);
+
     try {
-      await Promise.all([loadUserData(jwtToken, uid), loadRecommendation(jwtToken, uid), loadHistory(jwtToken, uid)]);
+      await Promise.all([
+        loadUserData(jwtToken, uid),
+        loadRecommendation(jwtToken, uid),
+        loadHistory(jwtToken, uid),
+      ]);
       setError(null);
     } catch (err) {
-      console.error('Error loading data:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load data';
-      if (!errorMessage.includes('No data')) {
-        setError(errorMessage);
+      const message =
+        err instanceof Error ? err.message : labels.loadDataFailed;
+      if (!String(message).includes("No data")) {
+        setError(message);
       }
     } finally {
       setLoadingData(false);
@@ -135,18 +131,14 @@ const DailyRecommendationDashboard = () => {
 
   const loadUserData = async (jwtToken: string, uid: number) => {
     const data = await apis.getUser(jwtToken, uid);
-    console.log('User data loaded:', data);
     setUserData(data);
   };
 
   const loadRecommendation = async (jwtToken: string, uid: number) => {
     try {
       const rec = await apis.getTodayRecommendation(jwtToken, uid);
-      if (rec) console.log('Recommendation loaded:', rec);
       setRecommendation(rec);
-    } catch (err) {
-      console.error('Error loading recommendation:', err);
-      // recommendation might not exist yet
+    } catch {
       setRecommendation(null);
     }
   };
@@ -154,17 +146,24 @@ const DailyRecommendationDashboard = () => {
   const loadHistory = async (jwtToken: string, uid: number) => {
     try {
       const items = await apis.getHistory(jwtToken, uid, 7);
-      console.log('History loaded:', items);
-      setHistory(items);
-    } catch (err) {
-      console.error('Error loading history:', err);
-      // history might be empty
+
+      const seen = new Set<string>();
+      const deduped = items.filter((item) => {
+        if (!item.date) return true;
+        if (seen.has(item.date)) return false;
+        seen.add(item.date);
+        return true;
+      });
+
+      setHistory(deduped);
+    } catch {
+      setHistory([]);
     }
   };
 
   const handleRefresh = async () => {
     if (!token || !userId) {
-      setError('Authentication required to refresh recommendation');
+      setError(labels.refreshAuthError);
       return;
     }
 
@@ -174,22 +173,43 @@ const DailyRecommendationDashboard = () => {
     try {
       const rec = await apis.refreshRecommendation(token, userId);
       setRecommendation(rec);
-      setSuccess('Recommendation refreshed successfully!');
+      setSuccess(labels.refreshSuccess);
       setTimeout(() => setSuccess(null), 3000);
-
       await loadHistory(token, userId);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to refresh recommendation';
-      setError(errorMessage);
-      console.error('Refresh error:', err);
+      setError(err instanceof Error ? err.message : labels.refreshFailed);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdateSettings = async (pregnancyWeek: number, preferences: string) => {
+  const handleSaveChecklist = async (payload: {
+    date: string;
+    items: ChecklistItem[];
+  }) => {
+    if (!token || !userId) return;
+
+    await apis.saveChecklist(token, userId, payload);
+
+    setRecommendation((prev) => {
+      if (!prev) return prev;
+      if (prev.date !== payload.date) return prev;
+
+      return {
+        ...prev,
+        checklist: payload.items,
+      };
+    });
+
+    await loadHistory(token, userId);
+  };
+
+  const handleUpdateSettings = async (
+    pregnancyWeek: number,
+    preferences: string
+  ) => {
     if (!token || !userId) {
-      setError('Authentication required to update settings');
+      setError(labels.updateAuthError);
       return;
     }
 
@@ -203,13 +223,8 @@ const DailyRecommendationDashboard = () => {
         regenerate_recommendation: true,
       };
 
-      console.log('PUT request to:', `/pregnancy/user/${userId}/data`);
-      console.log('Payload:', payload);
-
       const data = await apis.updateUserSettings(token, userId, payload);
-      console.log('Response:', data);
 
-      // Update local userData
       if (userData) {
         setUserData({
           ...userData,
@@ -218,71 +233,62 @@ const DailyRecommendationDashboard = () => {
         });
       }
 
-      // If backend returns new recommendation
       if (data?.new_recommendation) {
         setRecommendation({
           user_id: userId,
-          date: new Date().toISOString().split('T')[0],
+          date: new Date().toISOString().split("T")[0],
           recommendation: data.new_recommendation,
           regenerated: true,
+          checklist: [],
         });
       }
 
       setShowSettings(false);
-      setSuccess('Settings updated and recommendation regenerated!');
+      setSuccess(labels.updateSuccess);
       setTimeout(() => setSuccess(null), 3000);
 
       await loadAllData(token, userId);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update settings';
-      setError(errorMessage);
-      console.error('Update settings error:', err);
+      setError(err instanceof Error ? err.message : labels.updateFailed);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      setToken(null);
-      setUserId(null);
-      setIsAuthenticated(false);
-      setUserData(null);
-      setRecommendation(null);
-      setHistory([]);
-
-      window.location.href = '/login';
-    } catch (err) {
-      console.error('Logout error:', err);
-      setError('Failed to logout');
-    }
+  const handleLogout = () => {
+    setToken(null);
+    setUserId(null);
+    setIsAuthenticated(false);
+    setUserData(null);
+    setRecommendation(null);
+    setHistory([]);
+    window.location.href = "/login";
   };
 
-  // Loading screen
   if (loadingData) {
     return (
-      <div>
+      <div className="min-h-screen bg-[#fcd4cd]">
         <LoadingState />
       </div>
     );
   }
 
-  // Not authenticated screen
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 flex items-center justify-center p-8">
-        <Card className="max-w-md w-full shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-center flex items-center justify-center">
-              <Heart className="h-6 w-6 mr-2 text-pink-500" />
-              Authentication Required
+      <div className="min-h-screen bg-[#fcd4cd] flex items-center justify-center p-6 md:p-8">
+        <Card className="w-full max-w-md rounded-3xl border-0 bg-white shadow-[0_20px_60px_rgba(208,79,81,0.18)]">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center justify-center gap-2 text-center text-xl font-semibold text-[#d04f51]">
+              <Heart className="h-6 w-6" />
+              {labels.authRequiredTitle}
             </CardTitle>
           </CardHeader>
+
           <CardContent>
-            <Alert className="border-pink-200 bg-pink-50">
-              <AlertTriangle className="h-4 w-4 text-pink-600" />
-              <AlertDescription className="text-pink-800 ml-2">
-                Please log in to access the Daily Recommendations Dashboard
+            <Alert className="rounded-2xl border border-[#f3c7c8] bg-[#fff5f5]">
+              <AlertTriangle className="h-4 w-4 text-[#d04f51]" />
+              <AlertDescription className="ml-2 text-sm text-[#7a2d2f]">
+                {labels.authRequiredMessage}
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -292,49 +298,97 @@ const DailyRecommendationDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 p-8">
-      <div className="max-w-7xl mx-auto">
-        <DashboardHeader
-          userName={userData?.name || 'User'}
-          pregnancyWeek={userData?.pregnancy_week || 0}
-          onRefresh={handleRefresh}
-          onHistoryToggle={() => setShowHistory(!showHistory)}
-          onLogout={handleLogout}
-          loading={loading}
-          showHistory={showHistory}
-        />
+    <div className="min-h-screen bg-[#fcd4cd] px-4 py-6 md:px-6 md:py-8 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="rounded-[32px] bg-white/40 p-4 shadow-[0_20px_70px_rgba(0,0,0,0.06)] backdrop-blur-sm md:p-6 lg:p-8">
+          <TopBarFeatures />
+          <DashboardHeader
+            userName={userData?.name || "User"}
+            pregnancyWeek={userData?.pregnancy_week || 0}
+            onRefresh={handleRefresh}
+            onLogout={handleLogout}
+            loading={loading}
+          />
 
-        <ErrorAlert error={error} onDismiss={() => setError(null)} />
-        <SuccessAlert message={success} onDismiss={() => setSuccess(null)} />
-
-        {userData && (
-          <div className="mb-8">
-            <ProgressCard pregnancyWeek={userData.pregnancy_week} />
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <RecommendationCard
-              recommendation={recommendation}
-              onRefresh={handleRefresh}
-              onSettingsClick={() => setShowSettings(true)}
-              loading={loading}
-              preferences={userData?.preferences}
-            />
+          <div className="mt-6 space-y-4">
+            <ErrorAlert error={error} onDismiss={() => setError(null)} />
+            <SuccessAlert message={success} onDismiss={() => setSuccess(null)} />
           </div>
 
-          {showHistory && (
-            <div className="lg:col-span-1">
-              <HistorySection history={history} loading={false} />
+          {userData && (
+            <div className="mt-6">
+              <div className="rounded-3xl border border-[#f3d6d7] bg-white p-4 shadow-sm md:p-5">
+                <ProgressCard pregnancyWeek={userData.pregnancy_week} />
+              </div>
             </div>
           )}
+
+          <div className="mt-8">
+            <div className="inline-flex w-full rounded-2xl border border-[#efc6c7] bg-white p-1.5 shadow-sm md:w-auto">
+              <button
+                type="button"
+                onClick={() => setActivePanel("checklist")}
+                className={[
+                  "min-w-[140px] rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200",
+                  activePanel === "checklist"
+                    ? "bg-[#d04f51] text-white shadow-[0_10px_25px_rgba(208,79,81,0.28)]"
+                    : "text-[#7a2d2f] hover:bg-[#fff5f5]",
+                ].join(" ")}
+              >
+                {labels.checklist}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActivePanel("history")}
+                className={[
+                  "min-w-[140px] rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200",
+                  activePanel === "history"
+                    ? "bg-[#d04f51] text-white shadow-[0_10px_25px_rgba(208,79,81,0.28)]"
+                    : "text-[#7a2d2f] hover:bg-[#fff5f5]",
+                ].join(" ")}
+              >
+                {labels.history}
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-6 overflow-hidden">
+            <div
+              className={`flex w-[200%] transition-transform duration-500 ease-in-out ${
+                activePanel === "checklist"
+                  ? "translate-x-0"
+                  : "-translate-x-1/2"
+              }`}
+            >
+              <div className="w-1/2 pr-0 md:pr-3">
+                <div className="rounded-3xl border border-[#f1d2d3] bg-white p-4 shadow-sm md:p-5">
+                  <RecommendationCard
+                    recommendation={recommendation}
+                    onRefresh={handleRefresh}
+                    onSettingsClick={() => setShowSettings(true)}
+                    loading={loading}
+                    preferences={userData?.preferences}
+                    userId={userId}
+                    token={token}
+                    onSaveChecklist={handleSaveChecklist}
+                  />
+                </div>
+              </div>
+
+              <div className="w-1/2 pl-0 md:pl-3">
+                <div className="rounded-3xl border border-[#f1d2d3] bg-white p-4 shadow-sm md:p-5">
+                  <HistorySection history={history} loading={false} />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {showSettings && userData && (
           <SettingsModal
             currentWeek={userData.pregnancy_week}
-            currentPreferences={userData.preferences || ''}
+            currentPreferences={userData.preferences || ""}
             onSave={handleUpdateSettings}
             onClose={() => setShowSettings(false)}
             loading={loading}

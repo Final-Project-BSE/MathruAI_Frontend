@@ -1,13 +1,17 @@
-// api.ts
-import axios, { AxiosError } from 'axios';
-import type { UserData, RecommendationData, HistoryItem } from './types';
+import axios from "axios";
+import type {
+  UserData,
+  RecommendationData,
+  HistoryItem,
+  ChecklistItem,
+} from "./types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const PREGNANCY_API = `${API_BASE_URL}/pregnancy`;
 
 const http = axios.create({
   baseURL: PREGNANCY_API,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { "Content-Type": "application/json" },
 });
 
 function authHeader(token: string) {
@@ -18,21 +22,21 @@ function isAxios404(err: unknown) {
   return axios.isAxiosError(err) && err.response?.status === 404;
 }
 
-const apis = {
-  // Optional endpoint used by your JWT fallback flow
+const dailyRecommendationApi = {
   async me(token: string): Promise<{ user_id?: number; id?: number }> {
-    const res = await http.get('/auth/me', { headers: authHeader(token) });
+    const res = await http.get("/auth/me", { headers: authHeader(token) });
     return res.data;
   },
 
   async getUser(token: string, userId: number): Promise<UserData> {
-    const res = await http.get(`/user/${userId}`, {
-      headers: authHeader(token),
-    });
+    const res = await http.get(`/user/${userId}`, { headers: authHeader(token) });
     return res.data;
   },
 
-  async getTodayRecommendation(token: string, userId: number): Promise<RecommendationData | null> {
+  async getTodayRecommendation(
+    token: string,
+    userId: number
+  ): Promise<RecommendationData | null> {
     try {
       const res = await http.get(`/recommendation/${userId}`, {
         headers: authHeader(token),
@@ -44,8 +48,10 @@ const apis = {
     }
   },
 
-  async refreshRecommendation(token: string, userId: number): Promise<RecommendationData> {
-    // force regenerate
+  async refreshRecommendation(
+    token: string,
+    userId: number
+  ): Promise<RecommendationData> {
     const res = await http.get(`/recommendation/${userId}`, {
       headers: authHeader(token),
       params: { force_regenerate: true },
@@ -53,13 +59,27 @@ const apis = {
     return res.data;
   },
 
-  async getHistory(token: string, userId: number, limit = 7): Promise<HistoryItem[]> {
+  async saveChecklist(
+    token: string,
+    userId: number,
+    payload: { date: string; items: ChecklistItem[] }
+  ): Promise<{ message: string; saved_count: number }> {
+    const res = await http.put(`/recommendation/${userId}/checklist`, payload, {
+      headers: authHeader(token),
+    });
+    return res.data;
+  },
+
+  async getHistory(
+    token: string,
+    userId: number,
+    limit = 7
+  ): Promise<HistoryItem[]> {
     const res = await http.get(`/recommendations/history/${userId}`, {
       headers: authHeader(token),
       params: { limit },
     });
 
-    // your backend returns { recommendations: [...] }
     return res.data?.recommendations || [];
   },
 
@@ -71,7 +91,7 @@ const apis = {
       preferences: string;
       regenerate_recommendation: boolean;
     }
-  ): Promise<any> {
+  ): Promise<unknown> {
     const res = await http.put(`/user/${userId}/data`, payload, {
       headers: authHeader(token),
     });
@@ -79,4 +99,4 @@ const apis = {
   },
 };
 
-export default apis;
+export default dailyRecommendationApi;

@@ -1,6 +1,22 @@
-// src/lib/api.ts
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 export const FERTILITY_API = `${API_BASE_URL}/api/fertility`;
+
+// export interface FertilityResponseDto {
+//   ovulation: string | number | Date;
+//   fertileStart: string | number | Date;
+//   fertileEnd: string | number | Date;
+//   nextPeriod: string | number | Date;
+//   pregnancyTest: string | number | Date;
+//   fertileWindowStart: string;
+//   fertileWindowEnd: string;
+//   ovulationDate: string;
+//   nextPeriodDate: string;
+//   pregnancyTestDay: string;
+//   safeStart1: string;
+//   safeEnd1: string;
+//   safeStart2: string;
+//   safeEnd2: string;
+// }
 
 export interface FertilityResponseDto {
   fertileWindowStart: string;
@@ -8,10 +24,16 @@ export interface FertilityResponseDto {
   ovulationDate: string;
   nextPeriodDate: string;
   pregnancyTestDay: string;
+  safeStart1: string;
+  safeEnd1: string;
+  safeStart2: string;
+  safeEnd2: string;
+  lastPeriodDate: string;
+  averageCycleLength: number;
 }
 
 export interface CalculateFertilityRequest {
-  lastPeriodDate: string; // YYYY-MM-DD
+  lastPeriodDate: string;
   averageCycleLength: number;
 }
 
@@ -44,7 +66,6 @@ export async function getLatestFertility(token: string): Promise<FertilityRespon
       },
     });
   } catch {
-    // If there's no existing record, treat it as "no data" rather than an app error
     return null;
   }
 }
@@ -63,3 +84,5 @@ export async function calculateFertility(
     body: JSON.stringify(payload),
   });
 }
+
+

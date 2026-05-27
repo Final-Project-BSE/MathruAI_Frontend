@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { ClientFloatingChatbot } from "@/components/ClientFloatingChatbot";
 import { getSession } from "@/lib/authentication";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -25,6 +26,7 @@ export default async function RootLayout({ children }: Props) {
               {children}
             </main>
           </div>
+          <ClientFloatingChatbot />
         </SidebarProvider>
       </body>
     </html>

@@ -1,0 +1,72 @@
+import type { Patient } from './types';
+
+export const patients: Patient[] = [
+  {
+    id: '21',
+    name: 'Anna W. Abarca',
+    gender: 'F',
+    patientId: '15321904',
+    phone: '972-810-1206',
+    lastAppointment: '04/15/2020 10:00 AM',
+    doctor: 'Dr. Carlos Murphy',
+    reason: 'General health checkup',
+    avatar: 'A',
+    birthDate: '01.02.1985',
+    registrationDate: '12.05.2019',
+    email: 'anna.abarca@gmail.com',
+    address: '4517 Washington Ave, Manchester, Kentucky 39495',
+    age: 37,
+    measurements: [
+      { label: 'Heart rate', value: '87 b.p.m', accent: 'green' },
+      { label: 'Blood pressure', value: '120/80 mmHg', accent: 'red' },
+      { label: 'Weight', value: '64 kg', accent: 'purple' },
+      { label: 'Height', value: '165 cm', accent: 'dark' },
+    ],
+    documents: [
+      { title: 'Dental X-Ray Result', subtitle: 'Scanned report' },
+      { title: 'Medical Prescriptions', subtitle: '3 attached files' },
+      { title: 'Blood Analyzes', subtitle: 'Latest lab export' },
+    ],
+    visitsAnalysis: 5,
+    visitsCount: 7,
+    recentVisits: [
+      {
+        doctor: 'Jane Cooper',
+        specialty: 'Therapist',
+        time: '08:45 - 09:15',
+        duration: '30 min',
+        patient: 'Anna W. Abarca',
+        date: '21.12.2022',
+        weekday: 'Friday',
+      },
+      {
+        doctor: 'Bessie Cooper',
+        specialty: 'Dentist',
+        time: '10:05 - 11:45',
+        duration: '1h 40 min',
+        patient: 'Anna W. Abarca',
+        date: '10.08.2022',
+        weekday: 'Thursday',
+      },
+      {
+        doctor: 'Wade Warren',
+        specialty: 'Ophthalmologist',
+        time: '13:00 - 13:30',
+        duration: '30 min',
+        patient: 'Anna W. Abarca',
+        date: '02.01.2022',
+        weekday: 'Tuesday',
+      },
+      {
+        doctor: 'Leslie Alexander',
+        specialty: 'Orthodontist',
+        time: '08:45 - 09:15',
+        duration: '30 min',
+        patient: 'Anna W. Abarca',
+        date: '03.10.2021',
+        weekday: 'Wednesday',
+      },
+    ],
+  },
+  // keep the rest exactly the same
+];
