@@ -11,7 +11,7 @@ interface ProtectedImageProps {
   loadingFallback?: React.ReactNode;
 }
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080').replace(/\/$/, '');
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8081').replace(/\/$/, '');
 
 const resolveImageUrl = (path?: string | null) => {
   if (!path) return '';

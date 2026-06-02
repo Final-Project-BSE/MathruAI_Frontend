@@ -6,18 +6,18 @@ import type {
 } from "./types";
 
 const JAVA_API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8081"
 ).replace(/\/$/, "");
 
 const CHATBOT_API_BASE_URL = (
   process.env.NEXT_PUBLIC_CHATBOT_API_URL ||
   process.env.NEXT_PUBLIC_AI_API_URL ||
-  "http://localhost:5000/api"
+  "http://127.0.0.1:5000/api"
 ).replace(/\/$/, "");
 
 const DAILY_RECOMMENDATION_API_BASE_URL = (
   process.env.NEXT_PUBLIC_DAILY_RECOMMENDATION_API_URL ||
-  `${process.env.NEXT_PUBLIC_AI_API_URL || "http://localhost:5000"}/pregnancy`
+  `${process.env.NEXT_PUBLIC_AI_API_URL || "http://127.0.0.1:5000"}/pregnancy`
 ).replace(/\/$/, "");
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
