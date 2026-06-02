@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
 import type { RecoveryRecordRequestDto, RecoveryRecordResponseDto } from "./types";
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080").replace(/\/$/, "");
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8081").replace(/\/$/, "");
 
 const http = axios.create({
   baseURL: API_BASE_URL,

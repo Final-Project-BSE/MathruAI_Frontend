@@ -4,7 +4,7 @@ import { getSession } from "@/lib/authentication";
 import axios, { AxiosError, AxiosInstance } from "axios";
 
 const createAxiosService = (): AxiosInstance => {
-  const baseURL = process.env.BASE_URL ?? "http://localhost:8080";
+  const baseURL = process.env.BASE_URL ?? "http://127.0.0.1:8081";
 
   const instance = axios.create({
     baseURL,
