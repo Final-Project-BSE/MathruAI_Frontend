@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import {
-  Bell,
   Syringe,
   CalendarPlus,
   MapPinned,
@@ -13,7 +12,7 @@ import {
 } from "lucide-react";
 import { getcuruser } from "@/app/api/user/api";
 import type { UserResponseDto } from "@/app/api/user/types";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import ProtectedImage from "../../lib/ProtectedImage";
 import MessagesPopup from "../../app/(connection)/messages/MessagesPopup";
 import { chatApi } from "@/app/api/chat/api";
@@ -95,7 +94,7 @@ export default function TopBarFeatures({
     }
   }
 
-  async function refreshScheduledCount() {
+  const refreshScheduledCount = useCallback(async () => {
     if (!token || !me?.id || !me.assignedMidwifeId) return;
 
     try {
@@ -124,11 +123,11 @@ export default function TopBarFeatures({
     } catch (error) {
       console.error("Failed to load scheduled appointments count:", error);
     }
-  }
+  }, [token, me?.id, me?.assignedMidwifeId]);
 
   useEffect(() => {
     void refreshScheduledCount();
-  }, [token, me?.id, me?.assignedMidwifeId]);
+  }, [refreshScheduledCount]);
 
   useEffect(() => {
     const handleAppointmentsChanged = () => {
@@ -143,7 +142,7 @@ export default function TopBarFeatures({
         handleAppointmentsChanged
       );
     };
-  }, [token, me?.id, me?.assignedMidwifeId]);
+  }, [refreshScheduledCount]);
 
   const targetUserId = me?.assignedMidwifeId ?? null;
 

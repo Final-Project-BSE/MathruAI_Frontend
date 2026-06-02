@@ -77,7 +77,7 @@ export default function MidwifeConnectivityCard() {
   }, [midwife]);
 
   const rawRoles = useMemo(() => {
-    return midwife?.roles?.map((role: any) => cleanRole(role)) ?? [];
+    return midwife?.roles?.map(cleanRole) ?? [];
   }, [midwife]);
 
   useEffect(() => {
@@ -126,7 +126,11 @@ export default function MidwifeConnectivityCard() {
         return t.reproductive.midwife.identifyFailed;
       }
 
-      return translatedFallbackMessage || result.message || t.reproductive.midwife.loadFailed;
+      return (
+        translatedFallbackMessage ||
+        result.message ||
+        t.reproductive.midwife.loadFailed
+      );
     }
 
     return "";

@@ -43,8 +43,9 @@ export const ROUTE_ACCESS: Record<string, UserRole[]> = {
   '/midwife/patient-console': [ROLES.MIDWIFE],
   '/midwife/chatbot': [ROLES.MIDWIFE],
   '/user-assign': [ROLES.MIDWIFE],
-
-
+  '/midwife/profile': [ROLES.MIDWIFE],
+  '/midwife/vaccinations': [ROLES.MIDWIFE],
+  '/midwife/checklist': [ROLES.MIDWIFE],
 
 };
 

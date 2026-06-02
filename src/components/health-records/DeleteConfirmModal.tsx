@@ -46,7 +46,9 @@ export default function DeleteConfirmModal({
 
           <DialogDescription className="text-sm text-gray-500 pl-[52px]">
             {hr.deleteModal.confirmPrefix}{" "}
-            <span className="font-semibold text-gray-700">"{itemName}"</span>
+            <span className="font-semibold text-gray-700">
+              &quot;{itemName}&quot;
+            </span>
             {hr.deleteModal.confirmSuffix} {hr.deleteModal.cannotBeUndone}
           </DialogDescription>
         </DialogHeader>

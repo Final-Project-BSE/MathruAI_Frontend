@@ -114,7 +114,9 @@ export default function MidwivesMapPopup({ open, onClose }: Props) {
             </div>
 
             <div>
-              <h2 className="text-lg font-bold">{labels.map.registeredMidwivesMap}</h2>
+              <h2 className="text-lg font-bold">
+                {labels.map.registeredMidwivesMap}
+              </h2>
               <p className="text-sm text-white/90">
                 {labels.map.nearbyRegisteredMidwives}
               </p>
@@ -144,6 +146,7 @@ export default function MidwivesMapPopup({ open, onClose }: Props) {
           ) : userId !== null && token ? (
             <div className="min-h-[650px] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
               <RegisteredUsersMapPage
+                key={`midwives-map-popup-${userId}-${roles.join("-")}`}
                 userId={userId}
                 token={token}
                 roles={roles}

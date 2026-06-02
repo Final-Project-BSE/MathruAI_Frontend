@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import {
@@ -386,7 +387,9 @@ export default function HealthRecordsSection({
           >
             <div className="mb-2 flex items-center justify-between gap-3">
               <div>
-                <h3 className="font-semibold text-sm text-white">New Health Record</h3>
+                <h3 className="text-sm font-semibold text-white">
+                  New Health Record
+                </h3>
                 <p className="mt-1 text-xs text-zinc-500">
                   Category: {selectedCategory?.name || "Selected category"}
                 </p>
@@ -474,7 +477,8 @@ export default function HealthRecordsSection({
 
             {form.files.length ? (
               <div className="mt-3 text-sm text-zinc-400">
-                {form.files.length} file{form.files.length === 1 ? "" : "s"} selected
+                {form.files.length} file{form.files.length === 1 ? "" : "s"}{" "}
+                selected
               </div>
             ) : null}
 
@@ -492,7 +496,9 @@ export default function HealthRecordsSection({
                 disabled={savingRecord}
                 className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-semibold text-black hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {savingRecord ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {savingRecord ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : null}
                 Save Record
               </button>
             </div>
@@ -543,7 +549,7 @@ export default function HealthRecordsSection({
                       )}
                     </div>
 
-                    <div className="pl-3 pr-3 pt-1 pb-1">
+                    <div className="pb-1 pl-3 pr-3 pt-1">
                       <div className="line-clamp-2 text-sm font-semibold text-white">
                         {record.name}
                       </div>
@@ -682,9 +688,12 @@ export default function HealthRecordsSection({
                   </div>
                 ) : previewFile && previewUrl && isImageFile(previewFile) ? (
                   <div className="flex min-h-[420px] items-center justify-center">
-                    <img
+                    <Image
                       src={previewUrl}
                       alt={previewFile.fileName}
+                      width={900}
+                      height={700}
+                      unoptimized
                       className="max-h-[70vh] max-w-full rounded-xl object-contain"
                     />
                   </div>

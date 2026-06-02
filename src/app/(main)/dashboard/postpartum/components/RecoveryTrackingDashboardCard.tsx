@@ -11,10 +11,7 @@ import {
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  RECOVERY_DATA,
-  TaskCategory,
-} from "@/components/recovery-tracking/recovery-data";
+import { RECOVERY_DATA } from "@/components/recovery-tracking/recovery-data";
 import recoveryTrackingApi from "@/app/api/recovery-tracking/api";
 import { getcuruser } from "@/app/api/user/api";
 import { getSession } from "@/lib/authentication";
@@ -48,35 +45,6 @@ export default function RecoveryTrackingDashboardCard() {
     regularTasks.length > 0
       ? Math.round((completedRegular / regularTasks.length) * 100)
       : 0;
-
-  const topCategories = useMemo(() => {
-    const categories: TaskCategory[] = [
-      "physical",
-      "nutrition",
-      "baby",
-      "mental",
-      "medical",
-    ];
-
-    return categories
-      .map((category) => {
-        const tasks = currentData.tasks.filter(
-          (task) => task.category === category
-        );
-
-        const completed = tasks.filter((task) =>
-          completedTaskIds.has(task.id)
-        ).length;
-
-        return {
-          category,
-          completed,
-          total: tasks.length,
-        };
-      })
-      .filter((item) => item.total > 0)
-      .slice(0, 3);
-  }, [currentData, completedTaskIds]);
 
   useEffect(() => {
     async function loadRecoveryProgress() {

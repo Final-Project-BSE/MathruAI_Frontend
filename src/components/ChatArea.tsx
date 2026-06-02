@@ -17,7 +17,6 @@ export function ChatArea({
   isLoading,
   onSendMessage,
   onToggleSidebar,
-  hasActiveSession
 }: ChatAreaProps) {
   const [inputValue, setInputValue] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -64,18 +63,18 @@ export function ChatArea({
           </svg>
         </button>
         <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="bg-pink-600 p-2 rounded-full">
-                <Baby className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                  Pregnancy Advisor
-                  <Heart className="h-5 w-5 text-pink-500" />
-                </h1>
-              </div>
+          <div className="flex items-center space-x-3">
+            <div className="bg-pink-600 p-2 rounded-full">
+              <Baby className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                Pregnancy Advisor
+                <Heart className="h-5 w-5 text-pink-500" />
+              </h1>
             </div>
           </div>
+        </div>
       </div>
 
       {/* Messages Area */}
@@ -85,14 +84,14 @@ export function ChatArea({
             <div className="text-center max-w-md">
               <div className="w-20 h-20 bg-gradient-to-br from-pink-100 to-pink-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
                 <svg className="w-10 h-10 text-pink-600" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                 </svg>
               </div>
               <h2 className="text-2xl font-semibold text-pink-800 mb-3">
                 Welcome to your Pregnancy Assistant
               </h2>
               <p className="text-pink-600">
-                Ask me anything about pregnancy, prenatal care, or expectant motherhood. I'm here to help with guidance and support.
+                Ask me anything about pregnancy, prenatal care, or expectant motherhood. I&apos;m here to help with guidance and support.
               </p>
             </div>
           </div>

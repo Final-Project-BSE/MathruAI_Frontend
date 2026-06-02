@@ -66,7 +66,7 @@ const roleMap: Record<string, string> = {
   postpartum_lady: "POST_PREGNANT_MOTHER",
 };
 
-const SignUp = ({ onSwitchToSignIn, onClose }: SignUpProps) => {
+const SignUp = ({ onSwitchToSignIn }: SignUpProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [registerError, setRegisterError] = useState<string | null>(null);

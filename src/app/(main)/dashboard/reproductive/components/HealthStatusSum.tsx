@@ -15,11 +15,16 @@ type Props = {
   href?: string;
 };
 
+type PredictionResultWithTimestamps = PredictionResult & {
+  updated_at?: string | number | Date | null;
+  created_at?: string | number | Date | null;
+};
+
 function clamp(n: number, min = 0, max = 1) {
   return Math.max(min, Math.min(max, n));
 }
 
-function safeNum(v: any): number | null {
+function safeNum(v: unknown): number | null {
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }
@@ -29,6 +34,7 @@ function formatTimeAgo(
   text: ReturnType<typeof useLanguage>["t"]
 ) {
   if (!dateLike) return null;
+
   const d = new Date(dateLike);
   if (Number.isNaN(d.getTime())) return null;
 
@@ -182,8 +188,8 @@ export default function HealthStatusSum({ href = "/health-monitoring" }: Props) 
 
         const res = await apis.getLatest(token);
         setLatest(res ?? null);
-      } catch (e: any) {
-        setError(e?.message || t.reproductive.health.failed);
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : t.reproductive.health.failed);
         setLatest(null);
       } finally {
         setLoading(false);
@@ -231,8 +237,10 @@ export default function HealthStatusSum({ href = "/health-monitoring" }: Props) 
     };
   }, [riskLevel, language, status.translatedByStaticMap]);
 
+  const latestWithTimestamps = latest as PredictionResultWithTimestamps | null;
+
   const updatedAgo = formatTimeAgo(
-    (latest as any)?.updated_at || (latest as any)?.created_at || null,
+    latestWithTimestamps?.updated_at ?? latestWithTimestamps?.created_at ?? null,
     t
   );
 

@@ -50,8 +50,9 @@ const ChangeEmailCard = ({ token, userId, onUpdate }: Props) => {
         confirmText: labels.logout,
         cancelText: labels.close,
       });
-    } catch (err: any) {
-      const errorMsg = err.message || labels.failedToChangeEmail;
+    } catch (err: unknown) {
+      const errorMsg =
+        err instanceof Error ? err.message : labels.failedToChangeEmail;
 
       if (
         errorMsg.includes("User Not Found") ||

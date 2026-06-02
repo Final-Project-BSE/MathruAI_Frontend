@@ -36,15 +36,14 @@ export default function CategoryCard({
   const [me, setMe] = useState<UserResponseDto | null>(null);
   const [messagesOpen, setMessagesOpen] = useState(false);
   const [token, setToken] = useState("");
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  if (tasks.length === 0) return null;
+  const [, setUnreadCount] = useState(0);
 
   const color = CATEGORY_COLORS[category];
   const isWarning = category === "warning";
 
   const completedCount = tasks.filter((t) => completedTaskIds.has(t.id)).length;
-  const progress = Math.round((completedCount / tasks.length) * 100);
+  const progress =
+    tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
 
   useEffect(() => {
     const loadMe = async () => {
@@ -78,6 +77,8 @@ export default function CategoryCard({
   }
 
   const targetUserId = me?.assignedMidwifeId ?? null;
+
+  if (tasks.length === 0) return null;
 
   return (
     <>

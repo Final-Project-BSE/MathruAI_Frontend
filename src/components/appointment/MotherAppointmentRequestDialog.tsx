@@ -55,6 +55,7 @@ export default function MotherAppointmentRequestDialog({
       midwifeId,
       userId
     );
+
     setUnavailableDates(data.dates || []);
     setReasonByDate(data.reasonByDate || {});
   }, [token, midwifeId, userId]);
@@ -62,12 +63,14 @@ export default function MotherAppointmentRequestDialog({
   const refreshBookedSlots = useCallback(
     async (date?: string | null) => {
       const targetDate = date ?? selectedDateIso;
+
       if (!targetDate) {
         setBookedSlots([]);
         return;
       }
 
       setSlotLoading(true);
+
       try {
         const data = await appointmentApi.getBookedSlots(
           token,
@@ -75,6 +78,7 @@ export default function MotherAppointmentRequestDialog({
           userId,
           targetDate
         );
+
         setBookedSlots(data.bookedSlots || []);
       } finally {
         setSlotLoading(false);
@@ -99,13 +103,17 @@ export default function MotherAppointmentRequestDialog({
       try {
         setError("");
         setSuccess("");
+
         await refreshUnavailableDates();
+
         if (!active) return;
+
         if (selectedDateIso) {
           await refreshBookedSlots(selectedDateIso);
         }
       } catch (err) {
         if (!active) return;
+
         setError(
           err instanceof Error
             ? err.message
@@ -136,27 +144,34 @@ export default function MotherAppointmentRequestDialog({
     async function loadAppointments() {
       try {
         setLoadingAppointments(true);
+
         const rows = await appointmentApi.getPatientAppointments(
           token,
           midwifeId,
           userId
         );
+
         if (!active) return;
 
-        // filter out appointments the user deleted locally (persisted in localStorage)
         const deletedKey = `deletedAppointments:${userId}`;
         let deletedIds: string[] = [];
+
         try {
           const raw = localStorage.getItem(deletedKey);
-          if (raw) deletedIds = JSON.parse(raw) as string[];
-        } catch (e) {
+
+          if (raw) {
+            deletedIds = JSON.parse(raw) as string[];
+          }
+        } catch {
           deletedIds = [];
         }
 
-        const filtered = rows.filter((r) => !deletedIds.includes(r.id));
+        const filtered = rows.filter((row) => !deletedIds.includes(row.id));
+
         setAppointments(filtered);
       } catch (err) {
         if (!active) return;
+
         setError(
           err instanceof Error
             ? err.message
@@ -197,6 +212,7 @@ export default function MotherAppointmentRequestDialog({
       setAppointments((prev) =>
         prev.map((item) => (item.id === row.id ? updated : item))
       );
+
       setSuccess(appointmentText.appointmentCanceled);
       window.dispatchEvent(new Event("appointments:changed"));
     } catch (err) {
@@ -226,6 +242,7 @@ export default function MotherAppointmentRequestDialog({
       setAppointments((prev) =>
         prev.map((item) => (item.id === row.id ? updated : item))
       );
+
       setSuccess(appointmentText.appointmentCompleted);
       window.dispatchEvent(new Event("appointments:changed"));
     } catch (err) {
@@ -245,41 +262,41 @@ export default function MotherAppointmentRequestDialog({
       setError("");
       setSuccess("");
 
-      // Try to remove on server for all statuses. Some backends may only allow deletion for COMPLETED;
-      // in that case we fall back to persisting deletion locally so the user doesn't see it again.
       let serverDeleted = false;
+
       try {
         await appointmentApi.deleteAppointment(token, midwifeId, userId, row.id);
         serverDeleted = true;
-      } catch (apiErr) {
-        // If server deletion fails, we'll persist locally as a fallback below.
+      } catch {
         serverDeleted = false;
       }
 
-      // Persist deletion locally so the user doesn't see it again when reloading.
       try {
         const deletedKey = `deletedAppointments:${userId}`;
         const raw = localStorage.getItem(deletedKey);
-        const arr: string[] = raw ? JSON.parse(raw) : [];
+        const arr: string[] = raw ? (JSON.parse(raw) as string[]) : [];
+
         if (!arr.includes(row.id)) {
           arr.push(row.id);
           localStorage.setItem(deletedKey, JSON.stringify(arr));
         }
-        // If server deleted successfully, also ensure local list doesn't keep stale entries.
+
         if (serverDeleted) {
           const filtered = arr.filter((id) => id !== row.id);
           localStorage.setItem(deletedKey, JSON.stringify(filtered));
         }
-      } catch (e) {
-        // ignore localStorage errors
+      } catch {
+        // Ignore localStorage errors.
       }
 
       setAppointments((prev) => prev.filter((item) => item.id !== row.id));
+
       setSuccess(
         serverDeleted
           ? appointmentText.appointmentDeleted
           : appointmentText.appointmentRemovedLocally
       );
+
       window.dispatchEvent(new Event("appointments:changed"));
     } catch (err) {
       setError(
@@ -320,6 +337,7 @@ export default function MotherAppointmentRequestDialog({
           ? err.message
           : appointmentText.failedToSubmitRequest
       );
+
       await Promise.all([refreshUnavailableDates(), refreshBookedSlots()]);
     } finally {
       setSaving(false);
@@ -327,7 +345,7 @@ export default function MotherAppointmentRequestDialog({
   }
 
   const scheduledCount = appointments.filter(
-    (a) => a.status === "SCHEDULED"
+    (appointment) => appointment.status === "SCHEDULED"
   ).length;
 
   return (
@@ -358,11 +376,12 @@ export default function MotherAppointmentRequestDialog({
                 }
               >
                 {appointmentText.scheduledAppointments}
-                {appointments.length > 0 && (
+
+                {appointments.length > 0 ? (
                   <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
                     {appointments.length}
                   </span>
-                )}
+                ) : null}
               </button>
             </div>
           </div>
@@ -411,8 +430,10 @@ export default function MotherAppointmentRequestDialog({
               }
 
               const iso = format(date, "yyyy-MM-dd");
+
               setSelectedDateIso(iso);
               setBookedSlots([]);
+
               void refreshBookedSlots(iso);
             }}
             onCancel={() => onOpenChange(false)}
@@ -431,7 +452,7 @@ export default function MotherAppointmentRequestDialog({
               onCancel={handleCancel}
               onComplete={handleComplete}
               onDeleteCompleted={handleDeleteCompleted}
-              glass={true}
+              glass
               theme="light"
             />
           </div>

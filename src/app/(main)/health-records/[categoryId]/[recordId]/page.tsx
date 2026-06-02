@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Container from "@/components/shared/container";
@@ -9,7 +10,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   ChevronLeft,
   Pencil,
-  Trash2,
   FileText,
   CalendarDays,
   AlignLeft,
@@ -22,7 +22,6 @@ import RecordFormModal, {
   RecordFormData,
   UploadedFile,
 } from "@/components/health-records/RecordFormModal";
-import DeleteConfirmModal from "@/components/health-records/DeleteConfirmModal";
 import healthRecordsApi, {
   downloadSecureFile,
   updateRecord,
@@ -37,18 +36,20 @@ function SecureImage({
   alt,
   className,
   failedText,
+  sizes = "100vw",
 }: {
   fileUrl: string;
   alt: string;
   className?: string;
   failedText: string;
+  sizes?: string;
 }) {
   const { objectUrl, loading } = useSecureFile(fileUrl);
 
   if (loading) {
     return (
       <div
-        className={`flex items-center justify-center bg-gray-100 animate-pulse ${className}`}
+        className={`absolute inset-0 flex items-center justify-center bg-gray-100 animate-pulse ${className ?? ""}`}
       />
     );
   }
@@ -56,14 +57,23 @@ function SecureImage({
   if (!objectUrl) {
     return (
       <div
-        className={`flex items-center justify-center bg-gray-100 text-gray-400 text-xs ${className}`}
+        className={`absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400 text-xs ${className ?? ""}`}
       >
         {failedText}
       </div>
     );
   }
 
-  return <img src={objectUrl} alt={alt} className={className} />;
+  return (
+    <Image
+      src={objectUrl}
+      alt={alt}
+      fill
+      sizes={sizes}
+      className={className}
+      unoptimized
+    />
+  );
 }
 
 function formatDate(dateStr: string, locale: string) {
@@ -131,7 +141,6 @@ export default function SingleRecordPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
   const [lightboxFile, setLightboxFile] = useState<UploadedFile | null>(null);
 
   useEffect(() => {
@@ -283,8 +292,6 @@ export default function SingleRecordPage() {
     }
   };
 
-  const handleDelete = () => router.push(`/health-records/${categoryId}`);
-
   return (
     <Container title={translatedRecordName || record.name}>
       <div className="bg-[#fed2cc] min-h-screen p-4 md:p-6">
@@ -396,8 +403,9 @@ export default function SingleRecordPage() {
                       <SecureImage
                         fileUrl={file.data}
                         alt={file.name}
-                        className="absolute inset-0 w-full h-full object-cover"
+                        className="object-cover"
                         failedText={hr.failedToLoad}
+                        sizes="(max-width: 640px) 50vw, 33vw"
                       />
 
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
@@ -493,14 +501,15 @@ export default function SingleRecordPage() {
           onClick={() => setLightboxFile(null)}
         >
           <div
-            className="relative max-w-4xl w-full max-h-[90vh]"
+            className="relative max-w-4xl w-full h-[85vh]"
             onClick={(event) => event.stopPropagation()}
           >
             <SecureImage
               fileUrl={lightboxFile.data}
               alt={hr.preview}
-              className="w-full h-auto max-h-[85vh] object-contain rounded-2xl"
+              className="object-contain rounded-2xl"
               failedText={hr.failedToLoad}
+              sizes="100vw"
             />
 
             <button
@@ -519,14 +528,6 @@ export default function SingleRecordPage() {
         onClose={() => setEditOpen(false)}
         onSubmit={handleEdit}
         initialData={record}
-      />
-
-      <DeleteConfirmModal
-        isOpen={deleteOpen}
-        onClose={() => setDeleteOpen(false)}
-        onConfirm={handleDelete}
-        itemName={translatedRecordName || record.name}
-        itemType={hr.record}
       />
     </Container>
   );

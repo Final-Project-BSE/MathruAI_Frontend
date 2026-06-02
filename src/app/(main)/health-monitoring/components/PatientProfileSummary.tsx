@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { User, Calendar, Heart, Activity } from "lucide-react";
 import { useLanguage } from "@/components/common/useLanguage";
 import { translateText } from "@/components/common/translateText";
 
 interface PatientProfileSummaryProps {
-  patientProfile: Record<string, any>;
+  patientProfile: Record<string, unknown>;
 }
 
 const PatientProfileSummary: React.FC<PatientProfileSummaryProps> = ({
@@ -15,7 +15,9 @@ const PatientProfileSummary: React.FC<PatientProfileSummaryProps> = ({
   const { language, t } = useLanguage();
   const text = t.healthMonitor.profile;
 
-  const [translatedValues, setTranslatedValues] = useState<Record<string, string>>({});
+  const [translatedValues, setTranslatedValues] = useState<
+    Record<string, string>
+  >({});
 
   const getIconForField = (key: string) => {
     const keyLower = key.toLowerCase();
@@ -47,13 +49,32 @@ const PatientProfileSummary: React.FC<PatientProfileSummaryProps> = ({
     return text.fields[key] || formatFallbackKey(key);
   };
 
-  const formatValue = (value: any): string => {
-    if (value === null || value === undefined || value === "") return text.empty;
-    if (Array.isArray(value)) return value.length ? value.join(", ") : text.empty;
-    if (typeof value === "boolean") return value ? text.yes : text.no;
-    if (typeof value === "object") return JSON.stringify(value);
-    return String(value);
-  };
+  const formatValue = useCallback(
+    (value: unknown): string => {
+      if (value === null || value === undefined || value === "") {
+        return text.empty;
+      }
+
+      if (Array.isArray(value)) {
+        return value.length ? value.map(formatValue).join(", ") : text.empty;
+      }
+
+      if (typeof value === "boolean") {
+        return value ? text.yes : text.no;
+      }
+
+      if (typeof value === "object") {
+        try {
+          return JSON.stringify(value);
+        } catch {
+          return text.empty;
+        }
+      }
+
+      return String(value);
+    },
+    [text.empty, text.yes, text.no]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -68,7 +89,9 @@ const PatientProfileSummary: React.FC<PatientProfileSummaryProps> = ({
 
       if (language === "en") {
         setTranslatedValues(
-          Object.fromEntries(entries.map(([key, value]) => [key, formatValue(value)]))
+          Object.fromEntries(
+            entries.map(([key, value]) => [key, formatValue(value)])
+          )
         );
         return;
       }
@@ -83,11 +106,11 @@ const PatientProfileSummary: React.FC<PatientProfileSummaryProps> = ({
             formatted === text.no ||
             !Number.isNaN(Number(formatted))
           ) {
-            return [key, formatted];
+            return [key, formatted] as const;
           }
 
           const translated = await translateText(formatted, language);
-          return [key, translated];
+          return [key, translated] as const;
         })
       );
 
@@ -101,7 +124,7 @@ const PatientProfileSummary: React.FC<PatientProfileSummaryProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [patientProfile, language, text.empty, text.yes, text.no]);
+  }, [patientProfile, language, text.empty, text.yes, text.no, formatValue]);
 
   if (!patientProfile || Object.keys(patientProfile).length === 0) {
     return null;

@@ -231,8 +231,14 @@ export default function MessagesPopup({
     };
   }, [open, targetUserId]);
 
+  const selectedConversationId = selectedConversation?.id ?? null;
+
   useEffect(() => {
-    if (!open || !selectedConversation || !currentUserId || !token) return;
+    if (!open || !selectedConversationId || !currentUserId || !token) return;
+
+    const conversationId = selectedConversationId;
+    const userId = currentUserId;
+    const authToken = token;
 
     let active = true;
 
@@ -241,26 +247,20 @@ export default function MessagesPopup({
         setError("");
 
         const list = await chatApi.getMessages(
-          selectedConversation.id,
-          currentUserId,
-          token
+          conversationId,
+          userId,
+          authToken
         );
 
         if (!active) return;
 
         setMessages(list);
 
-        await chatApi.markAsRead(
-          selectedConversation.id,
-          currentUserId,
-          token
-        );
+        await chatApi.markAsRead(conversationId, userId, authToken);
 
         setConversations((prev) =>
           prev.map((item) =>
-            item.id === selectedConversation.id
-              ? { ...item, unreadCount: 0 }
-              : item
+            item.id === conversationId ? { ...item, unreadCount: 0 } : item
           )
         );
 
@@ -269,7 +269,7 @@ export default function MessagesPopup({
 
         if (socketRef.current?.client.connected) {
           conversationSubscriptionRef.current =
-            socketRef.current.subscribeConversation(selectedConversation.id);
+            socketRef.current.subscribeConversation(conversationId);
         }
       } catch (err) {
         if (!active) return;
@@ -284,7 +284,7 @@ export default function MessagesPopup({
     return () => {
       active = false;
     };
-  }, [open, selectedConversation?.id, currentUserId, token]);
+  }, [open, selectedConversationId, currentUserId, token]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -341,18 +341,33 @@ export default function MessagesPopup({
             )}
           >
             <h2 className="text-lg font-semibold">Messages</h2>
-            <p className={cn("text-sm", isLight ? "text-neutral-500" : "text-white/45")}>
+            <p
+              className={cn(
+                "text-sm",
+                isLight ? "text-neutral-500" : "text-white/45"
+              )}
+            >
               Assigned chat only
             </p>
           </div>
 
           <div className="h-[calc(100%-73px)] overflow-y-auto">
             {loading ? (
-              <div className={cn("p-4 text-sm", isLight ? "text-neutral-500" : "text-white/45")}>
+              <div
+                className={cn(
+                  "p-4 text-sm",
+                  isLight ? "text-neutral-500" : "text-white/45"
+                )}
+              >
                 Loading messages...
               </div>
             ) : conversations.length === 0 ? (
-              <div className={cn("p-4 text-sm", isLight ? "text-neutral-500" : "text-white/45")}>
+              <div
+                className={cn(
+                  "p-4 text-sm",
+                  isLight ? "text-neutral-500" : "text-white/45"
+                )}
+              >
                 No conversations available.
               </div>
             ) : (
@@ -426,7 +441,12 @@ export default function MessagesPopup({
               <h3 className="truncate text-base font-semibold">
                 {selectedConversation ? selectedOtherUserName : "Messages"}
               </h3>
-              <p className={cn("text-xs", isLight ? "text-neutral-500" : "text-white/45")}>
+              <p
+                className={cn(
+                  "text-xs",
+                  isLight ? "text-neutral-500" : "text-white/45"
+                )}
+              >
                 {socketReady ? "Online" : "Connecting..."}
               </p>
             </div>
@@ -471,7 +491,10 @@ export default function MessagesPopup({
                     return (
                       <div
                         key={message.id}
-                        className={cn("flex", mine ? "justify-end" : "justify-start")}
+                        className={cn(
+                          "flex",
+                          mine ? "justify-end" : "justify-start"
+                        )}
                       >
                         <div
                           className={cn(

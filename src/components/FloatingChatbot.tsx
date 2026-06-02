@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { MessageCircle, X, Send, Minimize2, Maximize2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -15,7 +15,31 @@ interface Message {
   timestamp: Date
 }
 
+interface ChatRequestBody {
+  message: string
+  top_k: number
+  similarity_threshold: number
+  session_id?: string
+}
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof error.message === 'string'
+  ) {
+    return error.message
+  }
+
+  return `Please check if the backend is running at ${API_BASE_URL}`
+}
 
 export function FloatingChatbot() {
   const [isOpen, setIsOpen] = useState(false)
@@ -42,14 +66,22 @@ export function FloatingChatbot() {
     }
   }, [isOpen, isMinimized])
 
-  // Create new chat session when opened
-  useEffect(() => {
-    if (isOpen && !sessionId) {
-      initializeChat()
+  const createNewSession = useCallback(async () => {
+    try {
+      // Don't create session ID locally - let backend manage it
+      // Add welcome message
+      setMessages([{
+        id: '0',
+        text: "Hello! I'm your pregnancy advisor assistant. How can I help you today?",
+        sender: 'bot',
+        timestamp: new Date()
+      }])
+    } catch (error) {
+      console.error('Failed to create chat session:', error)
     }
-  }, [isOpen, sessionId])
+  }, [])
 
-  const initializeChat = async () => {
+  const initializeChat = useCallback(async () => {
     try {
       // Get JWT token from session
       const session = await getSession()
@@ -75,27 +107,19 @@ export function FloatingChatbot() {
         timestamp: new Date()
       }])
     }
-  }
+  }, [createNewSession])
+
+  // Create new chat session when opened
+  useEffect(() => {
+    if (isOpen && !sessionId) {
+      initializeChat()
+    }
+  }, [isOpen, sessionId, initializeChat])
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
-
-  const createNewSession = async () => {
-    try {
-      // Don't create session ID locally - let backend manage it
-      // Add welcome message
-      setMessages([{
-        id: '0',
-        text: "Hello! I'm your pregnancy advisor assistant. How can I help you today?",
-        sender: 'bot',
-        timestamp: new Date()
-      }])
-    } catch (error) {
-      console.error('Failed to create chat session:', error)
-    }
-  }
 
   const sendMessage = async () => {
     if (!inputValue.trim() || isLoading) {
@@ -130,7 +154,7 @@ export function FloatingChatbot() {
     setIsLoading(true)
 
     try {
-      const requestBody: any = { 
+      const requestBody: ChatRequestBody = { 
         message: messageToSend,
         top_k: 3,
         similarity_threshold: 0.1
@@ -197,11 +221,11 @@ export function FloatingChatbot() {
         }
         setMessages(prev => [...prev, errorMessage])
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to send message:', error)
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: `Connection error: ${error.message || 'Please check if the backend is running at ' + API_BASE_URL}`,
+        text: `Connection error: ${getErrorMessage(error)}`,
         sender: 'bot',
         timestamp: new Date()
       }

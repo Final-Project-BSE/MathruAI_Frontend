@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 
 interface RoleGuardProps {
   allowedRoles: string[];
@@ -11,7 +10,6 @@ interface RoleGuardProps {
 
 export function RoleGuard({ allowedRoles, children, fallback }: RoleGuardProps) {
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
     async function checkAccess() {

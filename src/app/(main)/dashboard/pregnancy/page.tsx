@@ -1,8 +1,6 @@
 "use client";
 
 import Container from "@/components/shared/container";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { UpdateDataPopup } from "@/components/update-data-popup";
 import TopBarFeatures from "@/components/common/TopBarFeatures";
@@ -18,7 +16,6 @@ import { useLanguage } from "@/components/common/useLanguage";
 
 export default function PregnancyPage() {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const [kickCount, setKickCount] = useState(8);
 
   const { loading, error, stats } = usePregnancyStats();
   const { t } = useLanguage();

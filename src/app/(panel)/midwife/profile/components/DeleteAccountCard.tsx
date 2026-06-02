@@ -39,8 +39,10 @@ const DeleteAccountCard = ({ token, userId }: Props) => {
       localStorage.removeItem('userId');
       router.replace('/sign-in');
       router.refresh();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : 'Failed to delete account.'
+      );
     } finally {
       setLoading(false);
     }
@@ -53,11 +55,14 @@ const DeleteAccountCard = ({ token, userId }: Props) => {
       </h2>
 
       <p className="mb-5 text-sm text-zinc-400">
-        This action is <strong className="text-zinc-200">permanent</strong> and cannot be undone. All your data will be removed.
+        This action is{' '}
+        <strong className="text-zinc-200">permanent</strong> and cannot be
+        undone. All your data will be removed.
       </p>
 
       {!confirm ? (
         <button
+          type="button"
           onClick={() => setConfirm(true)}
           className="w-full rounded-lg border border-red-500/40 bg-red-600 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
         >
@@ -71,6 +76,7 @@ const DeleteAccountCard = ({ token, userId }: Props) => {
 
           <div className="flex gap-3">
             <button
+              type="button"
               onClick={() => setConfirm(false)}
               className="flex-1 rounded-lg border border-white/10 bg-black py-2 text-sm font-semibold text-zinc-300 transition hover:bg-zinc-900"
             >
@@ -78,6 +84,7 @@ const DeleteAccountCard = ({ token, userId }: Props) => {
             </button>
 
             <button
+              type="button"
               onClick={handleDelete}
               disabled={loading}
               className="flex-1 rounded-lg bg-[#D04F51] py-2 text-sm font-semibold text-white transition hover:bg-[#BA4547] disabled:cursor-not-allowed disabled:opacity-60"
@@ -88,7 +95,7 @@ const DeleteAccountCard = ({ token, userId }: Props) => {
         </div>
       )}
 
-      {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
+      {error ? <p className="mt-3 text-xs text-red-400">{error}</p> : null}
     </div>
   );
 };

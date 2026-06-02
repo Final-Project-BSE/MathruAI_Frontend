@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { getSession } from "@/lib/authentication";
@@ -52,7 +52,6 @@ import RecoveryTrackingCard from "./components/recovery-tracking/RecoveryTrackin
 import { triposhaApi } from "@/app/api/triposha/api";
 import type { TriposhaRecord } from "@/app/api/triposha/types";
 import TriposhaCard from "./components/TriposhaCard";
-import TriposhaForm from "./components/TriposhaForm";
 
 export default function AssignedPatientManagePage() {
   const router = useRouter();
@@ -65,9 +64,8 @@ export default function AssignedPatientManagePage() {
   const [patients, setPatients] = useState<UserResponseDto[]>([]);
   const [search, setSearch] = useState("");
 
-  const [patient, setPatient] = useState<AssignedPatientDetailResponseDto | null>(
-    null
-  );
+  const [patient, setPatient] =
+    useState<AssignedPatientDetailResponseDto | null>(null);
   const [categories, setCategories] = useState<HealthCategoryResponseDto[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [records, setRecords] = useState<HealthRecordResponseDto[]>([]);
@@ -85,7 +83,9 @@ export default function AssignedPatientManagePage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const [unreadByPatientId, setUnreadByPatientId] = useState<Record<number, number>>({});
+  const [unreadByPatientId, setUnreadByPatientId] = useState<
+    Record<number, number>
+  >({});
 
   const [form, setForm] = useState<AssignedUserProfileUpdateRequestDto>({
     firstName: "",
@@ -103,7 +103,149 @@ export default function AssignedPatientManagePage() {
   });
 
   const [triposha, setTriposha] = useState<TriposhaRecord[]>([]);
-  const [triposhaLoading, setTriposhaLoading] = useState(false);
+
+  const hydrateFromBundle = useCallback(
+    (bundle: {
+      patient: AssignedPatientDetailResponseDto;
+      categories: HealthCategoryResponseDto[];
+      fertility: FertilityResponseDto | null;
+      selectedCategoryId: string;
+      recordsByCategory: Record<string, HealthRecordResponseDto[]>;
+    }) => {
+      setPatient(bundle.patient);
+      setCategories(bundle.categories);
+      setFertility(bundle.fertility);
+
+      const nextCategoryId =
+        bundle.selectedCategoryId ||
+        bundle.categories.find((item) => item.recordCount > 0)?.id ||
+        bundle.categories[0]?.id ||
+        "";
+
+      setSelectedCategoryId(nextCategoryId);
+      setRecords(bundle.recordsByCategory[nextCategoryId] || []);
+
+      setForm({
+        firstName: bundle.patient.firstName || "",
+        lastName: bundle.patient.lastName || "",
+        phoneNumber: bundle.patient.phoneNumber || "",
+        dateOfBirth: bundle.patient.dateOfBirth || "",
+        nationalIdNumber: bundle.patient.nationalIdNumber || "",
+        address: bundle.patient.address || "",
+        profileImageUrl: bundle.patient.profileImageUrl || "",
+        area: bundle.patient.area || "",
+        district: bundle.patient.district || "",
+        mohArea: bundle.patient.mohArea || "",
+        latitude: bundle.patient.latitude,
+        longitude: bundle.patient.longitude,
+      });
+
+      setLoading(false);
+    },
+    []
+  );
+
+  const hydrateMonitoringFromCache = useCallback(
+    (currentPatientId: number) => {
+      const cached = getCachedHealthMonitoringBundle(currentPatientId);
+      if (!cached) return false;
+
+      setLatestMonitoring(cached.monitoring);
+      return true;
+    },
+    []
+  );
+
+  const persistMonitoringCache = useCallback(
+    (
+      currentPatientId: number,
+      monitoring: HealthMonitoringResponseDto | null
+    ) => {
+      setCachedHealthMonitoringBundle(currentPatientId, {
+        monitoring,
+      });
+    },
+    []
+  );
+
+  const loadMonitoringData = useCallback(
+    async (
+      jwt: string,
+      currentMidwifeId: number,
+      currentPatientId: number,
+      options?: { preferCache?: boolean }
+    ) => {
+      const preferCache = options?.preferCache ?? true;
+
+      try {
+        if (preferCache) {
+          const freshCached =
+            getFreshCachedHealthMonitoringBundle(currentPatientId);
+
+          if (freshCached) {
+            setLatestMonitoring(freshCached.monitoring);
+            return;
+          }
+        }
+
+        setMonitoringLoading(true);
+
+        const latest = await healthMonitoringApis.getLatest(
+          jwt,
+          currentMidwifeId,
+          currentPatientId
+        );
+
+        setLatestMonitoring(latest);
+        persistMonitoringCache(currentPatientId, latest);
+      } catch (err) {
+        setLatestMonitoring(null);
+        throw err;
+      } finally {
+        setMonitoringLoading(false);
+      }
+    },
+    [persistMonitoringCache]
+  );
+
+  const loadTriposha = useCallback(async () => {
+    if (!token || !patientId) return;
+
+    try {
+      const data = await triposhaApi.getByPatient(token, patientId);
+      setTriposha(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to load Triposha:", err);
+      setTriposha([]);
+    }
+  }, [token, patientId]);
+
+  const reloadMonitoringDataFromServer = useCallback(async () => {
+    if (!token || !midwifeId || !patientId) return;
+
+    clearCachedHealthMonitoringBundle(patientId);
+
+    await loadMonitoringData(token, midwifeId, patientId, {
+      preferCache: false,
+    });
+  }, [token, midwifeId, patientId, loadMonitoringData]);
+
+  const loadUnreadCounts = useCallback(
+    async (jwt: string, currentUserId: number) => {
+      const conversations = await chatApi.getMyConversations(
+        currentUserId,
+        jwt
+      );
+      const next: Record<number, number> = {};
+
+      conversations.forEach((conversation) => {
+        next[conversation.otherUser.id] = conversation.unreadCount || 0;
+      });
+
+      setUnreadByPatientId(next);
+    },
+    []
+  );
 
   useEffect(() => {
     if (!error && !success) return;
@@ -117,125 +259,8 @@ export default function AssignedPatientManagePage() {
   }, [error, success]);
 
   useEffect(() => {
-    if (token && patientId) {
-      loadTriposha();
-    }
-  }, [token, patientId]);
-
-  function hydrateFromBundle(bundle: {
-    patient: AssignedPatientDetailResponseDto;
-    categories: HealthCategoryResponseDto[];
-    fertility: FertilityResponseDto | null;
-    selectedCategoryId: string;
-    recordsByCategory: Record<string, HealthRecordResponseDto[]>;
-  }) {
-    setPatient(bundle.patient);
-    setCategories(bundle.categories);
-    setFertility(bundle.fertility);
-
-    const nextCategoryId =
-      bundle.selectedCategoryId ||
-      bundle.categories.find((item) => item.recordCount > 0)?.id ||
-      bundle.categories[0]?.id ||
-      "";
-
-    setSelectedCategoryId(nextCategoryId);
-    setRecords(bundle.recordsByCategory[nextCategoryId] || []);
-
-    setForm({
-      firstName: bundle.patient.firstName || "",
-      lastName: bundle.patient.lastName || "",
-      phoneNumber: bundle.patient.phoneNumber || "",
-      dateOfBirth: bundle.patient.dateOfBirth || "",
-      nationalIdNumber: bundle.patient.nationalIdNumber || "",
-      address: bundle.patient.address || "",
-      profileImageUrl: bundle.patient.profileImageUrl || "",
-      area: bundle.patient.area || "",
-      district: bundle.patient.district || "",
-      mohArea: bundle.patient.mohArea || "",
-      latitude: bundle.patient.latitude,
-      longitude: bundle.patient.longitude,
-    });
-
-    setLoading(false);
-  }
-
-  function hydrateMonitoringFromCache(currentPatientId: number) {
-    const cached = getCachedHealthMonitoringBundle(currentPatientId);
-    if (!cached) return false;
-
-    setLatestMonitoring(cached.monitoring);
-    return true;
-  }
-
-  function persistMonitoringCache(
-    currentPatientId: number,
-    monitoring: HealthMonitoringResponseDto | null
-  ) {
-    setCachedHealthMonitoringBundle(currentPatientId, {
-      monitoring,
-    });
-  }
-
-  async function loadMonitoringData(
-    jwt: string,
-    currentMidwifeId: number,
-    currentPatientId: number,
-    options?: { preferCache?: boolean }
-  ) {
-    const preferCache = options?.preferCache ?? true;
-
-    try {
-      if (preferCache) {
-        const freshCached =
-          getFreshCachedHealthMonitoringBundle(currentPatientId);
-        if (freshCached) {
-          setLatestMonitoring(freshCached.monitoring);
-          return;
-        }
-      }
-
-      setMonitoringLoading(true);
-
-      const latest = await healthMonitoringApis.getLatest(
-        jwt,
-        currentMidwifeId,
-        currentPatientId
-      );
-
-      setLatestMonitoring(latest);
-      persistMonitoringCache(currentPatientId, latest);
-    } catch (err) {
-      setLatestMonitoring(null);
-      throw err;
-    } finally {
-      setMonitoringLoading(false);
-    }
-  }
-
-  async function loadTriposha() {
-    if (!token || !patientId) return;
-
-    try {
-      setTriposhaLoading(true);
-      const data = await triposhaApi.getByPatient(token, patientId);
-      setTriposha(data);
-    } catch (err) {
-      console.error("Failed to load Triposha:", err);
-      setTriposha([]);
-    } finally {
-      setTriposhaLoading(false);
-    }
-  }
-  async function reloadMonitoringDataFromServer() {
-    if (!token || !midwifeId || !patientId) return;
-
-    clearCachedHealthMonitoringBundle(patientId);
-
-    await loadMonitoringData(token, midwifeId, patientId, {
-      preferCache: false,
-    });
-  }
+    void loadTriposha();
+  }, [loadTriposha]);
 
   useEffect(() => {
     if (Number.isNaN(patientId)) {
@@ -245,11 +270,13 @@ export default function AssignedPatientManagePage() {
     }
 
     const cachedList = getCachedPatientList();
+
     if (cachedList.length) {
       setPatients(cachedList);
     }
 
     const cachedBundle = getCachedPatientBundle(patientId);
+
     if (cachedBundle) {
       hydrateFromBundle(cachedBundle);
     } else {
@@ -257,7 +284,7 @@ export default function AssignedPatientManagePage() {
     }
 
     hydrateMonitoringFromCache(patientId);
-  }, [patientId]);
+  }, [patientId, hydrateFromBundle, hydrateMonitoringFromCache]);
 
   useEffect(() => {
     let active = true;
@@ -278,17 +305,13 @@ export default function AssignedPatientManagePage() {
         setToken(jwt);
 
         const currentUser = await getcuruser(jwt);
+
         if (!active) return;
         setMidwifeId(currentUser.id);
         void loadUnreadCounts(jwt, currentUser.id);
 
-        const listPromise =
-          patients.length > 0
-            ? Promise.resolve(patients)
-            : assignmentApi.getAssignedUsersForMidwife(currentUser.id, jwt);
-
         const [patientList, freshBundle] = await Promise.all([
-          listPromise,
+          assignmentApi.getAssignedUsersForMidwife(currentUser.id, jwt),
           prefetchPatientBundle({
             token: jwt,
             midwifeId: currentUser.id,
@@ -307,6 +330,7 @@ export default function AssignedPatientManagePage() {
         });
       } catch (err) {
         if (!active) return;
+
         setError(
           err instanceof Error ? err.message : "Failed to load patient details."
         );
@@ -319,7 +343,7 @@ export default function AssignedPatientManagePage() {
     return () => {
       active = false;
     };
-  }, [patientId]);
+  }, [patientId, hydrateFromBundle, loadMonitoringData, loadUnreadCounts]);
 
   useEffect(() => {
     let active = true;
@@ -332,7 +356,7 @@ export default function AssignedPatientManagePage() {
 
         const cachedRecords =
           getCachedPatientBundle(patientId)?.recordsByCategory?.[
-          selectedCategoryId
+            selectedCategoryId
           ];
 
         if (cachedRecords) {
@@ -348,6 +372,7 @@ export default function AssignedPatientManagePage() {
           );
 
         if (!active) return;
+
         setRecords(nextRecords);
         setCachedCategoryRecords(patientId, selectedCategoryId, nextRecords);
       } catch {
@@ -421,6 +446,7 @@ export default function AssignedPatientManagePage() {
       setSuccess("Patient profile updated successfully.");
 
       const cached = getCachedPatientBundle(patient.id);
+
       if (cached) {
         setCachedPatientBundle(patient.id, {
           ...cached,
@@ -461,12 +487,9 @@ export default function AssignedPatientManagePage() {
       setSuccess("Triposha record added successfully.");
       await loadTriposha();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to add Triposha"
-      );
+      setError(err instanceof Error ? err.message : "Failed to add Triposha");
     }
   }
-
 
   async function handleDeleteTriposha(id: number) {
     if (!token) return;
@@ -475,26 +498,20 @@ export default function AssignedPatientManagePage() {
       setError("");
       setSuccess("");
 
-      console.log("Deleting ID:", id);
-
       await triposhaApi.delete(token, id);
 
-      // ✅ REMOVE FROM UI IMMEDIATELY
-      setTriposha(prev => prev.filter(item => item.id !== id));
-
+      setTriposha((prev) => prev.filter((item) => item.id !== id));
       setSuccess("Triposha record deleted.");
     } catch (err) {
       console.error(err);
 
       if (err instanceof Error && err.message.includes("not found")) {
-        setTriposha(prev => prev.filter(item => item.id !== id));
+        setTriposha((prev) => prev.filter((item) => item.id !== id));
         setError("Record already deleted.");
         return;
       }
 
-      setError(
-        err instanceof Error ? err.message : "Delete failed"
-      );
+      setError(err instanceof Error ? err.message : "Delete failed");
     }
   }
 
@@ -530,6 +547,7 @@ export default function AssignedPatientManagePage() {
       );
     }
   }
+
   async function handleMonitoringSave(
     payload: HealthMonitoringUpsertRequestDto
   ) {
@@ -565,6 +583,7 @@ export default function AssignedPatientManagePage() {
         err instanceof Error
           ? err.message
           : "Failed to save health monitoring record";
+
       setError(message);
       throw err;
     } finally {
@@ -601,6 +620,7 @@ export default function AssignedPatientManagePage() {
         err instanceof Error
           ? err.message
           : "Failed to delete health monitoring record";
+
       setError(message);
       throw err;
     } finally {
@@ -622,49 +642,6 @@ export default function AssignedPatientManagePage() {
     }
 
     setSuccess("Fertility data recalculated successfully.");
-  }
-
-  async function handleRefresh() {
-    if (!token || !midwifeId || !patientId) return;
-
-    try {
-      setError("");
-      setSuccess("");
-
-      clearCachedPatientBundle(patientId);
-      clearCachedHealthMonitoringBundle(patientId);
-
-      const freshBundle = await prefetchPatientBundle({
-        token,
-        midwifeId,
-        patientId,
-        force: true,
-      });
-
-      hydrateFromBundle(freshBundle);
-
-      await loadMonitoringData(token, midwifeId, patientId, {
-        preferCache: false,
-      });
-
-      setSuccess("Patient data refreshed.");
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to refresh patient data."
-      );
-    }
-  }
-
-
-  async function loadUnreadCounts(jwt: string, currentUserId: number) {
-    const conversations = await chatApi.getMyConversations(currentUserId, jwt);
-    const next: Record<number, number> = {};
-
-    conversations.forEach((conversation) => {
-      next[conversation.otherUser.id] = conversation.unreadCount || 0;
-    });
-
-    setUnreadByPatientId(next);
   }
 
   if (loading) {
@@ -691,8 +668,8 @@ export default function AssignedPatientManagePage() {
 
         <main className="min-h-0 overflow-y-auto bg-black p-6">
           <div className="space-y-6">
-            {error && <StatusAlert type="error" message={error} />}
-            {success && <StatusAlert type="success" message={success} />}
+            {error ? <StatusAlert type="error" message={error} /> : null}
+            {success ? <StatusAlert type="success" message={success} /> : null}
 
             <div className="grid gap-6 xl:grid-cols-2">
               <PatientSummaryCard
@@ -728,7 +705,9 @@ export default function AssignedPatientManagePage() {
               patientId={patientId}
               patientName={
                 patient
-                  ? `${patient.firstName || ""} ${patient.lastName || ""}`.trim()
+                  ? `${patient.firstName || ""} ${
+                      patient.lastName || ""
+                    }`.trim()
                   : ""
               }
               defaultLocation={patient?.mohArea || patient?.district || ""}
@@ -752,11 +731,11 @@ export default function AssignedPatientManagePage() {
 
             {isPostpartumUser && midwifeId && patient ? (
               <BreastfeedingCard
-              token={token}
-              patientId={patientId}
-              midwifeId={midwifeId}
-               />
-               ) : null}
+                token={token}
+                patientId={patientId}
+                midwifeId={midwifeId}
+              />
+            ) : null}
 
             {isPostpartumUser ? (
               <RecoveryTrackingCard token={token} patientId={patientId} />
@@ -779,7 +758,6 @@ export default function AssignedPatientManagePage() {
               onUpdate={handleUpdateTriposha}
             />
 
-
             <HealthRecordsSection
               categories={categories}
               selectedCategoryId={selectedCategoryId}
@@ -790,12 +768,23 @@ export default function AssignedPatientManagePage() {
               midwifeId={midwifeId}
               patientId={patientId}
               onRecordsChanged={async () => {
-                if (!token || !midwifeId || !patientId || !selectedCategoryId) return;
+                if (
+                  !token ||
+                  !midwifeId ||
+                  !patientId ||
+                  !selectedCategoryId
+                ) {
+                  return;
+                }
 
                 clearCachedPatientBundle(patientId);
 
                 const [freshCategories, freshRecords] = await Promise.all([
-                  midwifePatientApi.getPatientHealthCategories(token, midwifeId, patientId),
+                  midwifePatientApi.getPatientHealthCategories(
+                    token,
+                    midwifeId,
+                    patientId
+                  ),
                   midwifePatientApi.getPatientHealthRecordsByCategory(
                     token,
                     midwifeId,
@@ -806,9 +795,14 @@ export default function AssignedPatientManagePage() {
 
                 setCategories(freshCategories);
                 setRecords(freshRecords);
-                setCachedCategoryRecords(patientId, selectedCategoryId, freshRecords);
+                setCachedCategoryRecords(
+                  patientId,
+                  selectedCategoryId,
+                  freshRecords
+                );
 
                 const cached = getCachedPatientBundle(patientId);
+
                 if (cached) {
                   setCachedPatientBundle(patientId, {
                     ...cached,

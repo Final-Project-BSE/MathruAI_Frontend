@@ -1,5 +1,5 @@
 import axios, { AxiosError } from "axios";
-import type { UserResponseDto, UserUpdateRequest } from './types';
+import type { UserResponseDto, UserUpdateRequest } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
@@ -12,17 +12,23 @@ function authHeader(token?: string) {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+type ErrorResponseData = {
+  message?: unknown;
+};
+
 function toMessage(err: unknown) {
   if (axios.isAxiosError(err)) {
-    const axErr = err as AxiosError<any>;
+    const axErr = err as AxiosError<ErrorResponseData>;
     const data = axErr.response?.data;
+
     return (
       (typeof data === "string" && data) ||
-      data?.message ||
+      (typeof data?.message === "string" && data.message) ||
       axErr.message ||
       "Request failed"
     );
   }
+
   return err instanceof Error ? err.message : "Request failed";
 }
 
@@ -77,11 +83,9 @@ export async function deleteUser(token: string, id: number): Promise<string> {
   }
 }
 
-export async function getcuruser(
-  token: string,
-): Promise<UserResponseDto> {
+export async function getcuruser(token: string): Promise<UserResponseDto> {
   try {
-    const res = await api.get<UserResponseDto>(`/api/users/me`, {
+    const res = await api.get<UserResponseDto>("/api/users/me", {
       headers: authHeader(token),
     });
     return res.data;

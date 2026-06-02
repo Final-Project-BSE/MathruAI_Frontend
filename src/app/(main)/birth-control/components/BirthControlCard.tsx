@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Method } from "../../../../../types/methods";
 import { useLanguage } from "@/components/common/useLanguage";
@@ -24,14 +25,20 @@ export default function BirthControlCard({ method }: Props) {
   return (
     <button
       type="button"
-      onClick={() => router.push(`/dashboard/reproductive/birth-control/${method.id}`)}
+      onClick={() =>
+        router.push(`/dashboard/reproductive/birth-control/${method.id}`)
+      }
       className="w-full overflow-hidden rounded-2xl bg-white text-left shadow-lg transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#d04f51] focus:ring-offset-2"
     >
-      <img
-        src={method.image}
-        alt={title}
-        className="h-48 w-full object-cover"
-      />
+      <div className="relative h-48 w-full">
+        <Image
+          src={method.image}
+          alt={title}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, 33vw"
+        />
+      </div>
 
       <div className="p-5">
         <h2 className="mb-2 text-lg font-semibold">{title}</h2>

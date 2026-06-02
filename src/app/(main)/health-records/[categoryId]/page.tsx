@@ -11,10 +11,27 @@ import RecordFormModal, {
   RecordFormData,
 } from "@/components/health-records/RecordFormModal";
 import DeleteConfirmModal from "@/components/health-records/DeleteConfirmModal";
-import healthRecordsApi, { updateRecord } from "@/app/api/health-records/api";
 import { LoadingState } from "@/components/common/LoadingState";
 import { useLanguage } from "@/components/common/useLanguage";
 import { translateText } from "@/components/common/translateText";
+
+type ApiFile = {
+  id: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+  fileUrl: string;
+};
+
+type ApiRecord = {
+  id: string;
+  categoryId: string;
+  categoryName?: string;
+  name: string;
+  date: string;
+  description?: string;
+  files?: ApiFile[];
+};
 
 export default function RecordsPage() {
   const params = useParams();
@@ -22,6 +39,7 @@ export default function RecordsPage() {
 
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<HealthRecord | null>(null);
@@ -50,59 +68,60 @@ export default function RecordsPage() {
       setLoading(true);
       setError(null);
 
-      const { getSession } = await import("@/lib/authentication");
-      const session = await getSession();
-      const token = session?.user?.token;
+      const response = await fetch(
+        `/api/health-records/categories/${categoryId}/records`,
+        {
+          method: "GET",
+          cache: "no-store",
+        }
+      );
 
-      if (!token) {
-        setError(hr.unauthorized);
-        return;
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.message || hr.loadRecordsError);
       }
 
-      const data = await healthRecordsApi.getRecordsByCategory(token, categoryId);
+      const data = await response.json();
 
-      const mapped: HealthRecord[] = data.map((record) => ({
+      const apiRecords: ApiRecord[] = Array.isArray(data)
+        ? data
+        : data.records ?? [];
+
+      const mapped: HealthRecord[] = apiRecords.map((record) => ({
         id: record.id,
         categoryId: record.categoryId,
         name: record.name,
         date: record.date,
         description: record.description,
-        files: record.files.map((file) => ({
-          id: file.id,
-          name: file.fileName,
-          type: file.fileType,
-          size: file.fileSize,
-          data: file.fileUrl,
-        })),
+        files:
+          record.files?.map((file) => ({
+            id: file.id,
+            name: file.fileName,
+            type: file.fileType,
+            size: file.fileSize,
+            data: file.fileUrl,
+          })) ?? [],
       }));
 
       setRecords(mapped);
 
-      if (data.length > 0) {
-        setCategoryInfo({
-          name: getCategoryName(categoryId, data[0].categoryName),
-        });
-      } else {
-        setCategoryInfo({
-          name: getCategoryName(categoryId, hr.records),
-        });
-      }
+      setCategoryInfo({
+        name: getCategoryName(
+          categoryId,
+          data.categoryName || apiRecords[0]?.categoryName || hr.records
+        ),
+      });
     } catch (err) {
       console.error("Failed to fetch records:", err);
-      setError(hr.loadRecordsError);
+      setError(err instanceof Error ? err.message : hr.loadRecordsError);
+
       setCategoryInfo({
         name: getCategoryName(categoryId, hr.records),
       });
     } finally {
       setLoading(false);
     }
-  }, [
-    categoryId,
-    getCategoryName,
-    hr.unauthorized,
-    hr.loadRecordsError,
-    hr.records,
-  ]);
+  }, [categoryId, getCategoryName, hr.loadRecordsError, hr.records]);
 
   useEffect(() => {
     fetchRecords();
@@ -111,15 +130,18 @@ export default function RecordsPage() {
   useEffect(() => {
     let active = true;
 
-    const translateLatest = async () => {
+    async function translateLatest() {
       if (!latestRecord) {
         setTranslatedLatestName("—");
         return;
       }
 
       const translated = await translateText(latestRecord.name, language);
-      if (active) setTranslatedLatestName(translated);
-    };
+
+      if (active) {
+        setTranslatedLatestName(translated);
+      }
+    }
 
     translateLatest();
 
@@ -131,11 +153,14 @@ export default function RecordsPage() {
   useEffect(() => {
     let active = true;
 
-    const translateCategory = async () => {
+    async function translateCategory() {
       const baseName = categoryInfo.name || getCategoryName(categoryId, hr.records);
       const translated = await translateText(baseName, language);
-      if (active) setTranslatedCategoryName(translated);
-    };
+
+      if (active) {
+        setTranslatedCategoryName(translated);
+      }
+    }
 
     translateCategory();
 
@@ -156,38 +181,49 @@ export default function RecordsPage() {
 
   const handleFormSubmit = async (data: RecordFormData) => {
     try {
-      const { getSession } = await import("@/lib/authentication");
-      const session = await getSession();
-      const token = session?.user?.token;
+      setSaving(true);
 
-      if (!token) return;
+      const formData = new FormData();
+      formData.append("name", data.name);
+      formData.append("date", data.date);
+
+      if (data.description) {
+        formData.append("description", data.description);
+      }
 
       const newFileObjects =
         data.files
           ?.map((file) => file.file)
           .filter((file): file is File => file instanceof File) ?? [];
 
-      if (editTarget) {
-        await updateRecord(token, editTarget.id, {
-          name: data.name,
-          date: data.date,
-          description: data.description,
-          files: newFileObjects,
-        });
-      } else {
-        await healthRecordsApi.createRecord(token, categoryId, {
-          name: data.name,
-          date: data.date,
-          description: data.description,
-          files: newFileObjects,
-        });
+      newFileObjects.forEach((file) => {
+        formData.append("files", file);
+      });
+
+      const url = editTarget
+        ? `/api/health-records/records/${editTarget.id}`
+        : `/api/health-records/categories/${categoryId}/records`;
+
+      const method = editTarget ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.message || hr.saveRecordError);
       }
 
       await fetchRecords();
       setFormOpen(false);
+      setEditTarget(null);
     } catch (err) {
       console.error("Failed to save record:", err);
-      alert(hr.saveRecordError);
+      alert(err instanceof Error ? err.message : hr.saveRecordError);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -195,18 +231,26 @@ export default function RecordsPage() {
     if (!deleteTarget) return;
 
     try {
-      const { getSession } = await import("@/lib/authentication");
-      const session = await getSession();
-      const token = session?.user?.token;
+      const response = await fetch(
+        `/api/health-records/records/${deleteTarget.id}`,
+        {
+          method: "DELETE",
+        }
+      );
 
-      if (!token) return;
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.message || hr.deleteRecordError);
+      }
 
-      await healthRecordsApi.deleteRecord(token, deleteTarget.id);
-      setRecords((prev) => prev.filter((record) => record.id !== deleteTarget.id));
+      setRecords((prev) =>
+        prev.filter((record) => record.id !== deleteTarget.id)
+      );
+
       setDeleteTarget(null);
     } catch (err) {
       console.error("Failed to delete record:", err);
-      alert(hr.deleteRecordError);
+      alert(err instanceof Error ? err.message : hr.deleteRecordError);
     }
   };
 
@@ -222,6 +266,7 @@ export default function RecordsPage() {
         <div className="flex items-center justify-between mb-6">
           <Button
             onClick={handleAdd}
+            disabled={saving}
             className="rounded-xl bg-[#d04f51] hover:bg-[#b84345] text-white gap-2 shadow-sm"
           >
             <Plus className="h-4 w-4" />
@@ -280,7 +325,10 @@ export default function RecordsPage() {
 
       <RecordFormModal
         isOpen={formOpen}
-        onClose={() => setFormOpen(false)}
+        onClose={() => {
+          setFormOpen(false);
+          setEditTarget(null);
+        }}
         onSubmit={handleFormSubmit}
         initialData={editTarget}
       />

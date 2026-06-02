@@ -8,11 +8,11 @@ type RegisterDataType = {
   email: string;
   phoneNumber: string;
   dateOfBirth: string;
-  nationalIdNumber: string;
-  address: string;
   password: string;
   roles: string[];
 
+  nationalIdNumber?: string;
+  address?: string;
   area?: string;
   district?: string;
   mohArea?: string;
@@ -59,10 +59,8 @@ export const register = async (
       longitude: data.longitude,
     };
 
-    const { data: backendResponse }: { data: BackendResponse } = await axios.post(
-      "/api/auth/signup",
-      requestData
-    );
+    const { data: backendResponse }: { data: BackendResponse } =
+      await axios.post("/api/auth/signup", requestData);
 
     const parsedResponse = backendResponse.body || backendResponse;
 
@@ -80,7 +78,10 @@ export const register = async (
       data: null,
     };
   } catch (error) {
-    const message = getErrorMessage(error, "Registration failed. Please try again.");
+    const message = getErrorMessage(
+      error,
+      "Registration failed. Please try again."
+    );
 
     return {
       status: "FAIL",

@@ -13,7 +13,10 @@ import ErrorAlert from "./ErrorAlert";
 import PatientProfileSummary from "./PatientProfileSummary";
 
 import apis, { VitalsPayload } from "../../../api/healthmonitor/api";
-import type { PredictionResult, VitalsState } from "../../../api/healthmonitor/types";
+import type {
+  PredictionResult,
+  VitalsState,
+} from "../../../api/healthmonitor/types";
 import { LoadingState } from "@/components/common/LoadingState";
 import TopBarFeatures from "@/components/common/TopBarFeatures";
 import { useLanguage } from "@/components/common/useLanguage";
@@ -32,6 +35,23 @@ const emptyVitals: VitalsState = {
   MentalHealth: 0,
 };
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
 const MaternalHealthDashboard = () => {
   const { t } = useLanguage();
   const text = t.healthMonitor;
@@ -39,12 +59,15 @@ const MaternalHealthDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
 
-  const [predictionResult, setPredictionResult] = useState<PredictionResult | null>(null);
+  const [predictionResult, setPredictionResult] =
+    useState<PredictionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [token, setToken] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentPredictionId, setCurrentPredictionId] = useState<string | null>(null);
+  const [currentPredictionId, setCurrentPredictionId] = useState<string | null>(
+    null
+  );
 
   const [vitals, setVitals] = useState<VitalsState>(emptyVitals);
 
@@ -62,7 +85,7 @@ const MaternalHealthDashboard = () => {
           setError(text.loginAccessPage);
           setIsAuthenticated(false);
         }
-      } catch (e) {
+      } catch {
         setError(text.authError);
         setIsAuthenticated(false);
       } finally {
@@ -89,7 +112,7 @@ const MaternalHealthDashboard = () => {
       }
 
       setError(null);
-    } catch (err: any) {
+    } catch {
       // Keep existing behavior: no forced error when saved data loading fails.
     } finally {
       setLoadingData(false);
@@ -145,7 +168,9 @@ const MaternalHealthDashboard = () => {
       const missingFields = requiredFields.filter((field) => !vitals[field]);
 
       if (missingFields.length > 0) {
-        const translatedMissingFields = missingFields.map(getRequiredFieldLabel).join(", ");
+        const translatedMissingFields = missingFields
+          .map(getRequiredFieldLabel)
+          .join(", ");
         setError(`${text.fillRequiredFields}: ${translatedMissingFields}`);
         return;
       }
@@ -160,8 +185,10 @@ const MaternalHealthDashboard = () => {
       setVitals(result.vitals);
       setCurrentPredictionId(result.prediction_id);
       setError(null);
-    } catch (err: any) {
-      setError(`${text.failedPredictionPrefix} ${err?.message || text.tryAgain}`);
+    } catch (err: unknown) {
+      setError(
+        `${text.failedPredictionPrefix} ${getErrorMessage(err, text.tryAgain)}`
+      );
     } finally {
       setLoading(false);
     }
@@ -179,8 +206,8 @@ const MaternalHealthDashboard = () => {
       setPredictionResult(null);
       setCurrentPredictionId(null);
       setError(null);
-    } catch (err: any) {
-      setError(err?.message || text.failedDeletePrediction);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, text.failedDeletePrediction));
     }
   };
 

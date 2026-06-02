@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   ChevronDown,
   Database,
-  LayoutDashboard,
   LogOut,
   MapPinned,
   Menu,

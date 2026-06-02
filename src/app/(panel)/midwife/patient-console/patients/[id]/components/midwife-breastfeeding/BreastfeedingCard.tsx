@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Heart,
   Loader2,
@@ -46,27 +46,45 @@ const ISSUE_LABELS: Record<string, string> = {
   OTHER: "🔵 Other",
 };
 
-const SEVERITY_COLORS: Record<string, { text: string; border: string; bg: string }> = {
-  MILD:     { text: "text-emerald-300", border: "border-emerald-500/30", bg: "bg-emerald-500/10" },
-  MODERATE: { text: "text-yellow-300",  border: "border-yellow-500/30",  bg: "bg-yellow-500/10"  },
-  SEVERE:   { text: "text-red-300",     border: "border-red-500/30",     bg: "bg-red-500/10"     },
+const SEVERITY_COLORS: Record<
+  string,
+  { text: string; border: string; bg: string }
+> = {
+  MILD: {
+    text: "text-emerald-300",
+    border: "border-emerald-500/30",
+    bg: "bg-emerald-500/10",
+  },
+  MODERATE: {
+    text: "text-yellow-300",
+    border: "border-yellow-500/30",
+    bg: "bg-yellow-500/10",
+  },
+  SEVERE: {
+    text: "text-red-300",
+    border: "border-red-500/30",
+    bg: "bg-red-500/10",
+  },
 };
 
 const CATEGORY_LABELS: Record<TipCategory, string> = {
   LATCH_TECHNIQUE: "👶 Latch Technique",
-  MILK_SUPPLY:     "🍼 Milk Supply",
-  PAIN_RELIEF:     "💊 Pain Relief",
-  NUTRITION:       "🥗 Nutrition",
-  PUMPING:         "🔵 Pumping",
-  GENERAL:         "💡 General",
+  MILK_SUPPLY: "🍼 Milk Supply",
+  PAIN_RELIEF: "💊 Pain Relief",
+  NUTRITION: "🥗 Nutrition",
+  PUMPING: "🔵 Pumping",
+  GENERAL: "💡 General",
 };
 
 const CATEGORIES = Object.keys(CATEGORY_LABELS) as TipCategory[];
 
 function formatDateTime(value?: string | null) {
   if (!value) return "-";
+
   const date = new Date(value);
+
   if (Number.isNaN(date.getTime())) return "-";
+
   return date.toLocaleString(undefined, {
     year: "numeric",
     month: "short",
@@ -76,28 +94,35 @@ function formatDateTime(value?: string | null) {
   });
 }
 
-export default function BreastfeedingCard({ token, patientId, midwifeId }: Props) {
+export default function BreastfeedingCard({
+  token,
+  patientId,
+  midwifeId,
+}: Props) {
   const [activeTab, setActiveTab] = useState<ActiveTab>("sessions");
 
-  const [sessions, setSessions] = useState<BreastfeedingSessionResponseDto[]>([]);
+  const [sessions, setSessions] = useState<
+    BreastfeedingSessionResponseDto[]
+  >([]);
   const [issues, setIssues] = useState<BreastfeedingIssueResponseDto[]>([]);
   const [tips, setTips] = useState<BreastfeedingTipResponseDto[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Session expand
-  const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
+  const [expandedSessionId, setExpandedSessionId] = useState<string | null>(
+    null
+  );
 
-  // Issue note popup
-  const [selectedIssue, setSelectedIssue] = useState<BreastfeedingIssueResponseDto | null>(null);
+  const [selectedIssue, setSelectedIssue] =
+    useState<BreastfeedingIssueResponseDto | null>(null);
   const [isIssuePopupOpen, setIsIssuePopupOpen] = useState(false);
   const [midwifeNote, setMidwifeNote] = useState("");
   const [savingNote, setSavingNote] = useState(false);
 
-  // Tip popup modal
   const [showTipModal, setShowTipModal] = useState(false);
-  const [editingTip, setEditingTip] = useState<BreastfeedingTipResponseDto | null>(null);
+  const [editingTip, setEditingTip] =
+    useState<BreastfeedingTipResponseDto | null>(null);
   const [tipCategory, setTipCategory] = useState<TipCategory>("GENERAL");
   const [tipTitle, setTipTitle] = useState("");
   const [tipContent, setTipContent] = useState("");
@@ -106,17 +131,27 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
   const [deletingTipId, setDeletingTipId] = useState<string | null>(null);
   const [tipFormError, setTipFormError] = useState("");
 
-  // ===================== LOAD DATA =====================
+  const loadAll = useCallback(async () => {
+    if (!token || !patientId || !midwifeId) {
+      setLoading(false);
+      return;
+    }
 
-  async function loadAll() {
-    if (!token || !patientId || !midwifeId) return;
     try {
       setLoading(true);
       setError("");
 
       const [sessionData, issueData, tipData] = await Promise.all([
-        breastfeedingApi.getPatientSessionsForMidwife(token, midwifeId, patientId),
-        breastfeedingApi.getPatientIssuesForMidwife(token, midwifeId, patientId),
+        breastfeedingApi.getPatientSessionsForMidwife(
+          token,
+          midwifeId,
+          patientId
+        ),
+        breastfeedingApi.getPatientIssuesForMidwife(
+          token,
+          midwifeId,
+          patientId
+        ),
         breastfeedingApi.getAllActiveTips(token),
       ]);
 
@@ -130,13 +165,11 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
     } finally {
       setLoading(false);
     }
-  }
+  }, [token, patientId, midwifeId]);
 
   useEffect(() => {
     void loadAll();
-  }, [token, patientId, midwifeId]);
-
-  // ===================== ISSUE NOTE =====================
+  }, [loadAll]);
 
   function openIssuePopup(issue: BreastfeedingIssueResponseDto) {
     setSelectedIssue(issue);
@@ -152,8 +185,10 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
 
   async function handleSaveMidwifeNote() {
     if (!selectedIssue || !token) return;
+
     try {
       setSavingNote(true);
+
       await breastfeedingApi.updatePatientIssueForMidwife(
         token,
         midwifeId,
@@ -168,6 +203,7 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
           midwifeNotes: midwifeNote,
         }
       );
+
       closeIssuePopup();
       await loadAll();
     } catch (err) {
@@ -178,8 +214,6 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
       setSavingNote(false);
     }
   }
-
-  // ===================== TIP CRUD =====================
 
   function openAddTipModal() {
     setEditingTip(null);
@@ -214,6 +248,7 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
       setTipFormError("Title is required.");
       return;
     }
+
     if (!tipContent.trim()) {
       setTipFormError("Content is required.");
       return;
@@ -249,25 +284,20 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
 
   async function handleDeleteTip(id: string) {
     if (!token) return;
+
     try {
       setDeletingTipId(id);
       await breastfeedingApi.deleteTip(token, id);
       await loadAll();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to delete tip."
-      );
+      setError(err instanceof Error ? err.message : "Failed to delete tip.");
     } finally {
       setDeletingTipId(null);
     }
   }
 
-  // ===================== RENDER =====================
-
   return (
     <section className="rounded-2xl border border-white/10 bg-zinc-950 p-5">
-
-      {/* Header */}
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -277,26 +307,24 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
             </h2>
           </div>
           <p className="mt-1 text-xs text-zinc-500">
-            Patient's breastfeeding sessions, reported issues and expert tips.
+            Patient&apos;s breastfeeding sessions, reported issues and expert
+            tips.
           </p>
         </div>
       </div>
 
-      {/* Error */}
-      {error && (
+      {error ? (
         <div className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
           {error}
         </div>
-      )}
+      ) : null}
 
-      {/* Loading */}
       {loading ? (
         <div className="flex min-h-[220px] items-center justify-center rounded-xl border border-white/10 bg-black/20">
           <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
         </div>
       ) : (
         <>
-          {/* Summary Stats */}
           <div className="mb-5 grid grid-cols-3 gap-3">
             {[
               {
@@ -306,14 +334,15 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
               },
               {
                 label: "Unresolved Issues",
-                value: issues.filter((i) => !i.resolved).length,
-                color: issues.filter((i) => !i.resolved).length > 0
-                  ? "text-yellow-300"
-                  : "text-emerald-300",
+                value: issues.filter((issue) => !issue.resolved).length,
+                color:
+                  issues.filter((issue) => !issue.resolved).length > 0
+                    ? "text-yellow-300"
+                    : "text-emerald-300",
               },
               {
                 label: "Active Tips",
-                value: tips.filter((t) => t.active).length,
+                value: tips.filter((tip) => tip.active).length,
                 color: "text-blue-300",
               },
             ].map((stat) => (
@@ -329,7 +358,6 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
             ))}
           </div>
 
-          {/* Tab Switcher */}
           <div className="mb-5 flex gap-1 rounded-xl border border-white/10 bg-black/30 p-1">
             {(["sessions", "issues", "tips"] as const).map((tab) => (
               <button
@@ -346,14 +374,13 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
                 {tab === "sessions"
                   ? "🤱 Sessions"
                   : tab === "issues"
-                  ? "⚠️ Issues"
-                  : "💡 Tips"}
+                    ? "⚠️ Issues"
+                    : "💡 Tips"}
               </button>
             ))}
           </div>
 
-          {/* ===================== SESSIONS TAB ===================== */}
-          {activeTab === "sessions" && (
+          {activeTab === "sessions" ? (
             <div>
               {sessions.length === 0 ? (
                 <div className="flex min-h-[160px] flex-col items-center justify-center rounded-xl border border-white/10 bg-black/20 text-center">
@@ -378,6 +405,7 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
                             <span className="rounded-full border border-white/10 bg-zinc-800 px-3 py-1 text-xs font-semibold text-zinc-300">
                               {SIDE_LABELS[session.side] || session.side}
                             </span>
+
                             <div>
                               <p className="text-sm font-semibold text-white">
                                 {feedDate.toLocaleDateString(undefined, {
@@ -400,11 +428,11 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
                               {session.durationMinutes} min
                             </span>
 
-                            {session.milkAmountMl > 0 && (
+                            {session.milkAmountMl > 0 ? (
                               <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-300">
                                 {session.milkAmountMl} ml
                               </span>
-                            )}
+                            ) : null}
 
                             <button
                               type="button"
@@ -424,7 +452,7 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
                           </div>
                         </div>
 
-                        {isExpanded && (
+                        {isExpanded ? (
                           <div className="mt-3 rounded-lg border border-white/10 bg-black/40 p-3">
                             <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500">
                               Notes
@@ -433,17 +461,16 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
                               {session.notes || "No notes added."}
                             </p>
                           </div>
-                        )}
+                        ) : null}
                       </div>
                     );
                   })}
                 </div>
               )}
             </div>
-          )}
+          ) : null}
 
-          {/* ===================== ISSUES TAB ===================== */}
-          {activeTab === "issues" && (
+          {activeTab === "issues" ? (
             <div>
               {issues.length === 0 ? (
                 <div className="flex min-h-[160px] flex-col items-center justify-center rounded-xl border border-white/10 bg-black/20 text-center">
@@ -453,7 +480,9 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
               ) : (
                 <div className="max-h-[400px] space-y-3 overflow-y-auto pr-1">
                   {issues.map((issue) => {
-                    const sev = SEVERITY_COLORS[issue.severity] || SEVERITY_COLORS.MILD;
+                    const severityStyle =
+                      SEVERITY_COLORS[issue.severity] ||
+                      SEVERITY_COLORS.MILD;
 
                     return (
                       <div
@@ -468,16 +497,16 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex flex-col gap-1.5">
                             <p className="text-sm font-semibold text-white">
-                              {ISSUE_LABELS[issue.issueType] || issue.issueType}
+                              {ISSUE_LABELS[issue.issueType] ||
+                                issue.issueType}
                             </p>
                             <span
-                              className={`w-fit rounded-full border px-2.5 py-0.5 text-xs font-semibold ${sev.border} ${sev.bg} ${sev.text}`}
+                              className={`w-fit rounded-full border px-2.5 py-0.5 text-xs font-semibold ${severityStyle.border} ${severityStyle.bg} ${severityStyle.text}`}
                             >
                               {issue.severity}
                             </span>
                           </div>
 
-                          {/* ✅ FIX 1 — Status badge only, no resolve button */}
                           <div className="flex shrink-0 items-center gap-2">
                             {issue.resolved ? (
                               <span className="flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300">
@@ -505,7 +534,7 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
                           {issue.description}
                         </p>
 
-                        {issue.midwifeNotes && (
+                        {issue.midwifeNotes ? (
                           <div className="mt-3 rounded-lg border border-white/10 bg-black/40 p-3">
                             <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500">
                               Midwife Note
@@ -514,7 +543,7 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
                               {issue.midwifeNotes}
                             </p>
                           </div>
-                        )}
+                        ) : null}
 
                         <p className="mt-2 text-xs text-zinc-600">
                           Reported: {formatDateTime(issue.reportedAt)}
@@ -525,16 +554,15 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
                 </div>
               )}
             </div>
-          )}
+          ) : null}
 
-          {/* ===================== TIPS TAB ===================== */}
-          {activeTab === "tips" && (
+          {activeTab === "tips" ? (
             <div>
               <div className="mb-4 flex items-center justify-between">
                 <p className="text-xs text-zinc-500">
                   Manage breastfeeding tips for all patients
                 </p>
-                {/* ✅ FIX 2 — Opens popup modal */}
+
                 <button
                   type="button"
                   onClick={openAddTipModal}
@@ -568,11 +596,12 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
                         </div>
 
                         <div className="flex shrink-0 items-center gap-2">
-                          {!tip.active && (
+                          {!tip.active ? (
                             <span className="rounded-full border border-white/10 bg-zinc-800 px-2 py-0.5 text-xs text-zinc-500">
                               Inactive
                             </span>
-                          )}
+                          ) : null}
+
                           <button
                             type="button"
                             onClick={() => openEditTipModal(tip)}
@@ -580,6 +609,7 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
                           >
                             <Pencil className="h-4 w-4" />
                           </button>
+
                           <button
                             type="button"
                             onClick={() => handleDeleteTip(tip.id)}
@@ -606,12 +636,11 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
                 </div>
               )}
             </div>
-          )}
+          ) : null}
         </>
       )}
 
-      {/* ===================== ISSUE NOTE POPUP ===================== */}
-      {isIssuePopupOpen && selectedIssue && (
+      {isIssuePopupOpen && selectedIssue ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
           <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-zinc-950 p-5 shadow-2xl">
             <div className="mb-4 flex items-start justify-between gap-3">
@@ -620,9 +649,11 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
                   Add Midwife Note
                 </h3>
                 <p className="mt-1 text-xs text-zinc-500">
-                  {ISSUE_LABELS[selectedIssue.issueType]} — {selectedIssue.severity}
+                  {ISSUE_LABELS[selectedIssue.issueType]} —{" "}
+                  {selectedIssue.severity}
                 </p>
               </div>
+
               <button
                 type="button"
                 onClick={closeIssuePopup}
@@ -634,7 +665,7 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
 
             <div className="mb-4 rounded-xl border border-white/10 bg-black/40 p-3">
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                Patient's Description
+                Patient&apos;s Description
               </p>
               <p className="text-sm leading-relaxed text-zinc-300">
                 {selectedIssue.description}
@@ -649,7 +680,7 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
                 rows={4}
                 placeholder="Add your clinical notes or advice here..."
                 value={midwifeNote}
-                onChange={(e) => setMidwifeNote(e.target.value)}
+                onChange={(event) => setMidwifeNote(event.target.value)}
                 className="w-full resize-none rounded-xl border border-white/10 bg-black px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-[#d04f51]"
               />
             </div>
@@ -662,6 +693,7 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
               >
                 Cancel
               </button>
+
               <button
                 type="button"
                 onClick={handleSaveMidwifeNote}
@@ -680,10 +712,9 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* ===================== TIP POPUP MODAL ===================== */}
-      {showTipModal && (
+      {showTipModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
           <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-zinc-950 p-5 shadow-2xl">
             <div className="mb-4 flex items-start justify-between gap-3">
@@ -697,6 +728,7 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
                     : "Add a new breastfeeding tip for patients"}
                 </p>
               </div>
+
               <button
                 type="button"
                 onClick={closeTipModal}
@@ -706,37 +738,35 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
               </button>
             </div>
 
-            {tipFormError && (
+            {tipFormError ? (
               <div className="mb-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">
                 {tipFormError}
               </div>
-            )}
+            ) : null}
 
-            {/* Category */}
             <div className="mb-3">
               <p className="mb-1.5 text-xs font-medium text-zinc-400">
                 Category
               </p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {CATEGORIES.map((cat) => (
+                {CATEGORIES.map((category) => (
                   <button
-                    key={cat}
+                    key={category}
                     type="button"
-                    onClick={() => setTipCategory(cat)}
+                    onClick={() => setTipCategory(category)}
                     className={[
                       "rounded-lg border px-3 py-2 text-left text-xs font-semibold transition",
-                      tipCategory === cat
+                      tipCategory === category
                         ? "border-[#d04f51] bg-[#d04f51] text-white"
                         : "border-white/10 bg-black/30 text-zinc-300 hover:bg-white/5",
                     ].join(" ")}
                   >
-                    {CATEGORY_LABELS[cat]}
+                    {CATEGORY_LABELS[category]}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Title */}
             <div className="mb-3">
               <p className="mb-1.5 text-xs font-medium text-zinc-400">
                 Title <span className="text-[#d04f51]">*</span>
@@ -745,12 +775,11 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
                 type="text"
                 placeholder="e.g. How to improve latch technique"
                 value={tipTitle}
-                onChange={(e) => setTipTitle(e.target.value)}
+                onChange={(event) => setTipTitle(event.target.value)}
                 className="w-full rounded-xl border border-white/10 bg-black px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-[#d04f51]"
               />
             </div>
 
-            {/* Content */}
             <div className="mb-3">
               <p className="mb-1.5 text-xs font-medium text-zinc-400">
                 Content <span className="text-[#d04f51]">*</span>
@@ -759,12 +788,11 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
                 rows={4}
                 placeholder="Write the tip content here..."
                 value={tipContent}
-                onChange={(e) => setTipContent(e.target.value)}
+                onChange={(event) => setTipContent(event.target.value)}
                 className="w-full resize-none rounded-xl border border-white/10 bg-black px-3 py-2 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-[#d04f51]"
               />
             </div>
 
-            {/* Active Toggle */}
             <div className="mb-4 flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-4 py-3">
               <div>
                 <p className="text-sm font-medium text-white">Active</p>
@@ -772,6 +800,7 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
                   Show this tip to patients
                 </p>
               </div>
+
               <button
                 type="button"
                 onClick={() => setTipActive((prev) => !prev)}
@@ -789,7 +818,6 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
               </button>
             </div>
 
-            {/* Buttons */}
             <div className="flex justify-end gap-3">
               <button
                 type="button"
@@ -798,6 +826,7 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
               >
                 Cancel
               </button>
+
               <button
                 type="button"
                 onClick={handleSaveTip}
@@ -818,7 +847,7 @@ export default function BreastfeedingCard({ token, patientId, midwifeId }: Props
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </section>
   );
 }

@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowUpRightIcon, CoinSymbol } from "./icons";
+import { CoinSymbol } from "./icons";
 
 export type AssetCardProps = {
   name: string;
