@@ -4,8 +4,6 @@ import AuthWrapper from "@/components/auth/AuthWrapper";
 import { getSession } from "@/lib/authentication";
 import Image from "next/image";
 
-// import "@/public/auth-icons.css";
-
 const AuthLayout = async ({ children }: { children: React.ReactNode }) => {
   const session = await getSession();
 

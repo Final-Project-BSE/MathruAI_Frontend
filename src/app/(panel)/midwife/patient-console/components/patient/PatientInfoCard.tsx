@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 import type { Patient } from './types';
 import { DotMenuIcon, LocationIcon, MailIcon, PhoneIcon } from './icons';
 
@@ -14,9 +16,11 @@ export function PatientInfoCard({ patient }: PatientInfoCardProps) {
         <div>
           <div className="mb-4 flex items-center gap-4">
             {patient.profileImage ? (
-              <img
+              <Image
                 src={patient.profileImage}
                 alt={patient.name}
+                width={64}
+                height={64}
                 className="h-16 w-16 rounded-full border border-[#34343a] object-cover"
               />
             ) : (
@@ -74,7 +78,12 @@ export function PatientInfoCard({ patient }: PatientInfoCardProps) {
               {patient.registrationDate}
             </div>
           </div>
-          <button className="text-[#7a7a84] transition hover:text-[#fab0a7]">
+
+          <button
+            type="button"
+            className="text-[#7a7a84] transition hover:text-[#fab0a7]"
+            aria-label="Open patient options"
+          >
             <DotMenuIcon />
           </button>
         </div>

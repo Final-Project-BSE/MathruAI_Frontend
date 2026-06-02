@@ -68,10 +68,13 @@ const ChangePasswordCard = ({ token, userId }: Props) => {
         newPassword: "",
         confirmNewPassword: "",
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : labels.failedToChangePassword;
+
       setMessage({
         type: "error",
-        text: err.message || labels.failedToChangePassword,
+        text: errorMessage || labels.failedToChangePassword,
       });
     } finally {
       setLoading(false);

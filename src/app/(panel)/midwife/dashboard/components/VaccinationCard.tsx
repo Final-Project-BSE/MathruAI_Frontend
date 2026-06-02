@@ -1,5 +1,5 @@
 import React from "react";
-import { CalendarDays, Clock, MapPin, User } from "lucide-react";
+import { Clock, MapPin, User } from "lucide-react";
 
 export function VaccinationCard() {
   return (

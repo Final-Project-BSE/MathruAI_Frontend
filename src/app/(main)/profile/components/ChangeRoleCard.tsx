@@ -19,6 +19,23 @@ const STAGE_VALUES: Role[] = [
   "POST_PREGNANT_MOTHER",
 ];
 
+const getErrorMessage = (error: unknown, fallbackMessage: string): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
+  }
+
+  return fallbackMessage;
+};
+
 const ChangeRoleCard = ({ profile, token, userId, onUpdate }: Props) => {
   const { actionLogoutToast } = useActionLogoutToast();
   const { t } = useLanguage();
@@ -34,8 +51,8 @@ const ChangeRoleCard = ({ profile, token, userId, onUpdate }: Props) => {
   }));
 
   useEffect(() => {
-    const currentStage = (profile?.roles || []).find((r) =>
-      STAGE_VALUES.some((value) => value === r)
+    const currentStage = (profile?.roles || []).find((role) =>
+      STAGE_VALUES.includes(role)
     );
 
     setSelectedRole(currentStage || null);
@@ -45,8 +62,8 @@ const ChangeRoleCard = ({ profile, token, userId, onUpdate }: Props) => {
     return labels.stages[roleValue] || roleValue;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
     if (!selectedRole) {
       errorToast(labels.selectStageError);
@@ -66,16 +83,18 @@ const ChangeRoleCard = ({ profile, token, userId, onUpdate }: Props) => {
         title: labels.stageUpgradedTitle,
         description: (
           <>
-            {labels.stageUpgradedDescription1} <strong>"{stageName}"</strong>.
+            {labels.stageUpgradedDescription1}{" "}
+            <strong>&quot;{stageName}&quot;</strong>.
             <br />
-            {labels.stageUpgradedDescription2} <strong>"{stageName}"</strong>.
+            {labels.stageUpgradedDescription2}{" "}
+            <strong>&quot;{stageName}&quot;</strong>.
           </>
         ),
         confirmText: labels.logout,
         cancelText: labels.close,
       });
-    } catch (err: any) {
-      errorToast(err.message || labels.failedToUpdateStage);
+    } catch (error: unknown) {
+      errorToast(getErrorMessage(error, labels.failedToUpdateStage));
     } finally {
       setLoading(false);
     }

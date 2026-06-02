@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { getSession } from '@/lib/authentication';
 import { getcuruser } from '@/app/api/user/api';
 import { LoadingState } from '@/components/common/LoadingState';
@@ -35,6 +35,44 @@ const BreastfeedingDashboard = () => {
   const [tips, setTips] = useState<BreastfeedingTipResponseDto[]>([]);
 
   const [activeTab, setActiveTab] = useState<'sessions' | 'issues' | 'tips'>('sessions');
+
+  const loadSessions = useCallback(async (jwt: string) => {
+    try {
+      const data = await breastfeedingApi.getSessions(jwt);
+      setSessions(data);
+    } catch {
+      setSessions([]);
+    }
+  }, []);
+
+  const loadIssues = useCallback(async (jwt: string) => {
+    try {
+      const data = await breastfeedingApi.getIssues(jwt);
+      setIssues(data);
+    } catch {
+      setIssues([]);
+    }
+  }, []);
+
+  const loadTips = useCallback(async (jwt: string) => {
+    try {
+      const data = await breastfeedingApi.getAllActiveTips(jwt);
+      setTips(data);
+    } catch {
+      setTips([]);
+    }
+  }, []);
+
+  const loadAllData = useCallback(
+    async (jwt: string) => {
+      await Promise.all([
+        loadSessions(jwt),
+        loadIssues(jwt),
+        loadTips(jwt),
+      ]);
+    },
+    [loadSessions, loadIssues, loadTips]
+  );
 
   useEffect(() => {
     const initialize = async () => {
@@ -72,43 +110,13 @@ const BreastfeedingDashboard = () => {
       }
     };
 
-    initialize();
-  }, [t.breastfeeding.authError, t.breastfeeding.loginRequired, t.breastfeeding.userIdError]);
-
-  const loadAllData = async (jwt: string) => {
-    await Promise.all([
-      loadSessions(jwt),
-      loadIssues(jwt),
-      loadTips(jwt),
-    ]);
-  };
-
-  const loadSessions = async (jwt: string) => {
-    try {
-      const data = await breastfeedingApi.getSessions(jwt);
-      setSessions(data);
-    } catch {
-      setSessions([]);
-    }
-  };
-
-  const loadIssues = async (jwt: string) => {
-    try {
-      const data = await breastfeedingApi.getIssues(jwt);
-      setIssues(data);
-    } catch {
-      setIssues([]);
-    }
-  };
-
-  const loadTips = async (jwt: string) => {
-    try {
-      const data = await breastfeedingApi.getAllActiveTips(jwt);
-      setTips(data);
-    } catch {
-      setTips([]);
-    }
-  };
+    void initialize();
+  }, [
+    loadAllData,
+    t.breastfeeding.authError,
+    t.breastfeeding.loginRequired,
+    t.breastfeeding.userIdError,
+  ]);
 
   if (isLoading) {
     return (

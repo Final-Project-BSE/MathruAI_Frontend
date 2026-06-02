@@ -13,6 +13,12 @@ import {
   setCachedPatientList,
 } from "./patients/[id]/components/lib/patientConsoleCache";
 
+type WindowWithIdleCallback = Window &
+  typeof globalThis & {
+    requestIdleCallback?: (callback: () => void) => number;
+    cancelIdleCallback?: (handle: number) => void;
+  };
+
 export default function MainConsolePage() {
   const router = useRouter();
 
@@ -49,6 +55,7 @@ export default function MainConsolePage() {
           currentUser.id,
           jwt
         );
+
         if (!active) return;
 
         setPatients(assignedUsers);
@@ -70,26 +77,42 @@ export default function MainConsolePage() {
   }, []);
 
   useEffect(() => {
-    if (!token || !midwifeId || patients.length === 0) return;
+    if (!token || midwifeId === null || patients.length === 0) return;
+
+    const currentMidwifeId: number = midwifeId;
 
     const warmup = () => {
       patients.slice(0, 6).forEach((patient) => {
         router.prefetch(`/midwife/patient-console/patients/${patient.id}`);
+
         void prefetchPatientBundle({
           token,
-          midwifeId,
+          midwifeId: currentMidwifeId,
           patientId: patient.id,
         });
       });
     };
 
-    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-      const id = window.requestIdleCallback(warmup);
-      return () => window.cancelIdleCallback(id);
+    if (typeof window !== "undefined") {
+      const browserWindow = window as WindowWithIdleCallback;
+
+      if (
+        typeof browserWindow.requestIdleCallback === "function" &&
+        typeof browserWindow.cancelIdleCallback === "function"
+      ) {
+        const id = browserWindow.requestIdleCallback(warmup);
+
+        return () => {
+          browserWindow.cancelIdleCallback?.(id);
+        };
+      }
     }
 
-    const timeout = window.setTimeout(warmup, 300);
-    return () => window.clearTimeout(timeout);
+    const timeout = globalThis.setTimeout(warmup, 300);
+
+    return () => {
+      globalThis.clearTimeout(timeout);
+    };
   }, [patients, token, midwifeId, router]);
 
   const filteredPatients = useMemo(() => {
@@ -103,11 +126,13 @@ export default function MainConsolePage() {
   function prefetchPatient(patient: UserResponseDto) {
     router.prefetch(`/midwife/patient-console/patients/${patient.id}`);
 
-    if (!token || !midwifeId) return;
+    if (!token || midwifeId === null) return;
+
+    const currentMidwifeId: number = midwifeId;
 
     void prefetchPatientBundle({
       token,
-      midwifeId,
+      midwifeId: currentMidwifeId,
       patientId: patient.id,
     });
   }
@@ -131,6 +156,7 @@ export default function MainConsolePage() {
             <div className="mb-3 text-2xl font-semibold tracking-tight text-white">
               Select a patient
             </div>
+
             <p className="text-sm leading-6 text-zinc-500">
               Patient details are prefetched in the background so opening a
               profile feels instant.

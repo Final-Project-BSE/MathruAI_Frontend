@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Loader2, MapPinned, Search } from "lucide-react";
 import adminApi from "@/app/api/admin/api";
 import type { UserResponseDto } from "@/app/api/admin/types";
@@ -91,7 +91,7 @@ export default function AdminUsersMapPage({ token }: Props) {
     return [coordinates.latitude, coordinates.longitude];
   }, [mappedUsers]);
 
-  async function loadUsers() {
+  const loadUsers = useCallback(async () => {
     try {
       setLoading(true);
       setMapError("");
@@ -103,11 +103,11 @@ export default function AdminUsersMapPage({ token }: Props) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
 
   useEffect(() => {
     void loadUsers();
-  }, [token]);
+  }, [loadUsers]);
 
   const midwifeCount = mappedUsers.filter((user) => user.roles?.includes("MIDWIFE")).length;
   const patientCount = mappedUsers.filter(isPatient).length;

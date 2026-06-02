@@ -48,7 +48,7 @@ export const getRecoveryData = (): DayAdvice[] => {
   for (let day = 1; day <= 42; day++) {
     const tasks: RecoveryTask[] = [];
 
-    let physicalTasks = [
+    const physicalTasks = [
       "Manage pain (perineal / C-section wound care)",
       "Maintain personal hygiene (daily wash, clean pads)",
     ];
@@ -77,7 +77,7 @@ export const getRecoveryData = (): DayAdvice[] => {
       })
     );
 
-    let nutritionTasks = [
+    const nutritionTasks = [
       "Drink enough water (8–10 glasses daily)",
       "Eat balanced meals (rice, vegetables, protein, fruits)",
       "Avoid junk/processed food",
@@ -100,7 +100,7 @@ export const getRecoveryData = (): DayAdvice[] => {
       })
     );
 
-    let babyTasks = [
+    const babyTasks = [
       "Feed baby on demand (breastfeeding / formula)",
       "Burp baby after feeding",
     ];
@@ -121,7 +121,7 @@ export const getRecoveryData = (): DayAdvice[] => {
       })
     );
 
-    let mentalTasks = [
+    const mentalTasks = [
       "Monitor mood daily",
       "Talk with family/friends for support",
       "Get enough sleep when possible",
@@ -143,7 +143,7 @@ export const getRecoveryData = (): DayAdvice[] => {
       })
     );
 
-    let medicalTasks: string[] = [];
+    const medicalTasks: string[] = [];
 
     if (day <= 10) {
       medicalTasks.push("Take medications as prescribed");
@@ -164,7 +164,7 @@ export const getRecoveryData = (): DayAdvice[] => {
       })
     );
 
-    let warningTasks = [
+    const warningTasks = [
       "Heavy bleeding (soaking pads quickly)",
       "High fever",
       "Severe abdominal pain",

@@ -11,7 +11,6 @@ import {
 } from "react";
 import {
   IconDots,
-  IconInnerShadowTop,
   IconLoader,
   IconMessage,
   IconPlus,
@@ -24,7 +23,6 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
   SidebarGroup,
   SidebarGroupContent,
@@ -54,6 +52,23 @@ interface ChatSidebarProps extends React.ComponentProps<typeof Sidebar> {
   onSessionSelect?: (sessionId: number | null) => void;
 }
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
 function getDisplayTitle(session: ChatSession) {
   const raw = session.session_name?.trim();
 
@@ -69,7 +84,7 @@ function getDisplayTitle(session: ChatSession) {
 }
 
 function normalizeSessions(sessions: ApiChatSession[]): ChatSession[] {
-  return sessions.map((s: any) => {
+  return sessions.map((s: ApiChatSession) => {
     const canonicalId = Number(s.session_id ?? s.id);
 
     return {
@@ -114,10 +129,11 @@ function ChatHistoryItem({
     <SidebarMenuItem>
       <div
         onClick={() => onSelect(session.id)}
-        className={`group relative flex w-full cursor-pointer items-center justify-between rounded-2xl border px-3 py-2 transition ${isActive
+        className={`group relative flex w-full cursor-pointer items-center justify-between rounded-2xl border px-3 py-2 transition ${
+          isActive
             ? "border-white/10 bg-white/[0.08] text-white"
             : "border-transparent text-white/70 hover:border-white/10 hover:bg-white/[0.04] hover:text-white"
-          }`}
+        }`}
       >
         <div className="flex min-w-0 items-center gap-2">
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-[#d04f51]/10">
@@ -207,8 +223,8 @@ export const ChatSidebarMidwife = forwardRef<ChatSidebarRef, ChatSidebarProps>(
         } else {
           setError(data.message || "Failed to load chat sessions");
         }
-      } catch (e: any) {
-        setError(e?.message || "Unable to connect to server");
+      } catch (e: unknown) {
+        setError(getErrorMessage(e, "Unable to connect to server"));
       } finally {
         setLoading(false);
       }
@@ -252,8 +268,8 @@ export const ChatSidebarMidwife = forwardRef<ChatSidebarRef, ChatSidebarProps>(
         } else {
           setError(data.message || "Failed to create new chat");
         }
-      } catch (e: any) {
-        setError(e?.message || "Failed to create new chat");
+      } catch (e: unknown) {
+        setError(getErrorMessage(e, "Failed to create new chat"));
       } finally {
         setCreatingSession(false);
       }
@@ -281,8 +297,8 @@ export const ChatSidebarMidwife = forwardRef<ChatSidebarRef, ChatSidebarProps>(
         } else {
           setError(data.message || "Failed to delete chat");
         }
-      } catch (e: any) {
-        setError(e?.message || "Failed to delete chat");
+      } catch (e: unknown) {
+        setError(getErrorMessage(e, "Failed to delete chat"));
       }
     };
 
@@ -302,9 +318,11 @@ export const ChatSidebarMidwife = forwardRef<ChatSidebarRef, ChatSidebarProps>(
         <SidebarHeader className="border-b border-white/10 bg-[#080808]">
           <SidebarMenu>
             <SidebarMenuItem>
-                  <div className="text-left">
-                    <p className="text-xs text-white/40 text-center">Conversation history</p>
-                  </div>
+              <div className="text-left">
+                <p className="text-xs text-white/40 text-center">
+                  Conversation history
+                </p>
+              </div>
             </SidebarMenuItem>
           </SidebarMenu>
 
@@ -348,8 +366,9 @@ export const ChatSidebarMidwife = forwardRef<ChatSidebarRef, ChatSidebarProps>(
                 type="button"
               >
                 <IconLoader
-                  className={`h-3.5 w-3.5 text-white/45 ${loading ? "animate-spin" : ""
-                    }`}
+                  className={`h-3.5 w-3.5 text-white/45 ${
+                    loading ? "animate-spin" : ""
+                  }`}
                 />
               </button>
             </SidebarGroupLabel>

@@ -4,15 +4,11 @@ import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronDown,
-  Bell,
   Search,
   Settings,
   Syringe,
   X,
   LayoutGrid,
-  BarChart3,
-  Wallet,
-  FileText,
   Activity,
   Menu,
   LogOut,

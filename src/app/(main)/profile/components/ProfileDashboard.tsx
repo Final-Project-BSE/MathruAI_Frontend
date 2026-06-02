@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import ProfileHeader from "./ProfileHeader";
 import PersonalInfoCard from "./PersonalInfoCard";
 import ChangePasswordCard from "./ChangePasswordCard";
@@ -14,6 +14,23 @@ import { getcuruser } from "@/app/api/user/api";
 import { useLanguage } from "@/components/common/useLanguage";
 import { translateText } from "@/components/common/translateText";
 
+const getErrorMessage = (error: unknown, fallbackMessage: string): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
+  }
+
+  return fallbackMessage;
+};
+
 const ProfileDashboard = () => {
   const { language, t } = useLanguage();
 
@@ -25,20 +42,25 @@ const ProfileDashboard = () => {
 
   const translatedError = useTranslatedText(error || "", language);
 
-  const fetchProfile = async (authToken: string, authUserId: number) => {
-    try {
-      setLoading(true);
-      setError(null);
+  const fetchProfile = useCallback(
+    async (authToken: string, authUserId: number) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const data = await profileApi.getProfile(authToken, authUserId);
-      setProfile(data);
-    } catch (err: any) {
-      setError(err.message);
-      setProfile(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+        const data = await profileApi.getProfile(authToken, authUserId);
+        setProfile(data);
+      } catch (error: unknown) {
+        setError(
+          getErrorMessage(error, t.profile.dashboard.failedToLoadProfile)
+        );
+        setProfile(null);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [t.profile.dashboard.failedToLoadProfile]
+  );
 
   useEffect(() => {
     const init = async () => {
@@ -54,7 +76,7 @@ const ProfileDashboard = () => {
             const session = await getSession();
             authToken = session?.user?.token || "";
           } catch {
-            // ignore
+            // Continue without session token.
           }
         }
 
@@ -81,14 +103,20 @@ const ProfileDashboard = () => {
         setToken(authToken);
         setUserId(authUserId);
         await fetchProfile(authToken, authUserId);
-      } catch (err: any) {
-        setError(err.message || t.profile.dashboard.failedToLoadProfile);
+      } catch (error: unknown) {
+        setError(
+          getErrorMessage(error, t.profile.dashboard.failedToLoadProfile)
+        );
         setLoading(false);
       }
     };
 
-    init();
-  }, [t.profile.dashboard.failedToLoadProfile, t.profile.dashboard.unauthenticated]);
+    void init();
+  }, [
+    fetchProfile,
+    t.profile.dashboard.failedToLoadProfile,
+    t.profile.dashboard.unauthenticated,
+  ]);
 
   if (loading) {
     return (

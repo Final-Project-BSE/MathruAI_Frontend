@@ -170,7 +170,7 @@ export default function Announcements() {
       }
     };
 
-    initialize();
+    void initialize();
   }, [
     fetchAnnouncements,
     t.announcement.loginRequired,
@@ -248,109 +248,109 @@ export default function Announcements() {
 
   return (
     <Container title={announcement.title}>
-    <div className="bg-[#fed2cc] min-h-screen p-4 md:p-6">
-      <TopBarFeatures />
+      <div className="bg-[#fed2cc] min-h-screen p-4 md:p-6">
+        <TopBarFeatures />
 
-      <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-r from-[#fab0a7] to-[#d04f51] p-5 text-white shadow-lg">
-        <div className="relative z-10 flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur">
-            <Megaphone className="h-7 w-7 text-white" />
-          </div>
+        <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-r from-[#fab0a7] to-[#d04f51] p-5 text-white shadow-lg">
+          <div className="relative z-10 flex items-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur">
+              <Megaphone className="h-7 w-7 text-white" />
+            </div>
 
-          <div>
-            <h1 className="text-xl font-bold md:text-2xl">
-              {t.announcement.title}
-            </h1>
-            <p className="text-sm opacity-90 mt-0.5">
-              {t.announcement.subtitle}
-            </p>
-          </div>
+            <div>
+              <h1 className="text-xl font-bold md:text-2xl">
+                {t.announcement.title}
+              </h1>
+              <p className="text-sm opacity-90 mt-0.5">
+                {t.announcement.subtitle}
+              </p>
+            </div>
 
-          <div className="ml-auto flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 backdrop-blur">
-            <Bell className="h-4 w-4" />
-            <span className="text-sm font-semibold">
-              {translatedAnnouncements.length} {t.announcement.active}
-            </span>
+            <div className="ml-auto flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 backdrop-blur">
+              <Bell className="h-4 w-4" />
+              <span className="text-sm font-semibold">
+                {translatedAnnouncements.length} {t.announcement.active}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <Card className="bg-white/90 backdrop-blur shadow-md">
-        <CardContent className="p-4 md:p-6">
-          {translating && (
-            <div className="mb-4 rounded-xl border border-[#d04f51]/20 bg-[#d04f51]/5 px-4 py-3 text-sm font-medium text-[#d04f51]">
-              {t.announcement.translating}
-            </div>
-          )}
-
-          {translatedAnnouncements.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#d04f51]/10 mb-4">
-                <Bell className="h-8 w-8 text-[#d04f51]" />
+        <Card className="bg-white/90 backdrop-blur shadow-md">
+          <CardContent className="p-4 md:p-6">
+            {translating && (
+              <div className="mb-4 rounded-xl border border-[#d04f51]/20 bg-[#d04f51]/5 px-4 py-3 text-sm font-medium text-[#d04f51]">
+                {t.announcement.translating}
               </div>
-              <p className="text-gray-600 font-medium">
-                {t.announcement.noAnnouncements}
-              </p>
-              <p className="text-gray-400 text-sm mt-1">
-                {t.announcement.noAnnouncementsDescription}
-              </p>
+            )}
+
+            {translatedAnnouncements.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#d04f51]/10 mb-4">
+                  <Bell className="h-8 w-8 text-[#d04f51]" />
+                </div>
+                <p className="text-gray-600 font-medium">
+                  {t.announcement.noAnnouncements}
+                </p>
+                <p className="text-gray-400 text-sm mt-1">
+                  {t.announcement.noAnnouncementsDescription}
+                </p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {translatedAnnouncements.map((announcement) => {
+                const styles = getCategoryStyles(announcement.category);
+
+                return (
+                  <Card
+                    key={announcement.announcementId}
+                    className={`bg-white border-l-4 ${styles.border} ${styles.glow} hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5`}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-4">
+                        <div
+                          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${styles.icon}`}
+                        >
+                          {getCategoryIcon(announcement.category)}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <h4 className="font-semibold text-sm text-gray-900 leading-snug">
+                              {announcement.title}
+                            </h4>
+
+                            <Badge
+                              variant="outline"
+                              className={`text-xs font-medium whitespace-nowrap shrink-0 ${styles.badge}`}
+                            >
+                              {getCategoryLabel(announcement.category)}
+                            </Badge>
+                          </div>
+
+                          <p className="text-xs text-gray-600 leading-relaxed mb-2">
+                            {announcement.content}
+                          </p>
+
+                          <div className="flex items-center text-xs text-gray-400">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {formatDate(announcement.createdAt, language, {
+                              justNow: t.announcement.justNow,
+                              minAgo: t.announcement.minAgo,
+                              hrAgo: t.announcement.hrAgo,
+                              daysAgo: t.announcement.daysAgo,
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {translatedAnnouncements.map((announcement) => {
-              const styles = getCategoryStyles(announcement.category);
-
-              return (
-                <Card
-                  key={announcement.announcementId}
-                  className={`bg-white border-l-4 ${styles.border} ${styles.glow} hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5`}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      <div
-                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${styles.icon}`}
-                      >
-                        {getCategoryIcon(announcement.category)}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <h4 className="font-semibold text-sm text-gray-900 leading-snug">
-                            {announcement.title}
-                          </h4>
-
-                          <Badge
-                            variant="outline"
-                            className={`text-xs font-medium whitespace-nowrap shrink-0 ${styles.badge}`}
-                          >
-                            {getCategoryLabel(announcement.category)}
-                          </Badge>
-                        </div>
-
-                        <p className="text-xs text-gray-600 leading-relaxed mb-2">
-                          {announcement.content}
-                        </p>
-
-                        <div className="flex items-center text-xs text-gray-400">
-                          <Clock className="w-3 h-3 mr-1" />
-                          {formatDate(announcement.createdAt, language, {
-                            justNow: t.announcement.justNow,
-                            minAgo: t.announcement.minAgo,
-                            hrAgo: t.announcement.hrAgo,
-                            daysAgo: t.announcement.daysAgo,
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
     </Container>
   );
 }

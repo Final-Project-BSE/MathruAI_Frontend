@@ -1,5 +1,12 @@
 import type { FertilityResponseDto } from "@/app/api/cycletracker/api";
 
+export type CycleStats = {
+  currentDay: number;
+  cycleLength: number;
+  nextPeriod: number;
+  fertile: number;
+};
+
 type CalcStatsParams = {
   fertilityData: FertilityResponseDto;
   lastPeriodDate: string;
@@ -8,7 +15,6 @@ type CalcStatsParams = {
 
 export const MS_PER_DAY = 86400000;
 
-/** Derive the last period date if not provided */
 export function deriveLastPeriod(
   nextPeriodDate: string,
   cycleLength: number
@@ -17,12 +23,11 @@ export function deriveLastPeriod(
   return new Date(next.getTime() - cycleLength * MS_PER_DAY);
 }
 
-/** Calculate current cycle stats */
 export function calcStats({
   fertilityData,
   lastPeriodDate,
   cycleLength,
-}: CalcStatsParams) {
+}: CalcStatsParams): CycleStats {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -30,28 +35,34 @@ export function calcStats({
     ? new Date(`${lastPeriodDate}T00:00:00`)
     : deriveLastPeriod(fertilityData.nextPeriodDate, cycleLength);
 
-  /* Days since last period */
-  const diffDays = Math.floor((today.getTime() - lastPeriod.getTime()) / MS_PER_DAY);
-  const safeDiff = Math.max(0, diffDays);
+  const diffDays = Math.floor(
+    (today.getTime() - lastPeriod.getTime()) / MS_PER_DAY
+  );
 
-  /* Current cycle day */
+  const safeDiff = Math.max(0, diffDays);
   const currentDay = (safeDiff % cycleLength) + 1;
 
-  /* Auto-advance next period if in the past */
-  let nextPeriod = new Date(fertilityData.nextPeriodDate);
+  let nextPeriod = new Date(`${fertilityData.nextPeriodDate}T00:00:00`);
   nextPeriod.setHours(0, 0, 0, 0);
+
   while (nextPeriod < today) {
     nextPeriod = new Date(nextPeriod.getTime() + cycleLength * MS_PER_DAY);
   }
-  const nextPeriodDays = Math.ceil((nextPeriod.getTime() - today.getTime()) / MS_PER_DAY);
 
-  /* Fertile window end */
-  let fertileEnd = new Date(fertilityData.fertileWindowEnd);
+  const nextPeriodDays = Math.ceil(
+    (nextPeriod.getTime() - today.getTime()) / MS_PER_DAY
+  );
+
+  let fertileEnd = new Date(`${fertilityData.fertileWindowEnd}T00:00:00`);
   fertileEnd.setHours(0, 0, 0, 0);
+
   while (fertileEnd < today) {
     fertileEnd = new Date(fertileEnd.getTime() + cycleLength * MS_PER_DAY);
   }
-  const fertileDays = Math.ceil((fertileEnd.getTime() - today.getTime()) / MS_PER_DAY);
+
+  const fertileDays = Math.ceil(
+    (fertileEnd.getTime() - today.getTime()) / MS_PER_DAY
+  );
 
   return {
     currentDay,
@@ -61,7 +72,6 @@ export function calcStats({
   };
 }
 
-/** Generate future period dates from lastPeriodDate until current month */
 export function generateFutureCycles(
   lastPeriodDate: string,
   cycleLength: number
@@ -74,21 +84,18 @@ export function generateFutureCycles(
   let current = new Date(`${lastPeriodDate}T00:00:00`);
   current.setHours(0, 0, 0, 0);
 
-  // Calculate months ahead dynamically from last period to current month
   const monthsAhead =
     (today.getFullYear() - current.getFullYear()) * 12 +
     (today.getMonth() - current.getMonth()) +
-    1; // include current month
+    1;
 
   const endDate = new Date(current);
   endDate.setMonth(endDate.getMonth() + monthsAhead);
 
-  // Generate future periods until endDate
   while (current <= endDate) {
     result.push(new Date(current));
-    current = new Date(current.getTime() + cycleLength * MS_PER_DAY); // add one cycle
+    current = new Date(current.getTime() + cycleLength * MS_PER_DAY);
   }
 
   return result;
 }
-  

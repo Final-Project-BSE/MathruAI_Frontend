@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Edit3,
@@ -106,10 +106,11 @@ export default function AdminUsersPage({ token }: Props) {
     });
   }, [users, query, roleFilter]);
 
-  async function loadUsers() {
+  const loadUsers = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
+
       const data = await adminApi.getAllUsers(token);
       setUsers(data);
     } catch (err) {
@@ -117,11 +118,11 @@ export default function AdminUsersPage({ token }: Props) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
 
   useEffect(() => {
     void loadUsers();
-  }, [token]);
+  }, [loadUsers]);
 
   function startEdit(user: UserResponseDto) {
     setEditingUser(user);
@@ -462,11 +463,10 @@ export default function AdminUsersPage({ token }: Props) {
                         key={role}
                         type="button"
                         onClick={() => toggleRole(role)}
-                        className={`rounded-full border px-3 py-2 text-xs font-bold transition ${
-                          checked
+                        className={`rounded-full border px-3 py-2 text-xs font-bold transition ${checked
                             ? "border-[#d04f51] bg-[#d04f51] text-white"
                             : "border-zinc-200 bg-white text-zinc-600 hover:bg-[#fff2f2]"
-                        }`}
+                          }`}
                       >
                         {role}
                       </button>

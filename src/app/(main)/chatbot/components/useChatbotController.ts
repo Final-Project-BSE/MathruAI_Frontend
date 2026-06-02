@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { getSession } from "@/lib/authentication";
-import { useChatContext } from "@/app/(main)/chatbot/layout";
+import { useChatContext } from "@/app/(main)/chatbot/components/ChatContext";
 import apis from "../../../api/chatbot/api";
 
 import { ChatResponse as ApiChatResponse } from "../../../api/chatbot/types";
@@ -15,6 +15,13 @@ const WELCOME_MESSAGE: Message = {
   isUser: false,
   timestamp: new Date(),
   status: "sent",
+};
+
+type ChatHistoryItem = {
+  id: number | string;
+  message?: string | null;
+  response?: string | null;
+  created_at: string;
 };
 
 function generateChatTitle(message: string) {
@@ -74,7 +81,7 @@ export function useChatbotController() {
     try {
       const data = await apis.stats(jwtToken);
       if (data?.knowledge_base_stats) {
-        setSystemStats(data as any);
+        setSystemStats(data as SystemStats);
       }
     } catch (error) {
       console.error("Failed to fetch system stats:", error);
@@ -94,7 +101,7 @@ export function useChatbotController() {
             timestamp: new Date(),
           });
         } else {
-          data.messages.forEach((m: any) => {
+          (data.messages as ChatHistoryItem[]).forEach((m) => {
             if (m.message) {
               formattedMessages.push({
                 id: `${m.id}_user`,
@@ -201,11 +208,11 @@ export function useChatbotController() {
         prev.map((msg) =>
           msg.id === botMessage.id
             ? {
-                ...msg,
-                content:
-                  "Sorry, I encountered an error while processing your message. Please try again.",
-                status: "error",
-              }
+              ...msg,
+              content:
+                "Sorry, I encountered an error while processing your message. Please try again.",
+              status: "error",
+            }
             : msg
         )
       );

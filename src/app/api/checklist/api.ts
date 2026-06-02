@@ -9,6 +9,21 @@ export interface ChecklistItemDto {
   checked: boolean;
 }
 
+type ChecklistItemApiDto = Omit<ChecklistItemDto, "checked"> & {
+  checked?: boolean;
+};
+
+type ChecklistItemCreateDto = Omit<ChecklistItemDto, "id" | "checked">;
+
+type ChecklistItemUpdateDto = Partial<ChecklistItemCreateDto>;
+
+const withUncheckedState = (
+  item: ChecklistItemApiDto
+): ChecklistItemDto => ({
+  ...item,
+  checked: false,
+});
+
 export const getMasterChecklist = async (
   midwifeId: number
 ): Promise<ChecklistItemDto[]> => {
@@ -21,17 +36,14 @@ export const getMasterChecklist = async (
 
   if (!res.ok) throw new Error("Failed to fetch master checklist");
 
-  const data = await res.json();
+  const data = (await res.json()) as ChecklistItemApiDto[];
 
-  return data.map((item: any) => ({
-    ...item,
-    checked: false,
-  }));
+  return data.map(withUncheckedState);
 };
 
 export const addChecklistItem = async (
   midwifeId: number,
-  item: Omit<ChecklistItemDto, "id" | "checked">
+  item: ChecklistItemCreateDto
 ): Promise<ChecklistItemDto> => {
   const res = await fetch(
     `${BASE_URL}/api/checklist/master/midwife/${midwifeId}`,
@@ -44,18 +56,15 @@ export const addChecklistItem = async (
 
   if (!res.ok) throw new Error("Failed to add checklist item");
 
-  const data = await res.json();
+  const data = (await res.json()) as ChecklistItemApiDto;
 
-  return {
-    ...data,
-    checked: false,
-  };
+  return withUncheckedState(data);
 };
 
 export const updateChecklistItem = async (
   midwifeId: number,
   id: number,
-  item: Partial<Omit<ChecklistItemDto, "id" | "checked">>
+  item: ChecklistItemUpdateDto
 ): Promise<ChecklistItemDto> => {
   const res = await fetch(
     `${BASE_URL}/api/checklist/master/midwife/${midwifeId}/${id}`,
@@ -68,12 +77,9 @@ export const updateChecklistItem = async (
 
   if (!res.ok) throw new Error("Failed to update checklist item");
 
-  const data = await res.json();
+  const data = (await res.json()) as ChecklistItemApiDto;
 
-  return {
-    ...data,
-    checked: false,
-  };
+  return withUncheckedState(data);
 };
 
 export const deleteChecklistItem = async (
@@ -103,7 +109,7 @@ export const getUserChecklist = async (
 
   if (!res.ok) throw new Error("Failed to fetch user checklist");
 
-  return res.json();
+  return (await res.json()) as ChecklistItemDto[];
 };
 
 export const toggleUserChecklistItem = async (
@@ -120,5 +126,5 @@ export const toggleUserChecklistItem = async (
 
   if (!res.ok) throw new Error("Failed to toggle checklist item");
 
-  return res.json();
+  return (await res.json()) as ChecklistItemDto;
 };

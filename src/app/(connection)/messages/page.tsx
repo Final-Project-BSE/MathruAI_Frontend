@@ -42,6 +42,7 @@ export default function MessagesPage() {
   const unreadSubscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
   const selectedConversationIdRef = useRef<number | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
+  const selectedConversationId = selectedConversation?.id ?? null;
 
   useEffect(() => {
     selectedConversationIdRef.current = selectedConversation?.id || null;
@@ -199,7 +200,11 @@ export default function MessagesPage() {
   }, [targetUserIdParam]);
 
   useEffect(() => {
-    if (!selectedConversation || !currentUserId || !token) return;
+    if (!selectedConversationId || !currentUserId || !token) return;
+
+    const conversationId = selectedConversationId;
+    const userId = currentUserId;
+    const authToken = token;
 
     let active = true;
 
@@ -208,26 +213,20 @@ export default function MessagesPage() {
         setError("");
 
         const list = await chatApi.getMessages(
-          selectedConversation.id,
-          currentUserId,
-          token
+          conversationId,
+          userId,
+          authToken
         );
 
         if (!active) return;
 
         setMessages(list);
 
-        await chatApi.markAsRead(
-          selectedConversation.id,
-          currentUserId,
-          token
-        );
+        await chatApi.markAsRead(conversationId, userId, authToken);
 
         setConversations((prev) =>
           prev.map((item) =>
-            item.id === selectedConversation.id
-              ? { ...item, unreadCount: 0 }
-              : item
+            item.id === conversationId ? { ...item, unreadCount: 0 } : item
           )
         );
 
@@ -236,7 +235,7 @@ export default function MessagesPage() {
 
         if (socketRef.current?.client.connected) {
           conversationSubscriptionRef.current =
-            socketRef.current.subscribeConversation(selectedConversation.id);
+            socketRef.current.subscribeConversation(conversationId);
         }
       } catch (err) {
         if (!active) return;
@@ -251,7 +250,7 @@ export default function MessagesPage() {
     return () => {
       active = false;
     };
-  }, [selectedConversation?.id, currentUserId, token]);
+  }, [selectedConversationId, currentUserId, token]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });

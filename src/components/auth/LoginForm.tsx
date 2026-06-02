@@ -31,6 +31,9 @@ const formSchema = z.object({
   rememberMe: z.boolean().default(false),
 });
 
+type LoginFormInput = z.input<typeof formSchema>;
+type LoginFormOutput = z.output<typeof formSchema>;
+
 interface SignInProps {
   onSwitchToSignUp?: () => void;
   onForgotPassword?: () => void;
@@ -46,7 +49,7 @@ const SignIn = ({
   const [loginError, setLoginError] = useState<string | null>(null);
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<LoginFormInput, unknown, LoginFormOutput>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
@@ -55,7 +58,7 @@ const SignIn = ({
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: LoginFormOutput) => {
     setLoginError(null);
 
     try {
@@ -76,18 +79,15 @@ const SignIn = ({
         return;
       }
 
-      // Success
       successToast("Login successful!");
 
-      // Close modal if provided
       if (onClose) {
         onClose();
       }
 
-      // Get user's primary role and redirect
       const userRole = res.data?.roles?.[0];
       console.log("User role:", userRole);
-      
+
       if (!userRole) {
         const errorMsg = "Invalid user role. Please contact support.";
         console.error("No role found in response:", res.data);
@@ -98,9 +98,8 @@ const SignIn = ({
 
       const redirectPath = getDashboardForRole(userRole);
       console.log("Redirecting to:", redirectPath);
-      
-      router.replace(redirectPath);
 
+      router.replace(redirectPath);
     } catch (error) {
       const errorMsg = "An unexpected error occurred. Please try again.";
       setLoginError(errorMsg);
@@ -174,8 +173,10 @@ const SignIn = ({
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="remember"
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
+                    checked={field.value ?? false}
+                    onCheckedChange={(checked) => {
+                      field.onChange(checked === true);
+                    }}
                     className="size-4"
                     disabled={form.formState.isSubmitting}
                   />
@@ -188,6 +189,7 @@ const SignIn = ({
                 </div>
               )}
             />
+
             <button
               type="button"
               onClick={() => {

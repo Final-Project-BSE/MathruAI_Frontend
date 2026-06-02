@@ -15,8 +15,12 @@ const ChangePasswordCard = ({ token, userId }: Props) => {
     newPassword: '',
     confirmNewPassword: '',
   });
+
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,14 +29,18 @@ const ChangePasswordCard = ({ token, userId }: Props) => {
 
     try {
       const msg = await profileApi.changePassword(token, userId, form);
+
       setMessage({ type: 'success', text: msg });
       setForm({
         currentPassword: '',
         newPassword: '',
         confirmNewPassword: '',
       });
-    } catch (err: any) {
-      setMessage({ type: 'error', text: err.message });
+    } catch (err: unknown) {
+      setMessage({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Failed to update password.',
+      });
     } finally {
       setLoading(false);
     }
@@ -57,21 +65,28 @@ const ChangePasswordCard = ({ token, userId }: Props) => {
 
             <PasswordInput
               name={field}
-              placeholder={`Enter ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`}
+              placeholder={`Enter ${field
+                .replace(/([A-Z])/g, ' $1')
+                .toLowerCase()}`}
               className="w-full"
               inputClassName="rounded-lg border border-white/10 bg-black px-3 py-2 pr-10 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-[#D04F51]/70"
               autoComplete={
-                field === 'currentPassword' ? 'current-password' : 'new-password'
+                field === 'currentPassword'
+                  ? 'current-password'
+                  : 'new-password'
               }
               value={form[field as keyof typeof form]}
               onChange={(e) =>
-                setForm({ ...form, [field]: e.target.value })
+                setForm((prev) => ({
+                  ...prev,
+                  [field]: e.target.value,
+                }))
               }
             />
           </div>
         ))}
 
-        {message && (
+        {message ? (
           <p
             className={`text-xs font-medium ${
               message.type === 'success' ? 'text-emerald-400' : 'text-red-400'
@@ -79,7 +94,7 @@ const ChangePasswordCard = ({ token, userId }: Props) => {
           >
             {message.text}
           </p>
-        )}
+        ) : null}
 
         <button
           type="submit"

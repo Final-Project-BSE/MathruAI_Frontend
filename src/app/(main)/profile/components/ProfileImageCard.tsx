@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import profileApi from "@/app/api/profile/api";
 import type { ProfileResponse } from "@/app/api/profile/types";
 import ProtectedImage from "../../../../lib/ProtectedImage";
@@ -105,9 +106,11 @@ const ProfileImageCard = ({ profile, token, userId, onUpdate }: Props) => {
       setPreviewUrl("");
       setRefreshKey((prev) => prev + 1);
       onUpdate();
-    } catch (err: unknown) {
+    } catch (error: unknown) {
       const errorMessage =
-        err instanceof Error ? err.message : t.profile.profileImage.uploadFailed;
+        error instanceof Error
+          ? error.message
+          : t.profile.profileImage.uploadFailed;
 
       setMessage({ type: "error", text: errorMessage });
     } finally {
@@ -116,23 +119,26 @@ const ProfileImageCard = ({ profile, token, userId, onUpdate }: Props) => {
   };
 
   const fallbackAvatar = (
-    <div className="w-20 h-20 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-2xl font-bold border border-rose-200">
+    <div className="flex h-20 w-20 items-center justify-center rounded-full border border-rose-200 bg-rose-100 text-2xl font-bold text-rose-600">
       {profile?.firstName?.[0] ?? "?"}
     </div>
   );
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-      <h2 className="text-lg font-semibold text-gray-800 mb-5">
+    <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+      <h2 className="mb-5 text-lg font-semibold text-gray-800">
         {t.profile.profileImage.title}
       </h2>
 
-      <div className="flex items-center gap-4 mb-4">
+      <div className="mb-4 flex items-center gap-4">
         {previewUrl ? (
-          <img
+          <Image
             src={previewUrl}
             alt={t.profile.profileImage.profilePreviewAlt}
-            className="w-20 h-20 rounded-full object-cover border border-gray-200"
+            width={80}
+            height={80}
+            unoptimized
+            className="h-20 w-20 rounded-full border border-gray-200 object-cover"
           />
         ) : (
           <ProtectedImage
@@ -140,7 +146,7 @@ const ProfileImageCard = ({ profile, token, userId, onUpdate }: Props) => {
             src={profile?.profileImageUrl}
             token={token}
             alt={t.profile.profileImage.profileImageAlt}
-            className="w-20 h-20 rounded-full object-cover border border-gray-200"
+            className="h-20 w-20 rounded-full border border-gray-200 object-cover"
             fallback={fallbackAvatar}
             loadingFallback={fallbackAvatar}
           />
@@ -152,7 +158,7 @@ const ProfileImageCard = ({ profile, token, userId, onUpdate }: Props) => {
           </p>
 
           {profile?.profileImageUrl && (
-            <p className="text-[11px] text-gray-400 mt-1 break-all">
+            <p className="mt-1 break-all text-[11px] text-gray-400">
               {t.profile.profileImage.storedPath}: {profile.profileImageUrl}
             </p>
           )}
@@ -170,7 +176,7 @@ const ProfileImageCard = ({ profile, token, userId, onUpdate }: Props) => {
 
         <label
           htmlFor="profile-image-upload"
-          className="inline-block cursor-pointer bg-[#D04F51] hover:bg-[#BA4547] text-white font-semibold py-2 px-4 rounded-lg text-sm transition"
+          className="inline-block cursor-pointer rounded-lg bg-[#D04F51] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#BA4547]"
         >
           {t.profile.profileImage.chooseFile}
         </label>
@@ -185,7 +191,7 @@ const ProfileImageCard = ({ profile, token, userId, onUpdate }: Props) => {
           type="button"
           onClick={handleUpload}
           disabled={loading || !selectedFile || !token || !userId}
-          className="w-full bg-[#D04F51] hover:bg-[#BA4547] text-white font-semibold py-2 rounded-lg text-sm transition disabled:opacity-60"
+          className="w-full rounded-lg bg-[#D04F51] py-2 text-sm font-semibold text-white transition hover:bg-[#BA4547] disabled:opacity-60"
         >
           {loading
             ? t.profile.profileImage.uploading

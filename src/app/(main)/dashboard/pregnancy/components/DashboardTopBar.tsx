@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { getcuruser } from "@/app/api/user/api";
 import type { UserResponseDto } from "@/app/api/user/types";
@@ -58,7 +59,12 @@ function DashboardTopBar({ info, stats }: DashboardTopBarProps) {
     if (hour >= 12 && hour < 17) return t.dashboard.goodAfternoon;
     if (hour >= 17 && hour < 21) return t.dashboard.goodEvening;
     return t.dashboard.goodNight;
-  }, [t]);
+  }, [
+    t.dashboard.goodMorning,
+    t.dashboard.goodAfternoon,
+    t.dashboard.goodEvening,
+    t.dashboard.goodNight,
+  ]);
 
   const circleClass = `
     flex items-center justify-center rounded-full
@@ -74,15 +80,16 @@ function DashboardTopBar({ info, stats }: DashboardTopBarProps) {
 
   return (
     <div className="relative mb-6 min-h-[170px] overflow-hidden rounded-lg bg-gradient-to-r from-[#fab0a7] to-[#d04f51] p-4 text-white md:min-h-[190px] md:p-6">
-      <img
-        src={topbannerImageUrl}
-        alt="Banner"
-        className="
-          pointer-events-none absolute right-0 top-0 h-full
-          w-[160px] select-none object-cover opacity-90
-          md:w-[160px] lg:w-[160px]
-        "
-      />
+      <div className="pointer-events-none absolute right-0 top-0 h-full w-[160px] select-none md:w-[160px] lg:w-[160px]">
+        <Image
+          src={topbannerImageUrl}
+          alt="Banner"
+          fill
+          className="object-cover opacity-90"
+          sizes="160px"
+          priority
+        />
+      </div>
 
       <div className="relative z-10">
         <h1 className="mb-1 text-xl font-bold md:text-2xl">

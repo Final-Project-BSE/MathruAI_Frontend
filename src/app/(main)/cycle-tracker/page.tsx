@@ -34,7 +34,7 @@ function parseLocalDate(dateStr?: string | null): Date | null {
   return new Date(year, month - 1, day);
 }
 
-export function buildCalendarDays(params: {
+function buildCalendarDays(params: {
   year: number;
   month: number;
   lastPeriodDate: string;

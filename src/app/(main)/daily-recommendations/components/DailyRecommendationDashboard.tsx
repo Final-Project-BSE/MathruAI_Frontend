@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Heart, AlertTriangle } from "lucide-react";
@@ -25,6 +25,10 @@ import { LoadingState } from "@/components/common/LoadingState";
 import TopBarFeatures from "@/components/common/TopBarFeatures";
 import { useLanguage } from "@/components/common/useLanguage";
 
+type UpdateSettingsResponse = {
+  new_recommendation?: string;
+};
+
 const DailyRecommendationDashboard = () => {
   const { t } = useLanguage();
   const labels = t.dailyRecommendation;
@@ -46,6 +50,67 @@ const DailyRecommendationDashboard = () => {
 
   const [activePanel, setActivePanel] = useState<"checklist" | "history">(
     "checklist"
+  );
+
+  const loadUserData = useCallback(async (jwtToken: string, uid: number) => {
+    const data = await apis.getUser(jwtToken, uid);
+    setUserData(data);
+  }, []);
+
+  const loadRecommendation = useCallback(
+    async (jwtToken: string, uid: number) => {
+      try {
+        const rec = await apis.getTodayRecommendation(jwtToken, uid);
+        setRecommendation(rec);
+      } catch {
+        setRecommendation(null);
+      }
+    },
+    []
+  );
+
+  const loadHistory = useCallback(async (jwtToken: string, uid: number) => {
+    try {
+      const items = await apis.getHistory(jwtToken, uid, 7);
+
+      const seen = new Set<string>();
+      const deduped = items.filter((item) => {
+        if (!item.date) return true;
+        if (seen.has(item.date)) return false;
+        seen.add(item.date);
+        return true;
+      });
+
+      setHistory(deduped);
+    } catch {
+      setHistory([]);
+    }
+  }, []);
+
+  const loadAllData = useCallback(
+    async (jwtToken: string, uid: number) => {
+      setLoadingData(true);
+
+      try {
+        await Promise.all([
+          loadUserData(jwtToken, uid),
+          loadRecommendation(jwtToken, uid),
+          loadHistory(jwtToken, uid),
+        ]);
+
+        setError(null);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : labels.loadDataFailed;
+
+        if (!String(message).includes("No data")) {
+          setError(message);
+        }
+      } finally {
+        setLoadingData(false);
+      }
+    },
+    [loadUserData, loadRecommendation, loadHistory, labels.loadDataFailed]
   );
 
   useEffect(() => {
@@ -99,67 +164,19 @@ const DailyRecommendationDashboard = () => {
       }
     };
 
-    initialize();
-  }, [labels]);
+    void initialize();
+  }, [
+    loadAllData,
+    labels.loginRequiredError,
+    labels.authUserIdError,
+    labels.authError,
+  ]);
 
   useEffect(() => {
     if (activePanel === "history" && token && userId) {
       void loadHistory(token, userId);
     }
-  }, [activePanel, token, userId]);
-
-  const loadAllData = async (jwtToken: string, uid: number) => {
-    setLoadingData(true);
-
-    try {
-      await Promise.all([
-        loadUserData(jwtToken, uid),
-        loadRecommendation(jwtToken, uid),
-        loadHistory(jwtToken, uid),
-      ]);
-      setError(null);
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : labels.loadDataFailed;
-      if (!String(message).includes("No data")) {
-        setError(message);
-      }
-    } finally {
-      setLoadingData(false);
-    }
-  };
-
-  const loadUserData = async (jwtToken: string, uid: number) => {
-    const data = await apis.getUser(jwtToken, uid);
-    setUserData(data);
-  };
-
-  const loadRecommendation = async (jwtToken: string, uid: number) => {
-    try {
-      const rec = await apis.getTodayRecommendation(jwtToken, uid);
-      setRecommendation(rec);
-    } catch {
-      setRecommendation(null);
-    }
-  };
-
-  const loadHistory = async (jwtToken: string, uid: number) => {
-    try {
-      const items = await apis.getHistory(jwtToken, uid, 7);
-
-      const seen = new Set<string>();
-      const deduped = items.filter((item) => {
-        if (!item.date) return true;
-        if (seen.has(item.date)) return false;
-        seen.add(item.date);
-        return true;
-      });
-
-      setHistory(deduped);
-    } catch {
-      setHistory([]);
-    }
-  };
+  }, [activePanel, token, userId, loadHistory]);
 
   const handleRefresh = async () => {
     if (!token || !userId) {
@@ -223,7 +240,11 @@ const DailyRecommendationDashboard = () => {
         regenerate_recommendation: true,
       };
 
-      const data = await apis.updateUserSettings(token, userId, payload);
+      const data = (await apis.updateUserSettings(
+        token,
+        userId,
+        payload
+      )) as UpdateSettingsResponse;
 
       if (userData) {
         setUserData({
@@ -233,7 +254,7 @@ const DailyRecommendationDashboard = () => {
         });
       }
 
-      if (data?.new_recommendation) {
+      if (data.new_recommendation) {
         setRecommendation({
           user_id: userId,
           date: new Date().toISOString().split("T")[0],
@@ -302,6 +323,7 @@ const DailyRecommendationDashboard = () => {
       <div className="mx-auto max-w-7xl">
         <div className="rounded-[32px] bg-white/40 p-4 shadow-[0_20px_70px_rgba(0,0,0,0.06)] backdrop-blur-sm md:p-6 lg:p-8">
           <TopBarFeatures />
+
           <DashboardHeader
             userName={userData?.name || "User"}
             pregnancyWeek={userData?.pregnancy_week || 0}

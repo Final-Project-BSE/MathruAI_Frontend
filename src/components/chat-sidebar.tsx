@@ -44,6 +44,16 @@ interface ChatSession {
   message_count: number;
 }
 
+type NormalizableApiChatSession = ApiChatSession & {
+  id?: number | string;
+  session_id?: number | string;
+  session_name?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  last_activity?: string;
+  message_count?: number | null;
+};
+
 export interface ChatSidebarRef {
   refreshChatHistory: () => Promise<void>;
 }
@@ -51,6 +61,23 @@ export interface ChatSidebarRef {
 interface ChatSidebarProps extends React.ComponentProps<typeof Sidebar> {
   activeSessionId?: number | null;
   onSessionSelect?: (sessionId: number | null) => void;
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+
+  return fallback;
 }
 
 function getDisplayTitle(session: ChatSession) {
@@ -68,7 +95,7 @@ function getDisplayTitle(session: ChatSession) {
 }
 
 function normalizeSessions(sessions: ApiChatSession[]): ChatSession[] {
-  return sessions.map((s: any) => {
+  return sessions.map((s: NormalizableApiChatSession) => {
     const canonicalId = Number(s.session_id ?? s.id);
 
     return {
@@ -76,7 +103,8 @@ function normalizeSessions(sessions: ApiChatSession[]): ChatSession[] {
       id: canonicalId,
       session_id: canonicalId,
       session_name: s.session_name?.trim() || "New chat",
-      last_activity: s.updated_at || s.last_activity || s.created_at,
+      created_at: s.created_at || "",
+      last_activity: s.updated_at || s.last_activity || s.created_at || "",
       message_count: s.message_count ?? 0,
     };
   });
@@ -113,10 +141,11 @@ function ChatHistoryItem({
     <SidebarMenuItem>
       <div
         onClick={() => onSelect(session.id)}
-        className={`group relative flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer transition-all duration-200 ${isActive
+        className={`group relative flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer transition-all duration-200 ${
+          isActive
             ? "bg-pink-100 text-gray-900"
             : "text-gray-700 hover:bg-pink-50"
-          }`}
+        }`}
       >
         <div className="flex min-w-0 items-center gap-2">
           <IconMessage className="h-4 w-4 text-[#d04f51] flex-shrink-0" />
@@ -198,8 +227,8 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
         } else {
           setError(data.message || "Failed to load chat sessions");
         }
-      } catch (e: any) {
-        setError(e?.message || "Unable to connect to server");
+      } catch (e: unknown) {
+        setError(getErrorMessage(e, "Unable to connect to server"));
       } finally {
         setLoading(false);
       }
@@ -243,8 +272,8 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
         } else {
           setError(data.message || "Failed to create new chat");
         }
-      } catch (e: any) {
-        setError(e?.message || "Failed to create new chat");
+      } catch (e: unknown) {
+        setError(getErrorMessage(e, "Failed to create new chat"));
       } finally {
         setCreatingSession(false);
       }
@@ -272,8 +301,8 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
         } else {
           setError(data.message || "Failed to delete chat");
         }
-      } catch (e: any) {
-        setError(e?.message || "Failed to delete chat");
+      } catch (e: unknown) {
+        setError(getErrorMessage(e, "Failed to delete chat"));
       }
     };
 
@@ -339,8 +368,9 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
                 type="button"
               >
                 <IconLoader
-                  className={`h-3 w-3 text-gray-400 ${loading ? "animate-spin" : ""
-                    }`}
+                  className={`h-3 w-3 text-gray-400 ${
+                    loading ? "animate-spin" : ""
+                  }`}
                 />
               </button>
             </SidebarGroupLabel>

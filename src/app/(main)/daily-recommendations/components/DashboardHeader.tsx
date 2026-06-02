@@ -1,6 +1,4 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
 import { useLanguage } from "@/components/common/useLanguage";
 
 interface DashboardHeaderProps {
@@ -14,9 +12,6 @@ interface DashboardHeaderProps {
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   userName,
   pregnancyWeek,
-  onRefresh,
-  onLogout,
-  loading,
 }) => {
   const { t } = useLanguage();
   const labels = t.dailyRecommendation;

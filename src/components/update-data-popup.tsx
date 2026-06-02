@@ -3,7 +3,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-export function UpdateDataPopup({ isOpen, onClose }) {
+type UpdateDataPopupProps = {
+  isOpen: boolean
+  onClose: () => void
+}
+
+export function UpdateDataPopup({ isOpen, onClose }: UpdateDataPopupProps) {
   const [formData, setFormData] = useState({
     weight: "",
     bloodPressure: "",
@@ -11,14 +16,14 @@ export function UpdateDataPopup({ isOpen, onClose }) {
     cycleDay: ""
   })
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    // Handle form submission here
+
     console.log("Form data:", formData)
     onClose()
   }
 
-  const handleChange = (field, value) => {
+  const handleChange = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
@@ -27,13 +32,11 @@ export function UpdateDataPopup({ isOpen, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
         <div className="bg-gradient-to-r from-pink-300 to-pink-400 p-4 rounded-t-lg">
           <h2 className="text-xl font-bold text-white">Update Your Data</h2>
           <p className="text-sm text-white/90">Keep your health information current</p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="cycleDay">Current Cycle Day</Label>
@@ -80,7 +83,6 @@ export function UpdateDataPopup({ isOpen, onClose }) {
             />
           </div>
 
-          {/* Buttons */}
           <div className="flex gap-3 pt-4">
             <Button
               type="button"
@@ -90,6 +92,7 @@ export function UpdateDataPopup({ isOpen, onClose }) {
             >
               Cancel
             </Button>
+
             <Button
               type="submit"
               className="flex-1 bg-pink-500 hover:bg-pink-600 text-white"

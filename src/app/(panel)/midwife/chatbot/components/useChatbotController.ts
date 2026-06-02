@@ -1,12 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getSession } from "@/lib/authentication";
-import { useChatContext } from "@/app/(panel)/midwife/chatbot/layout";
+import { useChatContext } from "@/app/(panel)/midwife/chatbot/components/ChatContext";
 import apis from "../../../../api/chatbot/api";
 
 import { ChatResponse as ApiChatResponse } from "../../../../api/chatbot/types";
 import type { Message, SystemStats } from "../../../../api/chatbot/types";
+
+type SystemStatsApiResponse = SystemStats & {
+  knowledge_base_stats?: unknown;
+};
+
+type ChatHistoryMessage = {
+  id: number | string;
+  message?: string | null;
+  response?: string | null;
+  created_at: string;
+};
+
+type ChatMessagesApiResponse = {
+  status?: string;
+  messages?: ChatHistoryMessage[];
+};
 
 const WELCOME_MESSAGE: Message = {
   id: "welcome_message",
@@ -45,7 +61,7 @@ export function useChatbotController() {
     timestamp: new Date(),
   });
 
-  const resetToNewChat = () => {
+  const resetToNewChat = useCallback(() => {
     setCurrentSessionId(null);
     setMessages([
       {
@@ -53,11 +69,12 @@ export function useChatbotController() {
         timestamp: new Date(),
       },
     ]);
-  };
+  }, []);
 
-  const checkSystemHealth = async (jwtToken: string) => {
+  const checkSystemHealth = useCallback(async (jwtToken: string) => {
     try {
       const data = await apis.health(jwtToken);
+
       setIsConnected(data?.status === "healthy");
       setConnectionError(
         data?.status === "healthy" ? null : data?.error || "System not healthy"
@@ -68,61 +85,68 @@ export function useChatbotController() {
         "Unable to connect to the server. Please make sure the backend is running."
       );
     }
-  };
+  }, []);
 
-  const fetchSystemStats = async (jwtToken: string) => {
+  const fetchSystemStats = useCallback(async (jwtToken: string) => {
     try {
-      const data = await apis.stats(jwtToken);
+      const data = (await apis.stats(jwtToken)) as SystemStatsApiResponse;
+
       if (data?.knowledge_base_stats) {
-        setSystemStats(data as any);
+        setSystemStats(data);
       }
     } catch (error) {
       console.error("Failed to fetch system stats:", error);
     }
-  };
+  }, []);
 
-  const loadSessionMessages = async (sessionId: number, jwtToken: string) => {
-    try {
-      const data = await apis.getChatMessages(jwtToken, sessionId);
+  const loadSessionMessages = useCallback(
+    async (sessionId: number, jwtToken: string) => {
+      try {
+        const data = (await apis.getChatMessages(
+          jwtToken,
+          sessionId
+        )) as ChatMessagesApiResponse;
 
-      if (data?.status === "success") {
-        const formattedMessages: Message[] = [];
+        if (data?.status === "success") {
+          const formattedMessages: Message[] = [];
 
-        if (!data.messages || data.messages.length === 0) {
-          formattedMessages.push({
-            ...welcomeRef.current,
-            timestamp: new Date(),
-          });
-        } else {
-          data.messages.forEach((m: any) => {
-            if (m.message) {
-              formattedMessages.push({
-                id: `${m.id}_user`,
-                content: m.message,
-                isUser: true,
-                timestamp: new Date(m.created_at),
-                status: "sent",
-              });
-            }
+          if (!data.messages || data.messages.length === 0) {
+            formattedMessages.push({
+              ...welcomeRef.current,
+              timestamp: new Date(),
+            });
+          } else {
+            data.messages.forEach((messageItem) => {
+              if (messageItem.message) {
+                formattedMessages.push({
+                  id: `${messageItem.id}_user`,
+                  content: messageItem.message,
+                  isUser: true,
+                  timestamp: new Date(messageItem.created_at),
+                  status: "sent",
+                });
+              }
 
-            if (m.response) {
-              formattedMessages.push({
-                id: `${m.id}_bot`,
-                content: m.response,
-                isUser: false,
-                timestamp: new Date(m.created_at),
-                status: "sent",
-              });
-            }
-          });
+              if (messageItem.response) {
+                formattedMessages.push({
+                  id: `${messageItem.id}_bot`,
+                  content: messageItem.response,
+                  isUser: false,
+                  timestamp: new Date(messageItem.created_at),
+                  status: "sent",
+                });
+              }
+            });
+          }
+
+          setMessages(formattedMessages);
         }
-
-        setMessages(formattedMessages);
+      } catch (error) {
+        console.error("Failed to fetch chat messages:", error);
       }
-    } catch (error) {
-      console.error("Failed to fetch chat messages:", error);
-    }
-  };
+    },
+    []
+  );
 
   const sendMessage = async (messageContent: string) => {
     if (!messageContent.trim() || isLoading || !token) return;
@@ -130,7 +154,7 @@ export function useChatbotController() {
     const trimmedMessage = messageContent.trim();
     const sessionIdToUse = activeSessionId ?? currentSessionId;
     const isFirstUserMessageInSession =
-      messages.filter((m) => m.isUser).length === 0;
+      messages.filter((messageItem) => messageItem.isUser).length === 0;
     const baseId = `${Date.now()}`;
 
     const userMessage: Message = {
@@ -175,10 +199,10 @@ export function useChatbotController() {
         }
 
         setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === botMessage.id
-              ? { ...msg, content: data.response, status: "sent" }
-              : msg
+          prev.map((messageItem) =>
+            messageItem.id === botMessage.id
+              ? { ...messageItem, content: data.response, status: "sent" }
+              : messageItem
           )
         );
 
@@ -200,17 +224,18 @@ export function useChatbotController() {
       }
     } catch (error) {
       setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === botMessage.id
+        prev.map((messageItem) =>
+          messageItem.id === botMessage.id
             ? {
-                ...msg,
+                ...messageItem,
                 content:
                   "Sorry, I encountered an error while processing your message. Please try again.",
                 status: "error",
               }
-            : msg
+            : messageItem
         )
       );
+
       console.error("Chat error:", error);
     } finally {
       setIsLoading(false);
@@ -224,6 +249,7 @@ export function useChatbotController() {
 
         if (session?.user?.token) {
           const jwt = session.user.token;
+
           setToken(jwt);
           checkSystemHealth(jwt);
           fetchSystemStats(jwt);
@@ -236,22 +262,24 @@ export function useChatbotController() {
       }
     };
 
-    initialize();
-  }, []);
+    void initialize();
+  }, [checkSystemHealth, fetchSystemStats]);
 
   useEffect(() => {
     if (!token) return;
 
     if (activeSessionId !== null) {
       setCurrentSessionId(activeSessionId);
-      loadSessionMessages(activeSessionId, token);
+      void loadSessionMessages(activeSessionId, token);
     } else {
       resetToNewChat();
     }
-  }, [activeSessionId, token]);
+  }, [activeSessionId, token, loadSessionMessages, resetToNewChat]);
 
   const retryHealth = () => {
-    if (token) checkSystemHealth(token);
+    if (token) {
+      void checkSystemHealth(token);
+    }
   };
 
   return {

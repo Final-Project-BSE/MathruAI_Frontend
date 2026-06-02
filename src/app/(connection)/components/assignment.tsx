@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { assignmentApi } from "../../api/user-assign/api";
 import type {
   AreaMapSearchRequestDto,
@@ -31,11 +31,7 @@ type Props = {
   roles: Role[];
 };
 
-export default function Assignment({
-  userId,
-  token,
-  roles,
-}: Props): JSX.Element {
+export default function Assignment({ userId, token, roles }: Props) {
   const { t } = useLanguage();
   const labels = t.assignment;
 
@@ -52,23 +48,29 @@ export default function Assignment({
   const [targetArea, setTargetArea] = useState("");
   const [message, setMessage] = useState("");
 
-  const [sentRequests, setSentRequests] = useState<ConnectionRequestResponseDto[]>([]);
-  const [receivedRequests, setReceivedRequests] = useState<ConnectionRequestResponseDto[]>([]);
+  const [sentRequests, setSentRequests] = useState<
+    ConnectionRequestResponseDto[]
+  >([]);
+  const [receivedRequests, setReceivedRequests] = useState<
+    ConnectionRequestResponseDto[]
+  >([]);
   const [assignedUsers, setAssignedUsers] = useState<UserResponseDto[]>([]);
-  const [assignedMidwife, setAssignedMidwife] = useState<UserResponseDto | null>(null);
+  const [assignedMidwife, setAssignedMidwife] =
+    useState<UserResponseDto | null>(null);
 
   const [selectedMotherId, setSelectedMotherId] = useState<number | "">("");
-  const [updateForm, setUpdateForm] = useState<AssignedUserProfileUpdateRequestDto>({
-    firstName: "",
-    lastName: "",
-    phoneNumber: "",
-    address: "",
-    area: "",
-    district: "",
-    mohArea: "",
-    latitude: undefined,
-    longitude: undefined,
-  });
+  const [updateForm, setUpdateForm] =
+    useState<AssignedUserProfileUpdateRequestDto>({
+      firstName: "",
+      lastName: "",
+      phoneNumber: "",
+      address: "",
+      area: "",
+      district: "",
+      mohArea: "",
+      latitude: undefined,
+      longitude: undefined,
+    });
 
   const [searchForm, setSearchForm] = useState<AreaSearchRequestDto>({
     district: "",
@@ -81,7 +83,9 @@ export default function Assignment({
   });
 
   const [districtOptions, setDistrictOptions] = useState<string[]>([]);
-  const [searchMohAreaOptions, setSearchMohAreaOptions] = useState<string[]>([]);
+  const [searchMohAreaOptions, setSearchMohAreaOptions] = useState<string[]>(
+    []
+  );
   const [mapMohAreaOptions, setMapMohAreaOptions] = useState<string[]>([]);
 
   const [searchResults, setSearchResults] = useState<UserResponseDto[]>([]);
@@ -91,8 +95,12 @@ export default function Assignment({
   const [mapSearching, setMapSearching] = useState(false);
   const [loading, setLoading] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
-  const [assignmentActionLoadingId, setAssignmentActionLoadingId] = useState<number | "midwife" | null>(null);
-  const [sendingSearchUserId, setSendingSearchUserId] = useState<number | null>(null);
+  const [assignmentActionLoadingId, setAssignmentActionLoadingId] = useState<
+    number | "midwife" | null
+  >(null);
+  const [sendingSearchUserId, setSendingSearchUserId] = useState<number | null>(
+    null
+  );
   const [districtLoading, setDistrictLoading] = useState(false);
   const [searchMohLoading, setSearchMohLoading] = useState(false);
   const [mapMohLoading, setMapMohLoading] = useState(false);
@@ -104,12 +112,18 @@ export default function Assignment({
   const visibleSuccess = useAutoDismiss(success, 5000);
 
   const [searchPopupOpen, setSearchPopupOpen] = useState(false);
-  const [selectedUserForDetails, setSelectedUserForDetails] = useState<UserResponseDto | null>(null);
-  const [selectedUserStatus, setSelectedUserStatus] = useState<string | undefined>(undefined);
-  const [selectedRequest, setSelectedRequest] = useState<ConnectionRequestResponseDto | null>(null);
-  const [selectedRequestType, setSelectedRequestType] = useState<"received" | "sent">("received");
+  const [selectedUserForDetails, setSelectedUserForDetails] =
+    useState<UserResponseDto | null>(null);
+  const [selectedUserStatus, setSelectedUserStatus] = useState<
+    string | undefined
+  >(undefined);
+  const [selectedRequest, setSelectedRequest] =
+    useState<ConnectionRequestResponseDto | null>(null);
+  const [selectedRequestType, setSelectedRequestType] = useState<
+    "received" | "sent"
+  >("received");
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -123,7 +137,10 @@ export default function Assignment({
       setReceivedRequests(received);
 
       if (isMidwife) {
-        const users = await assignmentApi.getAssignedUsersForMidwife(userId, token);
+        const users = await assignmentApi.getAssignedUsersForMidwife(
+          userId,
+          token
+        );
         setAssignedUsers(users);
       } else {
         setAssignedUsers([]);
@@ -131,7 +148,10 @@ export default function Assignment({
 
       if (isMotherSide) {
         try {
-          const midwife = await assignmentApi.getAssignedMidwifeForMother(userId, token);
+          const midwife = await assignmentApi.getAssignedMidwifeForMother(
+            userId,
+            token
+          );
           setAssignedMidwife(midwife);
         } catch {
           setAssignedMidwife(null);
@@ -140,13 +160,21 @@ export default function Assignment({
         setAssignedMidwife(null);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : labels.messages.failedLoadData);
+      setError(
+        err instanceof Error ? err.message : labels.messages.failedLoadData
+      );
     } finally {
       setLoading(false);
     }
-  }
+  }, [
+    userId,
+    token,
+    isMidwife,
+    isMotherSide,
+    labels.messages.failedLoadData,
+  ]);
 
-  async function loadDistricts() {
+  const loadDistricts = useCallback(async () => {
     try {
       setDistrictLoading(true);
       const districts = await assignmentApi.getDistricts(token);
@@ -156,15 +184,15 @@ export default function Assignment({
     } finally {
       setDistrictLoading(false);
     }
-  }
+  }, [token]);
 
   useEffect(() => {
     void loadData();
-  }, [userId, token, isMidwife, isMotherSide]);
+  }, [loadData]);
 
   useEffect(() => {
     void loadDistricts();
-  }, [token]);
+  }, [loadDistricts]);
 
   useEffect(() => {
     async function loadSearchMohAreas() {
@@ -291,7 +319,9 @@ export default function Assignment({
       setMessage("");
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : labels.messages.failedSendRequest);
+      setError(
+        err instanceof Error ? err.message : labels.messages.failedSendRequest
+      );
     }
   }
 
@@ -303,8 +333,13 @@ export default function Assignment({
       setError("");
       setSuccess("");
 
-      if (!searchForm.district.trim()) throw new Error(labels.messages.districtRequired);
-      if (!searchForm.mohArea.trim()) throw new Error(labels.messages.mohAreaRequired);
+      if (!searchForm.district.trim()) {
+        throw new Error(labels.messages.districtRequired);
+      }
+
+      if (!searchForm.mohArea.trim()) {
+        throw new Error(labels.messages.mohAreaRequired);
+      }
 
       const results = await assignmentApi.searchUsersByDistrictAndMohArea(
         userId,
@@ -320,7 +355,9 @@ export default function Assignment({
       setSuccess(labels.messages.foundUsers(results.length));
     } catch (err) {
       setSearchResults([]);
-      setError(err instanceof Error ? err.message : labels.messages.failedSearchUsers);
+      setError(
+        err instanceof Error ? err.message : labels.messages.failedSearchUsers
+      );
     } finally {
       setSearching(false);
     }
@@ -334,23 +371,33 @@ export default function Assignment({
       setError("");
       setSuccess("");
 
-      if (!mapSearchForm.district.trim()) throw new Error(labels.messages.districtRequired);
-      if (!mapSearchForm.mohArea.trim()) throw new Error(labels.messages.mohAreaRequired);
+      if (!mapSearchForm.district.trim()) {
+        throw new Error(labels.messages.districtRequired);
+      }
 
-      const results = await assignmentApi.searchMappableUsersByDistrictAndMohArea(
-        userId,
-        {
-          district: mapSearchForm.district.trim(),
-          mohArea: mapSearchForm.mohArea.trim(),
-        },
-        token
-      );
+      if (!mapSearchForm.mohArea.trim()) {
+        throw new Error(labels.messages.mohAreaRequired);
+      }
+
+      const results =
+        await assignmentApi.searchMappableUsersByDistrictAndMohArea(
+          userId,
+          {
+            district: mapSearchForm.district.trim(),
+            mohArea: mapSearchForm.mohArea.trim(),
+          },
+          token
+        );
 
       setMapUsers(results);
       setSuccess(labels.messages.foundMappableUsers(results.length));
     } catch (err) {
       setMapUsers([]);
-      setError(err instanceof Error ? err.message : labels.messages.failedSearchMapUsers);
+      setError(
+        err instanceof Error
+          ? err.message
+          : labels.messages.failedSearchMapUsers
+      );
     } finally {
       setMapSearching(false);
     }
@@ -385,7 +432,9 @@ export default function Assignment({
 
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : labels.messages.failedSendRequest);
+      setError(
+        err instanceof Error ? err.message : labels.messages.failedSendRequest
+      );
     } finally {
       setSendingSearchUserId(null);
     }
@@ -402,7 +451,11 @@ export default function Assignment({
       await loadData();
       setSelectedRequest(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : labels.messages.failedApproveRequest);
+      setError(
+        err instanceof Error
+          ? err.message
+          : labels.messages.failedApproveRequest
+      );
     } finally {
       setActionLoadingId(null);
     }
@@ -422,7 +475,11 @@ export default function Assignment({
         setSelectedRequest(null);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : labels.messages.failedRejectRequest);
+      setError(
+        err instanceof Error
+          ? err.message
+          : labels.messages.failedRejectRequest
+      );
     } finally {
       setActionLoadingId(null);
     }
@@ -442,7 +499,11 @@ export default function Assignment({
         setSelectedRequest(null);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : labels.messages.failedCancelRequest);
+      setError(
+        err instanceof Error
+          ? err.message
+          : labels.messages.failedCancelRequest
+      );
     } finally {
       setActionLoadingId(null);
     }
@@ -459,7 +520,11 @@ export default function Assignment({
       setAssignedMidwife(null);
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : labels.messages.failedCancelAssignedMidwife);
+      setError(
+        err instanceof Error
+          ? err.message
+          : labels.messages.failedCancelAssignedMidwife
+      );
     } finally {
       setAssignmentActionLoadingId(null);
     }
@@ -471,7 +536,11 @@ export default function Assignment({
       setError("");
       setSuccess("");
 
-      await assignmentApi.cancelAssignedMotherForMidwife(userId, motherUserId, token);
+      await assignmentApi.cancelAssignedMotherForMidwife(
+        userId,
+        motherUserId,
+        token
+      );
       setSuccess(labels.messages.assignedMotherCancelled);
       await loadData();
 
@@ -480,7 +549,11 @@ export default function Assignment({
         setSelectedUserStatus(undefined);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : labels.messages.failedCancelAssignedMother);
+      setError(
+        err instanceof Error
+          ? err.message
+          : labels.messages.failedCancelAssignedMother
+      );
     } finally {
       setAssignmentActionLoadingId(null);
     }
@@ -531,7 +604,11 @@ export default function Assignment({
       });
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : labels.messages.failedUpdateAssignedUser);
+      setError(
+        err instanceof Error
+          ? err.message
+          : labels.messages.failedUpdateAssignedUser
+      );
     }
   }
 
@@ -555,6 +632,7 @@ export default function Assignment({
     >
       <div className="mx-auto max-w-7xl p-4 md:p-6">
         {isMotherSide ? <TopBarFeatures /> : null}
+
         <AssignmentPageHeader
           isMidwife={isMidwife}
           isMotherSide={isMotherSide}
@@ -669,7 +747,9 @@ export default function Assignment({
               setSelectedRequestType(type);
             }}
             onRejectRequest={(requestId) => void handleReject(requestId)}
-            onCancelSentRequest={(requestId) => void handleCancelSentRequest(requestId)}
+            onCancelSentRequest={(requestId) =>
+              void handleCancelSentRequest(requestId)
+            }
             actionLoadingId={actionLoadingId}
             theme={theme}
             labels={labels}
