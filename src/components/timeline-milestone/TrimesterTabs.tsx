@@ -48,7 +48,7 @@ export default function TrimesterTabs({
   }, [language]);
 
   return (
-    <div className="flex items-center gap-2 rounded-2xl bg-white/60 backdrop-blur-md p-1.5 shadow-sm border border-white/40">
+    <div className="inline-flex min-w-max items-center gap-2 rounded-2xl border border-white/40 bg-white/60 p-1.5 shadow-sm backdrop-blur-md">
       {TRIMESTER_RANGES.map((t, idx) => {
         const trimester = (idx + 1) as 1 | 2 | 3;
         const isActive = activeTrimester === trimester;
@@ -56,13 +56,14 @@ export default function TrimesterTabs({
         return (
           <button
             key={trimester}
+            type="button"
             onClick={() => onSelect(trimester)}
             className={`
-              relative px-4 py-2.5 rounded-xl cursor-pointer text-sm font-semibold transition-all duration-300 whitespace-nowrap
+              relative shrink-0 cursor-pointer whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-300
               ${
                 isActive
-                  ? "text-white shadow-lg scale-105"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
+                  ? "scale-105 text-white shadow-lg"
+                  : "text-gray-600 hover:bg-white/50 hover:text-gray-900"
               }
             `}
             style={
@@ -71,7 +72,7 @@ export default function TrimesterTabs({
                     background: `linear-gradient(135deg, ${t.color}cc, ${t.color})`,
                     boxShadow: `0 4px 15px ${t.color}40`,
                   }
-                : {}
+                : undefined
             }
             id={`trimester-tab-${trimester}`}
           >

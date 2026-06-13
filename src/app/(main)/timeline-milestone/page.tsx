@@ -97,7 +97,7 @@ export default function TimelineMilestonePage() {
   if (loading) {
     return (
       <Container title={labels.containerTitle}>
-        <div className="min-h-screen bg-[#fcd4cd]">
+        <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#fcd4cd]">
           <LoadingState />
         </div>
       </Container>
@@ -127,49 +127,55 @@ export default function TimelineMilestonePage() {
         }
       `}</style>
 
-      <div className="relative min-h-screen overflow-hidden bg-[#fed2cc] p-4 md:p-6">
-        <div className="absolute inset-0 pointer-events-none opacity-5" />
-
-        <div className="relative z-10">
+      <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#fed2cc] p-4 md:p-6">
+        <div className="w-full max-w-full min-w-0">
           <TopBarFeatures />
 
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-extrabold text-gray-900 md:text-2xl">
+          <div className="mb-6 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <h1 className="break-words text-xl font-extrabold text-gray-900 md:text-2xl">
                 {labels.title}
               </h1>
 
-              <p className="text-sm text-gray-500">{labels.subtitle}</p>
+              <p className="break-words text-sm text-gray-500">
+                {labels.subtitle}
+              </p>
             </div>
           </div>
 
           {error && (
-            <div className="mb-4 rounded-lg border border-[#d04f51]/20 bg-[#d04f51]/10 p-3 text-sm text-[#d04f51]">
+            <div className="mb-4 max-w-full break-words rounded-lg border border-[#d04f51]/20 bg-[#d04f51]/10 p-3 text-sm text-[#d04f51]">
               {labels.translatedError || error}
             </div>
           )}
 
-          <div className="mb-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-            <WeekSearch onSelectWeek={handleSelectWeek} totalWeeks={41} />
+          <div className="mb-4 flex w-full min-w-0 flex-col gap-3 xl:flex-row xl:items-center">
+            <div className="w-full min-w-0 xl:w-[400px] xl:shrink-0">
+              <WeekSearch onSelectWeek={handleSelectWeek} totalWeeks={41} />
+            </div>
 
-            <TrimesterTabs
-              activeTrimester={activeTrimester}
-              onSelect={handleTrimesterSelect}
-            />
+            <div className="w-full min-w-0 overflow-x-auto pb-1">
+              <TrimesterTabs
+                activeTrimester={activeTrimester}
+                onSelect={handleTrimesterSelect}
+              />
+            </div>
           </div>
 
-          <div className="mb-6 rounded-2xl border border-white/40 bg-white/30 shadow-sm backdrop-blur-sm">
-            <TimelineRail
-              selectedWeek={selectedWeek}
-              onSelectWeek={handleSelectWeek}
-            />
-          </div>
+          <div className="mb-6 w-full max-w-full min-w-0 overflow-hidden rounded-2xl border border-white/40 bg-white/30 shadow-sm backdrop-blur-sm">
+  <TimelineRail
+    selectedWeek={selectedWeek}
+    onSelectWeek={handleSelectWeek}
+  />
+</div>
 
-          <div className="mb-6">
+          <div className="mb-6 w-full max-w-full min-w-0">
             <GrowthStats data={weekData} />
           </div>
 
-          <MilestoneCard data={weekData} animKey={animKey} />
+          <div className="w-full max-w-full min-w-0">
+            <MilestoneCard data={weekData} animKey={animKey} />
+          </div>
         </div>
       </div>
     </Container>

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React from "react";
 
 interface DayRailProps {
   selectedDay: number;
@@ -11,32 +11,21 @@ export default function DayRail({
   onSelectDay,
   dayLabel = "Day",
 }: DayRailProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      const selectedEl = scrollRef.current.querySelector(
-        `[data-day="${selectedDay}"]`
-      );
-
-      if (selectedEl) {
-        selectedEl.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-          inline: "center",
-        });
-      }
-    }
-  }, [selectedDay]);
-
   const days = Array.from({ length: 42 }, (_, i) => i + 1);
 
   return (
-    <div className="relative w-full overflow-hidden py-3">
+    <div className="w-full max-w-full min-w-0 overflow-hidden py-3">
       <div
-        ref={scrollRef}
-        className="flex overflow-x-auto gap-2 px-4 pb-2 scrollbar-hide snap-x"
-        style={{ scrollBehavior: "smooth" }}
+        className="
+          grid w-full min-w-0 gap-2 px-4 pb-2
+          grid-cols-4
+          min-[420px]:grid-cols-5
+          sm:grid-cols-6
+          md:grid-cols-7
+          lg:grid-cols-8
+          xl:grid-cols-10
+          2xl:grid-cols-12
+        "
       >
         {days.map((day) => {
           const isSelected = day === selectedDay;
@@ -44,13 +33,17 @@ export default function DayRail({
           return (
             <button
               key={day}
+              type="button"
               data-day={day}
               onClick={() => onSelectDay(day)}
-              className={`snap-center cursor-pointer shrink-0 flex flex-col items-center justify-center w-14 h-16 rounded-2xl border-2 transition-all duration-300 ${
-                isSelected
-                  ? "bg-[#d04f51] border-[#d04f51] text-white shadow-md transform scale-110"
-                  : "bg-white/60 border-white text-gray-600 hover:bg-white hover:scale-105"
-              }`}
+              className={`
+                flex h-16 min-w-0 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 transition-all duration-300
+                ${
+                  isSelected
+                    ? "scale-[1.04] border-[#d04f51] bg-[#d04f51] text-white shadow-md"
+                    : "border-white bg-white/60 text-gray-600 hover:scale-[1.03] hover:bg-white"
+                }
+              `}
             >
               <span
                 className={`text-[10px] font-bold uppercase tracking-wider ${

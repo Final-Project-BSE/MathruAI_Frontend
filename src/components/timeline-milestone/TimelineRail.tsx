@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { FETAL_DATA, TRIMESTER_RANGES } from "./fetal-data";
 import { useLanguage } from "@/components/common/useLanguage";
 import { translateText } from "@/components/common/translateText";
@@ -16,25 +16,10 @@ export default function TimelineRail({
 }: TimelineRailProps) {
   const { language } = useLanguage();
 
-  const railRef = useRef<HTMLDivElement>(null);
-  const pillRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
-
   const [weekLabel, setWeekLabel] = useState("Week");
-  const [translatedTitles, setTranslatedTitles] = useState<Record<number, string>>(
-    {}
-  );
-
-  useEffect(() => {
-    const pill = pillRefs.current.get(selectedWeek);
-
-    if (pill && railRef.current) {
-      pill.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-        inline: "center",
-      });
-    }
-  }, [selectedWeek]);
+  const [translatedTitles, setTranslatedTitles] = useState<
+    Record<number, string>
+  >({});
 
   useEffect(() => {
     let active = true;
@@ -68,17 +53,18 @@ export default function TimelineRail({
   };
 
   return (
-    <div className="relative">
-      <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[#fed2cc] to-transparent z-10" />
-      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#fed2cc] to-transparent z-10" />
-
+    <div className="w-full max-w-full min-w-0">
       <div
-        ref={railRef}
-        className="flex flex-nowrap items-center gap-2 overflow-x-auto py-3 px-4"
-        style={{
-          scrollbarWidth: "thin",
-          scrollbarColor: "#fed2cc #f5f5f5",
-        }}
+        className="
+          grid w-full min-w-0 gap-2 p-3
+          grid-cols-4
+          min-[420px]:grid-cols-5
+          sm:grid-cols-7
+          md:grid-cols-9
+          lg:grid-cols-11
+          xl:grid-cols-14
+          2xl:grid-cols-16
+        "
       >
         {FETAL_DATA.map((weekData) => {
           const isSelected = weekData.week === selectedWeek;
@@ -87,16 +73,14 @@ export default function TimelineRail({
           return (
             <button
               key={weekData.week}
-              ref={(el) => {
-                if (el) pillRefs.current.set(weekData.week, el);
-              }}
+              type="button"
               onClick={() => onSelectWeek(weekData.week)}
               className={`
-                relative shrink-0 flex cursor-pointer flex-col items-center gap-0.5 rounded-2xl px-3 py-2 transition-all duration-300
+                relative flex min-w-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-2xl px-2 py-2 transition-all duration-300
                 ${
                   isSelected
-                    ? "text-white shadow-lg scale-110"
-                    : "bg-white/60 text-gray-600 hover:bg-white hover:shadow-md hover:scale-105 border border-white/50"
+                    ? "text-white shadow-lg scale-[1.04]"
+                    : "border border-white/50 bg-white/60 text-gray-600 hover:bg-white hover:shadow-md hover:scale-[1.03]"
                 }
               `}
               style={
@@ -105,17 +89,17 @@ export default function TimelineRail({
                       background: `linear-gradient(135deg, ${color}, ${color}dd)`,
                       boxShadow: `0 4px 20px ${color}50`,
                     }
-                  : {}
+                  : undefined
               }
               title={translatedTitles[weekData.week] ?? weekData.title}
               id={`week-pill-${weekData.week}`}
               aria-label={`${weekLabel} ${weekData.week}`}
             >
-              <span className="relative text-xs font-bold">
+              <span className="text-xs font-bold leading-none">
                 W{weekData.week}
               </span>
 
-              <span className="relative text-[10px] opacity-75">
+              <span className="text-[10px] leading-none opacity-75">
                 {weekData.emoji}
               </span>
             </button>

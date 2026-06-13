@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { assignmentApi } from "../../../api/user-assign/api";
 import type {
   ConnectionRequestResponseDto,
@@ -8,7 +9,6 @@ import type {
   Role,
   UserResponseDto,
 } from "../../../api/user-assign/types";
-import GlobalUsersMap from "./GlobalUsersMap";
 import MapUserDetailsModal from "./MapUserDetailsModal";
 import TopBarFeatures from "@/components/common/TopBarFeatures";
 import { useAutoDismiss } from "../../../../components/common/useAutoDismiss";
@@ -23,6 +23,7 @@ type Props = {
   roles: Role[];
   mode: Mode;
   showTopBar?: boolean;
+  mapInstanceKey?: string;
 };
 
 const MOTHER_ROLES: Role[] = [
@@ -39,12 +40,17 @@ function hasMotherRole(roles: Role[]) {
   return roles.some((role) => MOTHER_ROLES.includes(role));
 }
 
+const GlobalUsersMap = dynamic(() => import("./GlobalUsersMap"), {
+  ssr: false,
+});
+
 export default function RegisteredUsersMapPage({
   userId,
   token,
   roles,
   mode,
   showTopBar = true,
+  mapInstanceKey,
 }: Props) {
   const { t } = useLanguage();
   const labels = t.assignment;
@@ -53,13 +59,19 @@ export default function RegisteredUsersMapPage({
   const isMotherSide = useMemo(() => hasMotherRole(roles), [roles]);
 
   const [users, setUsers] = useState<MapUserResponseDto[]>([]);
-  const [sentRequests, setSentRequests] = useState<ConnectionRequestResponseDto[]>([]);
-  const [receivedRequests, setReceivedRequests] = useState<ConnectionRequestResponseDto[]>([]);
-  const [assignedMidwife, setAssignedMidwife] = useState<UserResponseDto | null>(null);
+  const [sentRequests, setSentRequests] = useState<
+    ConnectionRequestResponseDto[]
+  >([]);
+  const [receivedRequests, setReceivedRequests] = useState<
+    ConnectionRequestResponseDto[]
+  >([]);
+  const [assignedMidwife, setAssignedMidwife] =
+    useState<UserResponseDto | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [sendingUserId, setSendingUserId] = useState<number | null>(null);
-  const [selectedUser, setSelectedUser] = useState<MapUserResponseDto | null>(null);
+  const [selectedUser, setSelectedUser] =
+    useState<MapUserResponseDto | null>(null);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -84,10 +96,8 @@ export default function RegisteredUsersMapPage({
 
       if (isMotherSide) {
         try {
-          const myAssignedMidwife = await assignmentApi.getAssignedMidwifeForMother(
-            userId,
-            token
-          );
+          const myAssignedMidwife =
+            await assignmentApi.getAssignedMidwifeForMother(userId, token);
           setAssignedMidwife(myAssignedMidwife);
         } catch {
           setAssignedMidwife(null);
@@ -96,7 +106,9 @@ export default function RegisteredUsersMapPage({
         setAssignedMidwife(null);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : labels.messages.failedLoadMapData);
+      setError(
+        err instanceof Error ? err.message : labels.messages.failedLoadMapData
+      );
     } finally {
       setLoading(false);
     }
@@ -158,7 +170,9 @@ export default function RegisteredUsersMapPage({
       setSuccess(labels.messages.createdRequests(created.length));
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : labels.messages.failedSendRequest);
+      setError(
+        err instanceof Error ? err.message : labels.messages.failedSendRequest
+      );
     } finally {
       setSendingUserId(null);
     }
@@ -177,7 +191,13 @@ export default function RegisteredUsersMapPage({
       : labels.map.allRegisteredPatientsSubtitle;
 
   return (
-    <div className={isMidwife ? "min-h-screen bg-black text-white" : "min-h-screen bg-[#fed2cc] text-black"}>
+    <div
+      className={
+        isMidwife
+          ? "min-h-screen bg-black text-white"
+          : "min-h-screen bg-[#fed2cc] text-black"
+      }
+    >
       <div className="mx-auto max-w-7xl p-4 md:p-6">
         {!isMidwife && (
           <>
@@ -185,14 +205,18 @@ export default function RegisteredUsersMapPage({
 
             <div className="mb-6">
               <h1
-                className={`text-2xl font-bold ${isMidwife ? "text-white" : "text-gray-900"}`}
+                className={`text-2xl font-bold ${
+                  isMidwife ? "text-white" : "text-gray-900"
+                }`}
               >
                 {title}
               </h1>
 
               {shouldShow && (
                 <p
-                  className={`mt-2 text-sm ${isMidwife ? "text-gray-400" : "text-gray-700"}`}
+                  className={`mt-2 text-sm ${
+                    isMidwife ? "text-gray-400" : "text-gray-700"
+                  }`}
                 >
                   {subtitle}
                 </p>
@@ -213,32 +237,60 @@ export default function RegisteredUsersMapPage({
           </>
         )}
 
-        <section className={`rounded-xl border p-5 shadow-xl ${isMidwife ? "border-white/10 bg-zinc-950" : "border-gray-200 bg-white"}`}>
+        <section
+          className={`rounded-xl border p-5 shadow-xl ${
+            isMidwife
+              ? "border-white/10 bg-zinc-950"
+              : "border-gray-200 bg-white"
+          }`}
+        >
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className={`text-lg font-semibold ${isMidwife ? "text-white text-sm" : "text-gray-900"}`}>
+              <h2
+                className={`text-lg font-semibold ${
+                  isMidwife ? "text-white text-sm" : "text-gray-900"
+                }`}
+              >
                 {labels.map.mapView}
               </h2>
-              <p className={`text-sm ${isMidwife ? "text-gray-400 text-xs" : "text-gray-600"}`}>
+
+              <p
+                className={`text-sm ${
+                  isMidwife ? "text-gray-400 text-xs" : "text-gray-600"
+                }`}
+              >
                 {labels.map.mapHelp}
               </p>
             </div>
 
-            <div className={`text-sm ${isMidwife ? "text-gray-300 text-xs" : "text-gray-700"}`}>
+            <div
+              className={`text-sm ${
+                isMidwife ? "text-gray-300 text-xs" : "text-gray-700"
+              }`}
+            >
               {labels.map.totalUsersOnMap}: {users.length}
             </div>
           </div>
 
           {loading ? (
-            <p className={isMidwife ? "text-sm text-gray-400" : "text-sm text-gray-600"}>
+            <p
+              className={
+                isMidwife ? "text-sm text-gray-400" : "text-sm text-gray-600"
+              }
+            >
               {labels.map.loadingMap}
             </p>
           ) : users.length === 0 ? (
-            <p className={isMidwife ? "text-sm text-gray-400" : "text-sm text-gray-600"}>
+            <p
+              className={
+                isMidwife ? "text-sm text-gray-400" : "text-sm text-gray-600"
+              }
+            >
               {labels.map.noUsersWithCoordinates}
             </p>
           ) : (
             <GlobalUsersMap
+              mapInstanceKey={mapInstanceKey}
               users={users}
               getStatus={getStatus}
               sendingUserId={sendingUserId}
