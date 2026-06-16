@@ -8,6 +8,9 @@ import {
   FETAL_DATA,
   TRIMESTER_RANGES,
 } from "@/components/timeline-milestone/fetal-data";
+import { useLanguage } from "@/components/common/useLanguage";
+import { translateText } from "@/components/common/translateText";
+import { useEffect, useState } from "react";
 
 type TimelineMilestoneSummaryCardProps = {
   pregnancyWeek?: number;
@@ -18,6 +21,8 @@ export default function TimelineMilestoneSummaryCard({
   pregnancyWeek,
   daysLeft,
 }: TimelineMilestoneSummaryCardProps) {
+  const { language, t } = useLanguage();
+
   const safeWeek = Math.max(1, Math.min(pregnancyWeek ?? 1, 41));
 
   const weekData =
@@ -26,13 +31,70 @@ export default function TimelineMilestoneSummaryCard({
   const trimesterInfo = TRIMESTER_RANGES[weekData.trimester - 1];
 
   const mainDevelopment =
-    weekData.developments?.[0] ?? "Your baby is continuing to develop.";
+    weekData.developments?.[0] ?? t.pregnancy.timeline.fallbackDevelopment;
+
+  const [translatedTrimesterLabel, setTranslatedTrimesterLabel] = useState(
+    trimesterInfo.label
+  );
+  const [translatedWeekTitle, setTranslatedWeekTitle] = useState(
+    weekData.title
+  );
+  const [translatedMainDevelopment, setTranslatedMainDevelopment] =
+    useState(mainDevelopment);
+  const [translatedSizeComparison, setTranslatedSizeComparison] = useState(
+    weekData.sizeComparison
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    const translateDynamicTimelineData = async () => {
+      if (language === "en") {
+        setTranslatedTrimesterLabel(trimesterInfo.label);
+        setTranslatedWeekTitle(weekData.title);
+        setTranslatedMainDevelopment(mainDevelopment);
+        setTranslatedSizeComparison(weekData.sizeComparison);
+        return;
+      }
+
+      const [
+        nextTrimesterLabel,
+        nextWeekTitle,
+        nextMainDevelopment,
+        nextSizeComparison,
+      ] = await Promise.all([
+        translateText(trimesterInfo.label, language),
+        translateText(weekData.title, language),
+        translateText(mainDevelopment, language),
+        translateText(weekData.sizeComparison, language),
+      ]);
+
+      if (!active) return;
+
+      setTranslatedTrimesterLabel(nextTrimesterLabel);
+      setTranslatedWeekTitle(nextWeekTitle);
+      setTranslatedMainDevelopment(nextMainDevelopment);
+      setTranslatedSizeComparison(nextSizeComparison);
+    };
+
+    void translateDynamicTimelineData();
+
+    return () => {
+      active = false;
+    };
+  }, [
+    language,
+    trimesterInfo.label,
+    weekData.title,
+    weekData.sizeComparison,
+    mainDevelopment,
+  ]);
 
   return (
     <Card className="overflow-hidden border-[#d04f51]/20 bg-white shadow-sm">
-      <CardHeader className="">
+      <CardHeader>
         <CardTitle className="text-base font-semibold text-[#d04f51]">
-          Pregnancy Timeline & Milestones
+          {t.pregnancy.timeline.title}
         </CardTitle>
       </CardHeader>
 
@@ -42,7 +104,7 @@ export default function TimelineMilestoneSummaryCard({
             {weekData.image ? (
               <Image
                 src={weekData.image}
-                alt={`Week ${weekData.week} fetal development`}
+                alt={`${t.pregnancy.timeline.week} ${weekData.week}`}
                 fill
                 className="object-cover"
                 sizes="150px"
@@ -54,7 +116,7 @@ export default function TimelineMilestoneSummaryCard({
             )}
 
             <div className="absolute left-2 top-2 rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-[#d04f51] shadow-sm">
-              Week {weekData.week}
+              {t.pregnancy.timeline.week} {weekData.week}
             </div>
           </div>
 
@@ -64,15 +126,15 @@ export default function TimelineMilestoneSummaryCard({
                 className="mb-2 inline-flex rounded-full px-3 py-1 text-xs font-bold text-white"
                 style={{ backgroundColor: trimesterInfo.color }}
               >
-                {trimesterInfo.label}
+                {translatedTrimesterLabel}
               </div>
 
               <h3 className="text-md font-bold text-gray-900">
-                {weekData.title}
+                {translatedWeekTitle}
               </h3>
 
               <p className="text-xs text-gray-600">
-                {mainDevelopment}
+                {translatedMainDevelopment}
               </p>
             </div>
 
@@ -80,18 +142,20 @@ export default function TimelineMilestoneSummaryCard({
               <div className="rounded-xl border border-[#d04f51]/20 bg-[#d04f51]/5 p-3">
                 <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
                   <Ruler className="h-3.5 w-3.5 text-[#d04f51]" />
-                  Size
+                  {t.pregnancy.timeline.size}
                 </div>
+
                 <div className="text-xs font-semibold text-gray-900">
-                  {weekData.sizeComparison}
+                  {translatedSizeComparison}
                 </div>
               </div>
 
               <div className="rounded-xl border border-[#d04f51]/20 bg-[#d04f51]/5 p-3">
                 <div className="mb-1 flex items-center gap-1.5 text-xs text-gray-500">
                   <Weight className="h-3.5 w-3.5 text-[#d04f51]" />
-                  Weight
+                  {t.pregnancy.timeline.weight}
                 </div>
+
                 <div className="text-xs font-semibold text-gray-900">
                   {weekData.weightGrams
                     ? weekData.weightGrams >= 1000
@@ -103,7 +167,7 @@ export default function TimelineMilestoneSummaryCard({
             </div>
 
             <div className="rounded-xl bg-[#d04f51]/10 p-3 text-xs text-[#d04f51]">
-              Estimated days left:{" "}
+              {t.pregnancy.timeline.estimatedDaysLeft}:{" "}
               <span className="font-semibold">{daysLeft ?? "—"}</span>
             </div>
 
@@ -111,7 +175,7 @@ export default function TimelineMilestoneSummaryCard({
               href="/timeline-milestone"
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#d04f51] hover:underline"
             >
-              View full timeline
+              {t.pregnancy.timeline.viewFullTimeline}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>

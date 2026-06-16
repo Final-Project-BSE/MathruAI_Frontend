@@ -3,9 +3,14 @@ import React, { useRef, useEffect } from "react";
 interface DayRailProps {
   selectedDay: number;
   onSelectDay: (day: number) => void;
+  dayLabel?: string;
 }
 
-export default function DayRail({ selectedDay, onSelectDay }: DayRailProps) {
+export default function DayRail({
+  selectedDay,
+  onSelectDay,
+  dayLabel = "Day",
+}: DayRailProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -13,6 +18,7 @@ export default function DayRail({ selectedDay, onSelectDay }: DayRailProps) {
       const selectedEl = scrollRef.current.querySelector(
         `[data-day="${selectedDay}"]`
       );
+
       if (selectedEl) {
         selectedEl.scrollIntoView({
           behavior: "smooth",
@@ -34,6 +40,7 @@ export default function DayRail({ selectedDay, onSelectDay }: DayRailProps) {
       >
         {days.map((day) => {
           const isSelected = day === selectedDay;
+
           return (
             <button
               key={day}
@@ -45,9 +52,14 @@ export default function DayRail({ selectedDay, onSelectDay }: DayRailProps) {
                   : "bg-white/60 border-white text-gray-600 hover:bg-white hover:scale-105"
               }`}
             >
-              <span className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-pink-100' : 'text-gray-400'}`}>
-                Day
+              <span
+                className={`text-[10px] font-bold uppercase tracking-wider ${
+                  isSelected ? "text-pink-100" : "text-gray-400"
+                }`}
+              >
+                {dayLabel}
               </span>
+
               <span className="text-xl font-extrabold leading-tight">
                 {day}
               </span>

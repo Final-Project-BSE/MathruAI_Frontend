@@ -2,21 +2,36 @@
 
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
-import { signIn as signInAction } from "@/actions/auth";
+import {
+  signIn as signInAction,
+  forgetPasswordRequest,
+} from "@/actions/auth";
 
 const secretKey = process.env.JWT_SECRET || "secret123";
 const key = new TextEncoder().encode(secretKey);
 
-type User = {
+// type User = {
+//   email: string;
+//   token: string;
+//   roles: string[];
+// };
+
+// type Session = {
+//   user: User;
+//   expires: Date;
+//   createdAt: Date;
+// };
+
+export type User = {
   email: string;
   token: string;
   roles: string[];
 };
 
-type Session = {
+export type Session = {
   user: User;
-  expires: Date;
-  createdAt: Date;
+  expires: string;
+  createdAt: string;
 };
 
 async function encrypt(payload: Session): Promise<string> {
@@ -85,9 +100,11 @@ export async function login(data: {
       ? new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) // 7 days
       : new Date(Date.now() + 1000 * 60 * 60 * 8); // 8 hours
 
-    const createdAt = new Date();
-    
-    const session: Session = { user, expires, createdAt };
+    const session: Session = {
+      user,
+      expires: expires.toISOString(),
+      createdAt: new Date().toISOString(),
+    };
     const sessionToken = await encrypt(session);
 
     const cookiesStore = await cookies();
@@ -124,9 +141,9 @@ export async function logout() {
 export async function getSession(): Promise<Session | null> {
   const cookiesStore = await cookies();
   const sessionCookie = cookiesStore.get("session-admin-getJob")?.value;
-  
+
   if (!sessionCookie) return null;
-  
+
   return await decrypt(sessionCookie);
 }
 
@@ -147,4 +164,32 @@ export async function hasRole(role: string): Promise<boolean> {
 export async function getUserRoles(): Promise<string[]> {
   const session = await getSession();
   return session?.user?.roles || [];
+}
+
+export async function forgotPassword(data: { email: string }) {
+  try {
+    const res = await forgetPasswordRequest(data.email);
+
+    if (res.status === "FAIL") {
+      return {
+        status: "FAIL" as const,
+        message: res.message || "Failed to send reset email",
+        data: null,
+      };
+    }
+
+    return {
+      status: "SUCCESS" as const,
+      message: res.message || "Password reset link sent to your email",
+      data: res.data ?? null,
+    };
+  } catch (error) {
+    console.error("Forgot password error:", error);
+
+    return {
+      status: "FAIL" as const,
+      message: "Something went wrong. Please try again later.",
+      data: null,
+    };
+  }
 }

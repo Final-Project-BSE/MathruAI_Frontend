@@ -12,12 +12,14 @@ import CycleTrackerDashboardCard from "./components/CycleTrackerDashboardCard";
 import AnnouncementDashboardCard from "./components/AnnouncementDashboardCard";
 import MidwifeConnectivityCard from "./components/MidwifeConnectivityCard";
 import { LoadingState } from "@/components/common/LoadingState";
+import { useLanguage } from "../../../../components/common/useLanguage";
 
 export default function ReproductivePage() {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [pageReady, setPageReady] = useState(false);
 
   const { stats } = useCycleStats();
+  const { t } = useLanguage();
 
   useEffect(() => {
     setPageReady(true);
@@ -28,15 +30,15 @@ export default function ReproductivePage() {
   }
 
   return (
-    <Container title="Reproductive Planning Dashboard">
+    <Container title={t.reproductive.dashboard.title}>
       <div className="bg-[#fed2cc] min-h-screen p-4 md:p-6">
         <TopBarFeatures />
 
         <DashboardTopBar
           info={{
-            title: "Reproductive Planning Dashboard",
-            subtitle: "Current Cycle Day",
-            ultsubtitle: "Your cycle is looking healthy!",
+            title: t.reproductive.dashboard.title,
+            subtitle: t.reproductive.dashboard.subtitle,
+            ultsubtitle: t.reproductive.dashboard.healthyMessage,
           }}
           stats={stats}
         />

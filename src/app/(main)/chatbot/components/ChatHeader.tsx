@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Baby, Heart } from "lucide-react";
+import { AlertCircle, Baby } from "lucide-react";
 
 interface ChatHeaderProps {
   isConnected: boolean;

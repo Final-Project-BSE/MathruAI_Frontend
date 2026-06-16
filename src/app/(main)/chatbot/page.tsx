@@ -1,12 +1,9 @@
 "use client";
 
-import Container from "@/components/shared/container";
-
 import ChatHeader from "./components/ChatHeader";
 import ChatMessages from "./components/ChatMessages";
 import ChatInput from "./components/ChatInput";
 import { useChatbotController } from "./components/useChatbotController";
-import { ChartContainer } from "@/components/ui/chart";
 import ChatContainer from "@/components/shared/ChatContainer";
 
 export default function ChatBotPage() {

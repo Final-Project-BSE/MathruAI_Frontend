@@ -3,6 +3,8 @@
 import type { ConnectionRequestResponseDto } from "../../api/user-assign/types";
 import Modal from "./Modal";
 import StatusBadge from "./StatusBadge";
+import type { AssignmentTranslations } from "./assignmentLang";
+import { getStatusLabel } from "./assignmentLang";
 import { cn, formatDateTime } from "./utils";
 
 type Props = {
@@ -15,6 +17,7 @@ type Props = {
   onCancel?: (requestId: number) => void;
   actionLoadingId?: number | null;
   theme: "light" | "dark";
+  labels: AssignmentTranslations;
 };
 
 export default function RequestDetailsModal({
@@ -27,6 +30,7 @@ export default function RequestDetailsModal({
   onCancel,
   actionLoadingId,
   theme,
+  labels,
 }: Props) {
   if (!request) return null;
 
@@ -44,7 +48,13 @@ export default function RequestDetailsModal({
   const isLoading = actionLoadingId === request.id;
 
   return (
-    <Modal open={open} title="Request Details" onClose={onClose} theme={theme}>
+    <Modal
+      open={open}
+      title={labels.requests.requestDetails}
+      onClose={onClose}
+      theme={theme}
+      closeLabel={labels.common.close}
+    >
       <div
         className={cn(
           "rounded-lg border p-4",
@@ -68,7 +78,10 @@ export default function RequestDetailsModal({
             </p>
           </div>
 
-          <StatusBadge status={request.status} />
+          <StatusBadge
+            status={request.status}
+            label={getStatusLabel(request.status, labels)}
+          />
         </div>
 
         <div
@@ -79,33 +92,33 @@ export default function RequestDetailsModal({
         >
           <p>
             <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
-              Method:
+              {labels.common.method}:
             </span>{" "}
             {request.method}
           </p>
           <p>
             <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
-              Matched Area:
+              {labels.requests.matchedArea}:
             </span>{" "}
-            {request.matchedArea || "-"}
+            {request.matchedArea || labels.common.unavailable}
           </p>
           <p>
             <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
-              Created:
+              {labels.common.created}:
             </span>{" "}
             {formatDateTime(request.createdAt)}
           </p>
           <p>
             <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
-              Responded:
+              {labels.common.responded}:
             </span>{" "}
             {formatDateTime(request.respondedAt)}
           </p>
           <p className="md:col-span-2">
             <span className={cn("font-medium", isLightTheme ? "text-gray-900" : "text-white")}>
-              Message:
+              {labels.common.message}:
             </span>{" "}
-            {request.message || "-"}
+            {request.message || labels.common.unavailable}
           </p>
         </div>
 
@@ -117,7 +130,7 @@ export default function RequestDetailsModal({
               disabled={isLoading}
               className="rounded-lg bg-emerald-600 px-4 py-2 text-xs text-white hover:bg-emerald-500 disabled:opacity-50"
             >
-              Approve
+              {labels.common.approve}
             </button>
             <button
               type="button"
@@ -125,7 +138,7 @@ export default function RequestDetailsModal({
               disabled={isLoading}
               className="rounded-lg bg-red-600 px-4 py-2 text-xs text-white hover:bg-red-500 disabled:opacity-50"
             >
-              Reject
+              {labels.common.reject}
             </button>
           </div>
         ) : null}
@@ -138,7 +151,7 @@ export default function RequestDetailsModal({
               disabled={isLoading}
               className="rounded-lg bg-red-600 px-4 py-2 text-xs text-white hover:bg-red-500 disabled:opacity-50"
             >
-              Cancel Request
+              {labels.requests.cancelRequest}
             </button>
           </div>
         ) : null}

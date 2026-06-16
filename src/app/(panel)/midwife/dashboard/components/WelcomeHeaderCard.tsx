@@ -8,7 +8,7 @@ import { MapPinned } from "lucide-react";
 
 import Modal from "../../../../(connection)/components/Modal";
 import RegisteredUsersMapPage from "../../../../(connection)/components/midwife-map/RegisteredUsersMapPage";
-import MidwifeAnnouncementPage from "../../../../(panel)/midwife/announcements/page";
+import MidwifeAnnouncementPanel from "../../../../(panel)/midwife/announcements/components/MidwifeAnnouncementPanel";
 
 import { getcuruser } from "../../../../api/user/api";
 import type { UserResponseDto } from "../../../../api/user/types";
@@ -149,7 +149,7 @@ export default function WelcomeHeaderCard({ userId, token, roles }: Props) {
         theme="dark"
       >
         <div className="max-h-[80vh]">
-          <MidwifeAnnouncementPage token={token} />
+          <MidwifeAnnouncementPanel token={token} />
         </div>
       </Modal>
     </>

@@ -1,4 +1,3 @@
-import { ChatInterface } from '@/components/ChatInterface'
 import ReproductivePage from './reproductive/page';
 import Container from '@/components/shared/container';
 

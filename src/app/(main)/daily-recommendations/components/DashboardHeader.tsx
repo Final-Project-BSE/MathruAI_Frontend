@@ -1,6 +1,5 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import React from "react";
+import { useLanguage } from "@/components/common/useLanguage";
 
 interface DashboardHeaderProps {
   userName: string;
@@ -13,15 +12,19 @@ interface DashboardHeaderProps {
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   userName,
   pregnancyWeek,
-  onRefresh,
-  onLogout,
-  loading,
 }) => {
+  const { t } = useLanguage();
+  const labels = t.dailyRecommendation;
+
   return (
     <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
       <div>
-        <h1 className="text-3xl font-bold">Check Today's Recommendation, {userName}!</h1>
-        <p className="text-gray-600 mt-1">Week {pregnancyWeek} of your pregnancy journey</p>
+        <h1 className="text-3xl font-bold">
+          {labels.headerTitle(userName)}
+        </h1>
+        <p className="text-gray-600 mt-1">
+          {labels.pregnancyJourney(pregnancyWeek)}
+        </p>
       </div>
 
       {/* <div className="flex flex-wrap gap-2">

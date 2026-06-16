@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Container from "@/components/shared/container";
 import { UpdateDataPopup } from "@/components/update-data-popup";
 import TopBarFeatures from "@/components/common/TopBarFeatures";
@@ -11,21 +11,48 @@ import MidwifeConnectivityCard from "../reproductive/components/MidwifeConnectiv
 import AnnouncementDashboardCard from "../reproductive/components/AnnouncementDashboardCard";
 import DashboardFeatures from "../reproductive/components/DashboardFeatures";
 import RecoveryTrackingDashboardCard from "./components/RecoveryTrackingDashboardCard";
+import { useLanguage } from "@/components/common/useLanguage";
+import { translateText } from "@/components/common/translateText";
 
 export default function PostpartumPage() {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [translatedError, setTranslatedError] = useState("");
 
   const { loading, error, stats } = usePregnancyStats();
+  const { language, t } = useLanguage();
+
+  useEffect(() => {
+    let active = true;
+
+    const translateError = async () => {
+      if (!error || language === "en") {
+        setTranslatedError(error ?? "");
+        return;
+      }
+
+      const translated = await translateText(error, language);
+
+      if (active) {
+        setTranslatedError(translated);
+      }
+    };
+
+    void translateError();
+
+    return () => {
+      active = false;
+    };
+  }, [error, language]);
 
   return (
-    <Container title="Postpartum Dashboard">
+    <Container title={t.postpartum.page.title}>
       <div className="min-h-screen bg-[#fed2cc] p-4 md:p-6">
         <TopBarFeatures />
 
         <DashboardTopBar
           info={{
-            title: "Postpartum Dashboard",
-            subtitle: "Track your recovery progress",
+            title: t.postpartum.page.title,
+            subtitle: t.postpartum.page.subtitle,
             ultsubtitle: "",
           }}
           stats={stats}
@@ -33,13 +60,13 @@ export default function PostpartumPage() {
 
         {loading && (
           <div className="mb-4 rounded-lg border border-[#d04f51]/20 bg-white p-3 text-sm text-[#d04f51]">
-            Loading postpartum data...
+            {t.postpartum.page.loading}
           </div>
         )}
 
         {error && (
           <div className="mb-4 rounded-lg border border-[#d04f51]/20 bg-[#d04f51]/10 p-3 text-sm text-[#d04f51]">
-            {error}
+            {translatedError || error}
           </div>
         )}
 

@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
   ClipboardList,
   Loader2,
-  RefreshCw,
   X,
   FileText,
 } from "lucide-react";
@@ -74,20 +73,17 @@ export default function RecoveryTrackingCard({
   const [currentPage, setCurrentPage] = useState(1);
 
   const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  async function loadRecoveryRecords(options?: { silent?: boolean }) {
-    if (!token || !patientId) return;
+  const loadRecoveryRecords = useCallback(async () => {
+    if (!token || !patientId) {
+      setLoading(false);
+      return;
+    }
 
     try {
+      setLoading(true);
       setError("");
-
-      if (options?.silent) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
 
       const data = await recoveryTrackingApi.getAllRecordsForPatient(
         token,
@@ -104,13 +100,12 @@ export default function RecoveryTrackingCard({
       setRecords([]);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
-  }
+  }, [token, patientId]);
 
   useEffect(() => {
     void loadRecoveryRecords();
-  }, [token, patientId]);
+  }, [loadRecoveryRecords]);
 
   const recordByDay = useMemo(() => getRecordMap(records), [records]);
 
@@ -304,7 +299,7 @@ export default function RecoveryTrackingCard({
             </div>
           </div>
 
-          {isPopupOpen && (
+          {isPopupOpen ? (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
               <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg border border-white/10 bg-zinc-950 p-5 shadow-2xl">
                 <div className="mb-3 flex items-start justify-between gap-4">
@@ -327,7 +322,7 @@ export default function RecoveryTrackingCard({
                   </button>
                 </div>
 
-                {!selectedCategory && !showNotes && (
+                {!selectedCategory && !showNotes ? (
                   <>
                     <div className="mb-4 flex items-center justify-between gap-3">
                       <h4 className="text-sm font-semibold text-white">
@@ -394,9 +389,9 @@ export default function RecoveryTrackingCard({
                       })}
                     </div>
                   </>
-                )}
+                ) : null}
 
-                {selectedCategory && (
+                {selectedCategory ? (
                   <>
                     <div className="mb-4 flex items-center justify-between gap-3">
                       <div>
@@ -449,9 +444,9 @@ export default function RecoveryTrackingCard({
                       })}
                     </div>
                   </>
-                )}
+                ) : null}
 
-                {showNotes && (
+                {showNotes ? (
                   <>
                     <div className="mb-4 flex items-center justify-between gap-3">
                       <h4 className="text-sm font-semibold text-white">
@@ -474,10 +469,10 @@ export default function RecoveryTrackingCard({
                       </p>
                     </div>
                   </>
-                )}
+                ) : null}
               </div>
             </div>
-          )}
+          ) : null}
         </>
       )}
     </section>

@@ -15,6 +15,7 @@ import {
   type FertilityResponseDto,
 } from "../../api/cycletracker/api";
 import TopBarFeatures from "@/components/common/TopBarFeatures";
+import { useLanguage } from "@/components/common/useLanguage";
 
 function formatDateForApi(date: Date): string {
   const year = date.getFullYear();
@@ -23,14 +24,17 @@ function formatDateForApi(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-// ✅ FIX 1: Parse "YYYY-MM-DD" as LOCAL date — avoids UTC timezone offset bug
 function parseLocalDate(dateStr?: string | null): Date | null {
   if (!dateStr) return null;
+
   const [year, month, day] = dateStr.split("-").map(Number);
+
+  if (!year || !month || !day) return null;
+
   return new Date(year, month - 1, day);
 }
 
-export function buildCalendarDays(params: {
+function buildCalendarDays(params: {
   year: number;
   month: number;
   lastPeriodDate: string;
@@ -69,7 +73,6 @@ export function buildCalendarDays(params: {
   const addDays = (date: Date, n: number) =>
     new Date(date.getTime() + n * 86400000);
 
-  // ✅ FIX 1 applied: all backend date strings parsed as local dates
   const safeStartDate1 = parseLocalDate(safeStart1);
   const safeEndDate1 = parseLocalDate(safeEnd1);
   const safeStartDate2 = parseLocalDate(safeStart2);
@@ -95,12 +98,13 @@ export function buildCalendarDays(params: {
       ovulationDateObj &&
       currentDate.toDateString() === ovulationDateObj.toDateString();
 
-    // ✅ FIX 1 applied: now compares local dates correctly
     const isSafe =
-      (safeStartDate1 && safeEndDate1 &&
+      (safeStartDate1 &&
+        safeEndDate1 &&
         currentDate >= safeStartDate1 &&
         currentDate <= safeEndDate1) ||
-      (safeStartDate2 && safeEndDate2 &&
+      (safeStartDate2 &&
+        safeEndDate2 &&
         currentDate >= safeStartDate2 &&
         currentDate <= safeEndDate2);
 
@@ -109,10 +113,10 @@ export function buildCalendarDays(params: {
     days.push({
       date: i,
       isPeriod,
-      isFertile: !!isFertile,
-      isOvulation: !!isOvulation,
+      isFertile: Boolean(isFertile),
+      isOvulation: Boolean(isOvulation),
       isToday,
-      isSafe: !!isSafe,
+      isSafe: Boolean(isSafe),
     });
   }
 
@@ -120,6 +124,9 @@ export function buildCalendarDays(params: {
 }
 
 export default function CycleTrackerPage() {
+  const { language, t } = useLanguage();
+  const cycleText = t.cycleTracker;
+
   const [token, setToken] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -129,19 +136,19 @@ export default function CycleTrackerPage() {
 
   const [lastPeriodDate, setLastPeriodDate] = useState("");
   const [cycleLength, setCycleLength] = useState(28);
-  const [fertilityData, setFertilityData] = useState<FertilityResponseDto | null>(null);
+  const [fertilityData, setFertilityData] =
+    useState<FertilityResponseDto | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [calendarDays, setCalendarDays] = useState<CycleDay[]>([]);
 
-  // Load saved data from localStorage
   useEffect(() => {
     const savedLast = localStorage.getItem("ct_lastPeriodDate");
     const savedLen = localStorage.getItem("ct_cycleLength");
+
     if (savedLast) setLastPeriodDate(savedLast);
     if (savedLen) setCycleLength(Number(savedLen));
   }, []);
 
-  // Authentication + load latest fertility data
   useEffect(() => {
     const initialize = async () => {
       try {
@@ -160,25 +167,27 @@ export default function CycleTrackerPage() {
             setCycleLength(latest.averageCycleLength);
 
             localStorage.setItem("ct_lastPeriodDate", latest.lastPeriodDate);
-            localStorage.setItem("ct_cycleLength", String(latest.averageCycleLength));
+            localStorage.setItem(
+              "ct_cycleLength",
+              String(latest.averageCycleLength)
+            );
           }
         } else {
-          setError("Please log in to access the cycle tracker.");
+          setError(cycleText.authLoginMessage);
           setIsAuthenticated(false);
         }
       } catch {
-        setError("Authentication error. Please log in again.");
+        setError(cycleText.authErrorMessage);
         setIsAuthenticated(false);
       } finally {
         setLoadingData(false);
       }
     };
-    initialize();
-  }, []);
 
-  // Build calendar days
+    void initialize();
+  }, [cycleText.authErrorMessage, cycleText.authLoginMessage]);
+
   useEffect(() => {
-    if (!lastPeriodDate && !fertilityData) return;
     if (!lastPeriodDate) return;
 
     const year = currentMonth.getFullYear();
@@ -202,23 +211,64 @@ export default function CycleTrackerPage() {
   }, [lastPeriodDate, cycleLength, currentMonth, fertilityData]);
 
   const stats = useMemo(() => {
-    if (!fertilityData)
-      return { currentDay: 0, cycleLength, nextPeriod: 0, fertile: 0 };
+    if (!fertilityData) {
+      return {
+        currentDay: 0,
+        cycleLength,
+        nextPeriod: 0,
+        fertile: 0,
+      };
+    }
+
     return calcStats({ fertilityData, lastPeriodDate, cycleLength });
   }, [fertilityData, lastPeriodDate, cycleLength]);
 
-  const displayMonth = `${currentMonth.toLocaleString("default", {
-    month: "long",
-  })} ${currentMonth.getFullYear()}`;
+  const locale = useMemo(() => {
+    if (language === "si") return "si-LK";
+    if (language === "ta") return "ta-LK";
+    return "en-US";
+  }, [language]);
+
+  const displayMonth = useMemo(
+    () =>
+      `${currentMonth.toLocaleString(locale, {
+        month: "long",
+      })} ${currentMonth.getFullYear()}`,
+    [currentMonth, locale]
+  );
 
   const leadingEmptyDays = useMemo(
-    () => new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay(),
+    () =>
+      new Date(
+        currentMonth.getFullYear(),
+        currentMonth.getMonth(),
+        1
+      ).getDay(),
     [currentMonth]
   );
 
+  const formatDisplayDate = (value?: string | null) => {
+    const date = parseLocalDate(value);
+
+    if (!date) return cycleText.notAvailable;
+
+    return date.toLocaleDateString(locale, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
   async function handleCalculate() {
-    if (!lastPeriodDate) return setError("Please enter your last period date");
-    if (!token) return setError("Please log in to calculate fertility window");
+    if (!lastPeriodDate) {
+      setError(cycleText.enterLastPeriodDate);
+      return;
+    }
+
+    if (!token) {
+      setError(cycleText.loginToCalculate);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -235,13 +285,16 @@ export default function CycleTrackerPage() {
       setCycleLength(data.averageCycleLength);
 
       localStorage.setItem("ct_lastPeriodDate", data.lastPeriodDate);
-      localStorage.setItem("ct_cycleLength", String(data.averageCycleLength));
+      localStorage.setItem(
+        "ct_cycleLength",
+        String(data.averageCycleLength)
+      );
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to calculate fertility window"
+        err instanceof Error ? err.message : cycleText.calculationFailed
       );
     } finally {
       setLoading(false);
@@ -252,19 +305,35 @@ export default function CycleTrackerPage() {
     setFertilityData(null);
     setLastPeriodDate("");
     setCalendarDays([]);
+    setError(null);
+    setSuccess(false);
+
     localStorage.removeItem("ct_lastPeriodDate");
     localStorage.removeItem("ct_cycleLength");
   }
 
   if (loadingData) return <LoadingState />;
-  if (!isAuthenticated) return <AuthRequired message={error || "Please log in"} />;
+
+  if (!isAuthenticated) {
+    return (
+      <AuthRequired
+        title={cycleText.authRequiredTitle}
+        message={error || cycleText.authRequiredDefaultMessage}
+        defaultMessage={cycleText.authRequiredDefaultMessage}
+      />
+    );
+  }
 
   return (
-    <Container title="Cycle Tracker">
+    <Container title={cycleText.pageTitle}>
       <div className="min-h-screen bg-[#fed2cc] p-6">
         <TopBarFeatures />
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Cycle Tracker</h1>
-        <p className="text-gray-700 mb-6">Track your cycle and fertility window</p>
+
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          {cycleText.pageTitle}
+        </h1>
+
+        <p className="text-gray-700 mb-6">{cycleText.pageSubtitle}</p>
 
         {!fertilityData && (
           <CalculatorCard
@@ -277,12 +346,32 @@ export default function CycleTrackerPage() {
             error={error}
             success={success}
             maxDate={formatDateForApi(new Date())}
+            labels={{
+              title: cycleText.calculatorTitle,
+              lastPeriodStartDate: cycleText.lastPeriodStartDate,
+              averageCycleLength: cycleText.averageCycleLength,
+              calculateButton: cycleText.calculateButton,
+              calculatingButton: cycleText.calculatingButton,
+              calculatedSuccess: cycleText.calculatedSuccess,
+            }}
           />
         )}
 
         {fertilityData && (
           <>
-            <StatsGrid stats={stats} />
+            <StatsGrid
+              stats={stats}
+              labels={{
+                currentDay: cycleText.currentDay,
+                periodOfCycle: cycleText.periodOfCycle,
+                cycleLength: cycleText.cycleLength,
+                average: cycleText.average,
+                nextPeriod: cycleText.nextPeriod,
+                daysLeft: cycleText.daysLeft,
+                fertileDays: cycleText.fertileDays,
+                remaining: cycleText.remaining,
+              }}
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
@@ -292,19 +381,49 @@ export default function CycleTrackerPage() {
                   days={calendarDays}
                   onPrevMonth={() =>
                     setCurrentMonth(
-                      new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1)
+                      new Date(
+                        currentMonth.getFullYear(),
+                        currentMonth.getMonth() - 1
+                      )
                     )
                   }
                   onNextMonth={() =>
                     setCurrentMonth(
-                      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1)
+                      new Date(
+                        currentMonth.getFullYear(),
+                        currentMonth.getMonth() + 1
+                      )
                     )
                   }
                   onRecalculate={handleRecalculate}
+                  labels={{
+                    calendar: cycleText.calendar,
+                    recalculate: cycleText.recalculate,
+                    weekdays: cycleText.weekdays,
+                    period: cycleText.period,
+                    fertileWindow: cycleText.fertileWindow,
+                    ovulation: cycleText.ovulation,
+                    today: cycleText.today,
+                  }}
                 />
               </div>
 
-              <CycleInsights fertilityData={fertilityData} />
+              <CycleInsights
+                fertilityData={fertilityData}
+                formatDate={formatDisplayDate}
+                labels={{
+                  cycleInsights: cycleText.cycleInsights,
+                  ovulationTitle: cycleText.ovulationTitle,
+                  expectedOn: cycleText.expectedOn,
+                  fertileWindowTitle: cycleText.fertileWindowTitle,
+                  nextPeriodTitle: cycleText.nextPeriodTitle,
+                  expectedAround: cycleText.expectedAround,
+                  safeDaysTitle: cycleText.safeDaysTitle,
+                  pregnancyTestTitle: cycleText.pregnancyTestTitle,
+                  bestToTestAfter: cycleText.bestToTestAfter,
+                  notAvailable: cycleText.notAvailable,
+                }}
+              />
             </div>
           </>
         )}

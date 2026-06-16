@@ -11,6 +11,7 @@ type Props = {
   disabled?: boolean;
   onChange: (value: string) => void;
   theme?: "light" | "dark";
+  noResultsLabel?: string;
 };
 
 export default function SearchableSelect({
@@ -21,6 +22,7 @@ export default function SearchableSelect({
   disabled,
   onChange,
   theme = "dark",
+  noResultsLabel = "No matching results",
 }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(value);
@@ -119,7 +121,7 @@ export default function SearchableSelect({
                 isLightTheme ? "text-gray-500" : "text-gray-400"
               )}
             >
-              No matching results
+              {noResultsLabel}
             </div>
           )}
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Container from "@/components/shared/container";
 import TopBarFeatures from "@/components/common/TopBarFeatures";
 import { LoadingState } from "@/components/common/LoadingState";
@@ -14,21 +14,65 @@ import MilestoneCard from "@/components/timeline-milestone/MilestoneCard";
 import GrowthStats from "@/components/timeline-milestone/GrowthStats";
 import WeekSearch from "@/components/timeline-milestone/WeekSearch";
 import { usePregnancyStats } from "@/hooks/usePregnancyStatus";
+import { useLanguage } from "@/components/common/useLanguage";
+import { translateText } from "@/components/common/translateText";
 
 export default function TimelineMilestonePage() {
   const { loading, error, stats } = usePregnancyStats();
+  const { language } = useLanguage();
 
   const [selectedWeek, setSelectedWeek] = useState(1);
   const [animKey, setAnimKey] = useState(0);
+
+  const [labels, setLabels] = useState({
+    containerTitle: "Timeline-Milestone",
+    title: "Fetal Development Timeline",
+    subtitle: "Track your baby's growth week by week",
+    translatedError: "",
+  });
+
+  const previousPregnancyWeekRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!stats?.pregnancyWeek) return;
 
     const currentWeek = Math.max(1, Math.min(stats.pregnancyWeek, 41));
 
+    if (previousPregnancyWeekRef.current === currentWeek) return;
+
+    previousPregnancyWeekRef.current = currentWeek;
     setSelectedWeek(currentWeek);
     setAnimKey((k) => k + 1);
   }, [stats?.pregnancyWeek]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadTranslations() {
+      const [containerTitle, title, subtitle, translatedError] =
+        await Promise.all([
+          translateText("Timeline-Milestone", language),
+          translateText("Fetal Development Timeline", language),
+          translateText("Track your baby's growth week by week", language),
+          error ? translateText(error, language) : Promise.resolve(""),
+        ]);
+
+      if (!active) return;
+
+      setLabels({
+        containerTitle,
+        title,
+        subtitle,
+        translatedError,
+      });
+    }
+
+    void loadTranslations();
+
+    return () => {
+      active = false;
+    };
+  }, [language, error]);
 
   const weekData =
     FETAL_DATA.find((d) => d.week === selectedWeek) ?? FETAL_DATA[0];
@@ -52,7 +96,7 @@ export default function TimelineMilestonePage() {
 
   if (loading) {
     return (
-      <Container title="Timeline-Milestone">
+      <Container title={labels.containerTitle}>
         <div className="min-h-screen bg-[#fcd4cd]">
           <LoadingState />
         </div>
@@ -61,7 +105,7 @@ export default function TimelineMilestonePage() {
   }
 
   return (
-    <Container title="Timeline-Milestone">
+    <Container title={labels.containerTitle}>
       <style jsx global>{`
         @keyframes fadeSlideUp {
           from {
@@ -92,17 +136,16 @@ export default function TimelineMilestonePage() {
           <div className="mb-6 flex items-center justify-between">
             <div>
               <h1 className="text-xl font-extrabold text-gray-900 md:text-2xl">
-                Fetal Development Timeline
+                {labels.title}
               </h1>
-              <p className="text-sm text-gray-500">
-                Track your baby&apos;s growth week by week
-              </p>
+
+              <p className="text-sm text-gray-500">{labels.subtitle}</p>
             </div>
           </div>
 
           {error && (
             <div className="mb-4 rounded-lg border border-[#d04f51]/20 bg-[#d04f51]/10 p-3 text-sm text-[#d04f51]">
-              {error}
+              {labels.translatedError || error}
             </div>
           )}
 

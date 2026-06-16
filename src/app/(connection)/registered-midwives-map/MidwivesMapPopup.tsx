@@ -6,6 +6,7 @@ import { getSession } from "@/lib/authentication";
 import { getcuruser } from "@/app/api/user/api";
 import type { Role } from "@/app/api/user-assign/types";
 import RegisteredUsersMapPage from "@/app/(connection)/components/midwife-map/RegisteredUsersMapPage";
+import { useLanguage } from "@/components/common/useLanguage";
 
 type Props = {
   open: boolean;
@@ -32,6 +33,9 @@ function toRoles(input: string[]): Role[] {
 }
 
 export default function MidwivesMapPopup({ open, onClose }: Props) {
+  const { t } = useLanguage();
+  const labels = t.assignment;
+
   const [userId, setUserId] = useState<number | null>(null);
   const [token, setToken] = useState("");
   const [roles, setRoles] = useState<Role[]>([]);
@@ -53,7 +57,7 @@ export default function MidwivesMapPopup({ open, onClose }: Props) {
         const sessionRoles = session?.user?.roles || [];
 
         if (!jwt) {
-          throw new Error("You are not authenticated. Please sign in again.");
+          throw new Error(labels.messages.notAuthenticated);
         }
 
         const validRoles = toRoles(sessionRoles);
@@ -63,7 +67,7 @@ export default function MidwivesMapPopup({ open, onClose }: Props) {
         );
 
         if (!isMotherSide) {
-          throw new Error("You do not have permission to view this map.");
+          throw new Error(labels.messages.noPermissionMap);
         }
 
         const currentUser = await getcuruser(jwt);
@@ -83,7 +87,7 @@ export default function MidwivesMapPopup({ open, onClose }: Props) {
           setError(
             err instanceof Error
               ? err.message
-              : "Failed to load midwives map."
+              : labels.messages.failedLoadMapData
           );
         }
       } finally {
@@ -96,7 +100,7 @@ export default function MidwivesMapPopup({ open, onClose }: Props) {
     return () => {
       active = false;
     };
-  }, [open]);
+  }, [open, labels.messages]);
 
   if (!open) return null;
 
@@ -110,9 +114,11 @@ export default function MidwivesMapPopup({ open, onClose }: Props) {
             </div>
 
             <div>
-              <h2 className="text-lg font-bold">Registered Midwives Map</h2>
+              <h2 className="text-lg font-bold">
+                {labels.map.registeredMidwivesMap}
+              </h2>
               <p className="text-sm text-white/90">
-                View nearby registered midwives
+                {labels.map.nearbyRegisteredMidwives}
               </p>
             </div>
           </div>
@@ -121,7 +127,7 @@ export default function MidwivesMapPopup({ open, onClose }: Props) {
             type="button"
             onClick={onClose}
             className="rounded-full p-2 text-white transition hover:bg-white/20"
-            aria-label="Close midwives map popup"
+            aria-label={labels.common.close}
           >
             <X className="h-5 w-5" />
           </button>
@@ -131,7 +137,7 @@ export default function MidwivesMapPopup({ open, onClose }: Props) {
           {loading ? (
             <div className="flex min-h-[650px] items-center justify-center text-[#d04f51]">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Loading midwives map...
+              {labels.map.loadingMidwivesMap}
             </div>
           ) : error ? (
             <div className="flex min-h-[650px] items-center justify-center rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -140,15 +146,17 @@ export default function MidwivesMapPopup({ open, onClose }: Props) {
           ) : userId !== null && token ? (
             <div className="min-h-[650px] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
               <RegisteredUsersMapPage
+                key={`midwives-map-popup-${userId}-${roles.join("-")}`}
                 userId={userId}
                 token={token}
                 roles={roles}
                 mode="patient-midwives"
+                showTopBar={false}
               />
             </div>
           ) : (
             <div className="flex min-h-[650px] items-center justify-center rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              Unable to load midwives map.
+              {labels.map.unableToLoadMap}
             </div>
           )}
         </div>

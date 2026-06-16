@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { getcuruser } from "@/app/api/user/api";
 import type { UserResponseDto } from "@/app/api/user/types";
+import { useLanguage } from "../../../../../components/common/useLanguage";
 
 type CycleStats = {
   currentDay: number;
@@ -24,6 +26,7 @@ type DashboardTopBarProps = {
 
 function DashboardTopBar({ info, stats }: DashboardTopBarProps) {
   const [me, setMe] = useState<UserResponseDto | null>(null);
+  const { t } = useLanguage();
 
   const topbannerImageUrl = "/images/reproductive/repro1.png";
 
@@ -43,40 +46,45 @@ function DashboardTopBar({ info, stats }: DashboardTopBarProps) {
       }
     };
 
-    loadMe();
+    void loadMe();
   }, []);
 
   const fullname = useMemo(() => {
     if (!me) return "—";
-    return me.firstName;
+    return me.firstName || "—";
   }, [me]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
 
-    if (hour >= 5 && hour < 12) return "Good Morning";
-    if (hour >= 12 && hour < 17) return "Good Afternoon";
-    if (hour >= 17 && hour < 21) return "Good Evening";
-    return "Good Night";
-  }, []);
+    if (hour >= 5 && hour < 12) return t.dashboard.goodMorning;
+    if (hour >= 12 && hour < 17) return t.dashboard.goodAfternoon;
+    if (hour >= 17 && hour < 21) return t.dashboard.goodEvening;
+    return t.dashboard.goodNight;
+  }, [
+    t.dashboard.goodMorning,
+    t.dashboard.goodAfternoon,
+    t.dashboard.goodEvening,
+    t.dashboard.goodNight,
+  ]);
 
   return (
     <div className="relative mb-6 min-h-[170px] overflow-hidden rounded-lg bg-gradient-to-r from-[#fab0a7] to-[#d04f51] p-4 text-white md:min-h-[190px] md:p-6">
-      <img
-        src={topbannerImageUrl}
-        alt="Banner"
-        className="
-          pointer-events-none absolute right-0 top-0 h-full
-          w-[180px] select-none object-cover opacity-90
-          md:w-[240px] lg:w-[300px]
-        "
-      />
+      <div className="pointer-events-none absolute right-0 top-0 h-full w-[180px] select-none md:w-[240px] lg:w-[300px]">
+        <Image
+          src={topbannerImageUrl}
+          alt="Banner"
+          fill
+          className="object-cover opacity-90"
+          sizes="(max-width: 768px) 180px, (max-width: 1024px) 240px, 300px"
+          priority
+        />
+      </div>
 
       <div className="relative z-10">
         <h1 className="mb-1 text-xl font-bold md:text-2xl">
           {greeting}, {fullname}
         </h1>
-        <div className="text-sm opacity-90">Patient ID: RP-2025-001</div>
       </div>
 
       <div
@@ -105,9 +113,9 @@ function DashboardTopBar({ info, stats }: DashboardTopBarProps) {
 
           <div className="flex flex-col text-center text-[11px] opacity-95">
             <div>
-              Next period in{" "}
+              {t.reproductive.dashboard.nextPeriodIn}{" "}
               <span className="font-semibold text-white">
-                {stats?.nextPeriod ?? "—"} days
+                {stats?.nextPeriod ?? "—"} {t.dashboard.days}
               </span>
             </div>
           </div>

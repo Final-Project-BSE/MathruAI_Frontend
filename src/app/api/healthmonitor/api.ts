@@ -4,6 +4,7 @@ import type {
   PredictionResult,
   HealthMonitoringResponseDto,
   HealthMonitoringUpsertRequestDto,
+  VitalsState,
 } from "./types";
 
 const API_BASE_URL =
@@ -32,19 +33,33 @@ export type VitalsPayload = {
   MentalHealth: number;
 };
 
+type ApiErrorResponse = {
+  error?: string;
+  message?: string;
+};
+
+type AlternativeAdviceItem =
+  | string
+  | {
+      advice: string;
+      confidence: number;
+    };
+
+type PatientProfile = Record<string, unknown>;
+
 export type BackendPredictionRecord = {
   prediction_id?: string;
   id?: string;
   user_id: string;
-  vitals: any;
+  vitals: Partial<VitalsPayload>;
   prediction?: {
     risk_level?: string;
     risk_confidence?: number;
     risk_probabilities?: Record<string, number>;
     health_advice?: string;
     advice_confidence?: number;
-    alternative_advice?: Array<string | { advice: string; confidence: number }>;
-    patient_profile?: Record<string, any>;
+    alternative_advice?: AlternativeAdviceItem[];
+    patient_profile?: PatientProfile;
   };
   risk_assessment?: {
     risk_level: string;
@@ -54,26 +69,49 @@ export type BackendPredictionRecord = {
   health_guidance?: {
     primary_advice: string;
     advice_confidence: number;
-    alternative_recommendations: Array<
-      string | { advice: string; confidence: number }
-    >;
+    alternative_recommendations: AlternativeAdviceItem[];
   };
-  patient_profile?: Record<string, any>;
+  patient_profile?: PatientProfile;
   created_at?: string;
   updated_at?: string;
   updated_by_midwife_id?: string | number | null;
 };
 
+function toStringVital(value: number | undefined): string {
+  return value === undefined || value === null ? "" : String(value);
+}
+
+function toNumberFlag(value: number | undefined): number {
+  return Number(value ?? 0);
+}
+
+function normalizeVitals(vitals: Partial<VitalsPayload> = {}): VitalsState {
+  return {
+    Age: toStringVital(vitals.Age),
+    SystolicBP: toStringVital(vitals.SystolicBP),
+    DiastolicBP: toStringVital(vitals.DiastolicBP),
+    BS: toStringVital(vitals.BS),
+    BodyTemp: toStringVital(vitals.BodyTemp),
+    BMI: toStringVital(vitals.BMI),
+    HeartRate: toStringVital(vitals.HeartRate),
+    PreviousComplications: toNumberFlag(vitals.PreviousComplications),
+    PreexistingDiabetes: toNumberFlag(vitals.PreexistingDiabetes),
+    GestationalDiabetes: toNumberFlag(vitals.GestationalDiabetes),
+    MentalHealth: toNumberFlag(vitals.MentalHealth),
+  };
+}
+
 export function normalizePrediction(
   record: BackendPredictionRecord
 ): PredictionResult {
   const predId = record.prediction_id || record.id || "";
+  const vitals = normalizeVitals(record.vitals);
 
   if (record.risk_assessment && record.health_guidance) {
     return {
       prediction_id: predId,
       user_id: record.user_id,
-      vitals: record.vitals,
+      vitals,
       risk_assessment: record.risk_assessment,
       health_guidance: {
         primary_advice: record.health_guidance.primary_advice,
@@ -90,7 +128,7 @@ export function normalizePrediction(
   return {
     prediction_id: predId,
     user_id: record.user_id,
-    vitals: record.vitals,
+    vitals,
     risk_assessment: {
       risk_level: record.prediction?.risk_level || "",
       confidence: record.prediction?.risk_confidence ?? 0,
@@ -102,7 +140,7 @@ export function normalizePrediction(
       alternative_recommendations: Array.isArray(
         record.prediction?.alternative_advice
       )
-        ? record.prediction!.alternative_advice.map((item) =>
+        ? record.prediction.alternative_advice.map((item) =>
             typeof item === "string" ? item : item.advice
           )
         : [],
@@ -112,11 +150,7 @@ export function normalizePrediction(
 }
 
 function normalizeAlternativeAdvice(
-  alternativeAdvice: BackendPredictionRecord["prediction"] extends infer P
-    ? P extends { alternative_advice?: infer A }
-      ? A
-      : never
-    : never
+  alternativeAdvice: AlternativeAdviceItem[] | undefined
 ) {
   if (!Array.isArray(alternativeAdvice)) return [];
 
@@ -129,8 +163,8 @@ function normalizeAlternativeAdvice(
     }
 
     return {
-      advice: item?.advice || "",
-      confidence: Number(item?.confidence ?? 0),
+      advice: item.advice || "",
+      confidence: Number(item.confidence ?? 0),
     };
   });
 }
@@ -171,11 +205,12 @@ export function normalizeHealthMonitoringRecord(
         typeof item === "string"
           ? { advice: item, confidence: 0 }
           : {
-              advice: item?.advice || "",
-              confidence: Number(item?.confidence ?? 0),
+              advice: item.advice || "",
+              confidence: Number(item.confidence ?? 0),
             }
       )
     : [];
+
   const patientProfile =
     prediction.patient_profile || record.patient_profile || {};
 
@@ -226,8 +261,10 @@ const apis = {
 
       return null;
     } catch (err) {
-      const axiosErr = err as AxiosError<any>;
+      const axiosErr = err as AxiosError<ApiErrorResponse>;
+
       if (axiosErr.response?.status === 404) return null;
+
       throw err;
     }
   },
@@ -244,6 +281,7 @@ const apis = {
     if (res.data?.status !== "success" || !res.data.data) {
       throw new Error(res.data?.error || "Prediction failed");
     }
+
     return normalizePrediction(res.data.data);
   },
 
@@ -263,6 +301,7 @@ const apis = {
     if (res.data?.status !== "success" || !res.data.data) {
       throw new Error(res.data?.error || "Prediction update failed");
     }
+
     return normalizePrediction(res.data.data);
   },
 
@@ -300,7 +339,8 @@ export const healthMonitoringApis = {
 
       return null;
     } catch (err) {
-      const axiosErr = err as AxiosError<any>;
+      const axiosErr = err as AxiosError<ApiErrorResponse>;
+
       if (axiosErr.response?.status === 404) return null;
 
       throw new Error(
@@ -336,7 +376,8 @@ export const healthMonitoringApis = {
 
       return normalizeHealthMonitoringRecord(res.data.data);
     } catch (err) {
-      const axiosErr = err as AxiosError<any>;
+      const axiosErr = err as AxiosError<ApiErrorResponse>;
+
       throw new Error(
         axiosErr.response?.data?.error ||
           axiosErr.response?.data?.message ||
@@ -373,7 +414,8 @@ export const healthMonitoringApis = {
 
       return normalizeHealthMonitoringRecord(res.data.data);
     } catch (err) {
-      const axiosErr = err as AxiosError<any>;
+      const axiosErr = err as AxiosError<ApiErrorResponse>;
+
       throw new Error(
         axiosErr.response?.data?.error ||
           axiosErr.response?.data?.message ||
@@ -406,7 +448,8 @@ export const healthMonitoringApis = {
         );
       }
     } catch (err) {
-      const axiosErr = err as AxiosError<any>;
+      const axiosErr = err as AxiosError<ApiErrorResponse>;
+
       throw new Error(
         axiosErr.response?.data?.error ||
           axiosErr.response?.data?.message ||

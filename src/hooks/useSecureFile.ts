@@ -1,6 +1,18 @@
 import { useState, useEffect } from 'react';
 import healthRecordsApi from '@/app/api/health-records/api';
 
+function toError(err: unknown): Error {
+    if (err instanceof Error) {
+        return err;
+    }
+
+    if (typeof err === 'string') {
+        return new Error(err);
+    }
+
+    return new Error('Failed to load secure file');
+}
+
 export function useSecureFile(fileUrl: string | undefined | null) {
     const [objectUrl, setObjectUrl] = useState<string | null>(() => {
         // If it's already a base64 or object URL, just return it immediately
@@ -46,10 +58,13 @@ export function useSecureFile(fileUrl: string | undefined | null) {
                     // Prevent memory leak if unmounted before fetch completes
                     URL.revokeObjectURL(url);
                 }
-            } catch (err: any) {
-                console.error("Failed to load secure file:", err);
+            } catch (err: unknown) {
+                const error = toError(err);
+
+                console.error("Failed to load secure file:", error);
+
                 if (isSubscribed) {
-                    setError(err);
+                    setError(error);
                     setObjectUrl(null);
                 }
             } finally {
@@ -61,9 +76,9 @@ export function useSecureFile(fileUrl: string | undefined | null) {
 
         return () => {
             isSubscribed = false;
-            // We do NOT revoke the URL here immediately because other components 
-            // might still be rendering it (e.g. lightbox, lists). 
-            // In a strict app, we might want to reference count, but keeping 
+            // We do NOT revoke the URL here immediately because other components
+            // might still be rendering it (e.g. lightbox, lists).
+            // In a strict app, we might want to reference count, but keeping
             // the object URL alive for the session is usually fine for small amounts of files.
         };
     }, [fileUrl]);

@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import profileApi from "@/app/api/profile/api";
 import type { ProfileResponse } from "@/app/api/profile/types";
+import { useLanguage } from "@/components/common/useLanguage";
+import { translateText } from "@/components/common/translateText";
 
 const ProfileLocationPickerMap = dynamic(
   () => import("./ProfileLocationPickerMap"),
@@ -18,6 +20,8 @@ interface Props {
 }
 
 const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
+  const { language, t } = useLanguage();
+
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -40,6 +44,8 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
     text: string;
   } | null>(null);
 
+  const translatedMessage = useTranslatedText(message?.text || "", language);
+
   useEffect(() => {
     if (!profile) return;
 
@@ -53,10 +59,8 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
       area: profile.area || "",
       district: profile.district || "",
       mohArea: profile.mohArea || "",
-      latitude:
-        typeof profile.latitude === "number" ? profile.latitude : "",
-      longitude:
-        typeof profile.longitude === "number" ? profile.longitude : "",
+      latitude: typeof profile.latitude === "number" ? profile.latitude : "",
+      longitude: typeof profile.longitude === "number" ? profile.longitude : "",
     });
   }, [profile]);
 
@@ -66,7 +70,7 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
 
     try {
       if (!navigator.geolocation) {
-        throw new Error("Geolocation is not supported by this browser.");
+        throw new Error(t.profile.personalInfo.geolocationNotSupported);
       }
 
       const coords = await new Promise<{ latitude: number; longitude: number }>(
@@ -79,7 +83,11 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
               });
             },
             (error) => {
-              reject(new Error(error.message || "Failed to get current location."));
+              reject(
+                new Error(
+                  error.message || t.profile.personalInfo.failedToGetCurrentLocation
+                )
+              );
             },
             {
               enableHighAccuracy: true,
@@ -98,12 +106,15 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
 
       setMessage({
         type: "success",
-        text: "Current location loaded successfully.",
+        text: t.profile.personalInfo.currentLocationLoaded,
       });
     } catch (err: unknown) {
       setMessage({
         type: "error",
-        text: err instanceof Error ? err.message : "Failed to get location.",
+        text:
+          err instanceof Error
+            ? err.message
+            : t.profile.personalInfo.failedToGetCurrentLocation,
       });
     } finally {
       setLocating(false);
@@ -119,7 +130,7 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
 
     setMessage({
       type: "success",
-      text: "Location selected from map.",
+      text: t.profile.personalInfo.locationSelectedFromMap,
     });
   };
 
@@ -139,35 +150,42 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
         area: form.area || undefined,
         district: form.district || undefined,
         mohArea: form.mohArea || undefined,
-        latitude:
-          form.latitude === "" ? undefined : Number(form.latitude),
-        longitude:
-          form.longitude === "" ? undefined : Number(form.longitude),
+        latitude: form.latitude === "" ? undefined : Number(form.latitude),
+        longitude: form.longitude === "" ? undefined : Number(form.longitude),
       });
 
-      setMessage({ type: "success", text: "Profile updated successfully!" });
+      setMessage({
+        type: "success",
+        text: t.profile.personalInfo.profileUpdated,
+      });
+
       onUpdate();
     } catch (err: unknown) {
       setMessage({
         type: "error",
-        text: err instanceof Error ? err.message : "Failed to update profile.",
+        text:
+          err instanceof Error
+            ? err.message
+            : t.profile.personalInfo.failedToUpdateProfile,
       });
     } finally {
       setLoading(false);
     }
   };
 
+  const labels = useMemo(() => t.profile.personalInfo, [t.profile.personalInfo]);
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
       <h2 className="text-lg font-semibold text-gray-800 mb-5">
-        Personal Info
+        {labels.title}
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs font-medium text-gray-500 mb-1 block">
-              First Name
+              {labels.firstName}
             </label>
             <input
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
@@ -178,7 +196,7 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
 
           <div>
             <label className="text-xs font-medium text-gray-500 mb-1 block">
-              Last Name
+              {labels.lastName}
             </label>
             <input
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
@@ -190,7 +208,7 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
 
         <div>
           <label className="text-xs font-medium text-gray-500 mb-1 block">
-            Phone Number
+            {labels.phoneNumber}
           </label>
           <input
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
@@ -201,7 +219,7 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
 
         <div>
           <label className="text-xs font-medium text-gray-500 mb-1 block">
-            Date of Birth
+            {labels.dateOfBirth}
           </label>
           <input
             type="date"
@@ -213,7 +231,7 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
 
         <div>
           <label className="text-xs font-medium text-gray-500 mb-1 block">
-            National ID Number
+            {labels.nationalIdNumber}
           </label>
           <input
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
@@ -226,7 +244,7 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
 
         <div>
           <label className="text-xs font-medium text-gray-500 mb-1 block">
-            Address
+            {labels.address}
           </label>
           <textarea
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 min-h-[90px]"
@@ -238,7 +256,7 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <label className="text-xs font-medium text-gray-500 mb-1 block">
-              Area
+              {labels.area}
             </label>
             <input
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
@@ -249,7 +267,7 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
 
           <div>
             <label className="text-xs font-medium text-gray-500 mb-1 block">
-              District
+              {labels.district}
             </label>
             <input
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
@@ -260,7 +278,7 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
 
           <div>
             <label className="text-xs font-medium text-gray-500 mb-1 block">
-              MOH Area
+              {labels.mohArea}
             </label>
             <input
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-300"
@@ -273,10 +291,10 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
         <div className="rounded-xl border border-gray-200 p-4 space-y-4">
           <div>
             <h3 className="text-sm font-semibold text-gray-800">
-              Location on Map
+              {labels.locationOnMap}
             </h3>
             <p className="text-xs text-gray-500 mt-1">
-              Click on the map to choose your location, or use your current device location.
+              {labels.locationHelp}
             </p>
           </div>
 
@@ -287,7 +305,7 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
               disabled={locating}
               className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
             >
-              {locating ? "Getting Location..." : "Use My Current Location"}
+              {locating ? labels.gettingLocation : labels.useCurrentLocation}
             </button>
 
             <button
@@ -295,14 +313,14 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
               onClick={() => setShowMapPicker((prev) => !prev)}
               className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
-              {showMapPicker ? "Hide Map Picker" : "Pick on Map"}
+              {showMapPicker ? labels.hideMapPicker : labels.pickOnMap}
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-medium text-gray-500 mb-1 block">
-                Latitude
+                {labels.latitude}
               </label>
               <input
                 type="number"
@@ -317,7 +335,7 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
 
             <div>
               <label className="text-xs font-medium text-gray-500 mb-1 block">
-                Longitude
+                {labels.longitude}
               </label>
               <input
                 type="number"
@@ -333,12 +351,8 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
 
           {showMapPicker ? (
             <ProfileLocationPickerMap
-              latitude={
-                form.latitude === "" ? undefined : Number(form.latitude)
-              }
-              longitude={
-                form.longitude === "" ? undefined : Number(form.longitude)
-              }
+              latitude={form.latitude === "" ? undefined : Number(form.latitude)}
+              longitude={form.longitude === "" ? undefined : Number(form.longitude)}
               onPick={handleMapPick}
             />
           ) : null}
@@ -350,7 +364,7 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
               message.type === "success" ? "text-green-500" : "text-red-500"
             }`}
           >
-            {message.text}
+            {translatedMessage || message.text}
           </p>
         )}
 
@@ -359,11 +373,45 @@ const PersonalInfoCard = ({ profile, token, userId, onUpdate }: Props) => {
           disabled={loading}
           className="w-full bg-[#D04F51] hover:bg-[#BA4547] text-white font-semibold py-2 rounded-lg text-sm transition disabled:opacity-60"
         >
-          {loading ? "Saving..." : "Save Changes"}
+          {loading ? labels.saving : labels.saveChanges}
         </button>
       </form>
     </div>
   );
 };
+
+function useTranslatedText(text: string, language: "en" | "si" | "ta") {
+  const [translated, setTranslated] = useState(text);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      if (!text) {
+        setTranslated("");
+        return;
+      }
+
+      if (language === "en") {
+        setTranslated(text);
+        return;
+      }
+
+      const result = await translateText(text, language);
+
+      if (!cancelled) {
+        setTranslated(result);
+      }
+    };
+
+    void run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [text, language]);
+
+  return translated;
+}
 
 export default PersonalInfoCard;

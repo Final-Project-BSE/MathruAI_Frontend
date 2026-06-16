@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, Plus, Trash2, Pencil, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/components/common/useLanguage';
+import { translateText } from '@/components/common/translateText';
 import type {
   BreastfeedingIssueResponseDto,
   BreastfeedingIssueRequestDto,
@@ -16,32 +18,90 @@ interface IssueTrackerCardProps {
   onRefresh: () => void;
 }
 
-const ISSUE_LABELS: Record<string, string> = {
-  PAIN: '🔴 Pain',
-  LATCH_PROBLEM: '🟠 Latch Problem',
-  LOW_SUPPLY: '🟡 Low Supply',
-  ENGORGEMENT: '🟣 Engorgement',
-  MASTITIS: '⚫ Mastitis',
-  OTHER: '🔵 Other',
+const SEVERITY_COLORS: Record<string, { bg: string; border: string; text: string }> = {
+  MILD: { bg: '#f0fdf4', border: '#bbf7d0', text: '#15803d' },
+  MODERATE: { bg: '#fffbeb', border: '#fde68a', text: '#b45309' },
+  SEVERE: { bg: '#fff5f5', border: '#f3c7c8', text: '#d04f51' },
 };
 
-const SEVERITY_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  MILD:     { bg: '#f0fdf4', border: '#bbf7d0', text: '#15803d' },
-  MODERATE: { bg: '#fffbeb', border: '#fde68a', text: '#b45309' },
-  SEVERE:   { bg: '#fff5f5', border: '#f3c7c8', text: '#d04f51' },
-};
+const LOCALE_BY_LANGUAGE = {
+  en: 'en-US',
+  si: 'si-LK',
+  ta: 'ta-LK',
+} as const;
 
 const IssueTrackerCard: React.FC<IssueTrackerCardProps> = ({
   issues,
   token,
   onRefresh,
 }) => {
+  const { language, t } = useLanguage();
+  const locale = LOCALE_BY_LANGUAGE[language];
+
   const [showModal, setShowModal] = useState(false);
   const [editingIssue, setEditingIssue] =
     useState<BreastfeedingIssueResponseDto | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'ALL' | 'UNRESOLVED' | 'RESOLVED'>('ALL');
+  const [translatedIssueText, setTranslatedIssueText] = useState<Record<string, string>>({});
+
+  const dynamicTextItems = useMemo(
+    () =>
+      issues.flatMap((issue) => {
+        const items: { id: string; value: string }[] = [];
+
+        if (issue.description?.trim()) {
+          items.push({
+            id: `${issue.id}:description`,
+            value: issue.description.trim(),
+          });
+        }
+
+        if (issue.midwifeNotes?.trim()) {
+          items.push({
+            id: `${issue.id}:midwifeNotes`,
+            value: issue.midwifeNotes.trim(),
+          });
+        }
+
+        return items;
+      }),
+    [issues]
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    const translateDynamicText = async () => {
+      if (language === 'en' || dynamicTextItems.length === 0) {
+        setTranslatedIssueText({});
+        return;
+      }
+
+      const entries = await Promise.all(
+        dynamicTextItems.map(async (item) => [
+          item.id,
+          await translateText(item.value, language),
+        ] as const)
+      );
+
+      if (active) {
+        setTranslatedIssueText(Object.fromEntries(entries));
+      }
+    };
+
+    translateDynamicText();
+
+    return () => {
+      active = false;
+    };
+  }, [language, dynamicTextItems]);
+
+  const getTranslatedText = (id: string, fallback?: string | null) => {
+    if (!fallback) return '';
+    return translatedIssueText[id] || fallback;
+  };
 
   const handleDelete = async (id: string) => {
     if (!token) return;
@@ -50,7 +110,7 @@ const IssueTrackerCard: React.FC<IssueTrackerCardProps> = ({
       await breastfeedingApi.deleteIssue(token, id);
       onRefresh();
     } catch {
-      setError('Failed to delete issue. Please try again.');
+      setError(t.breastfeeding.issues.failedDelete);
     } finally {
       setDeletingId(null);
     }
@@ -70,7 +130,7 @@ const IssueTrackerCard: React.FC<IssueTrackerCardProps> = ({
       await breastfeedingApi.updateIssue(token, issue.id, payload);
       onRefresh();
     } catch {
-      setError('Failed to update issue. Please try again.');
+      setError(t.breastfeeding.issues.failedUpdate);
     }
   };
 
@@ -97,15 +157,16 @@ const IssueTrackerCard: React.FC<IssueTrackerCardProps> = ({
 
   return (
     <div>
-      {/* Header */}
       <div className="mb-5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <AlertCircle className="h-5 w-5 text-[#d04f51]" />
           <h2 className="text-lg font-semibold text-[#d04f51]">
-            Issue Tracker
+            {t.breastfeeding.issues.title}
           </h2>
           <span className="rounded-full border border-[#f3c7c8] bg-[#fff5f5] px-2.5 py-0.5 text-xs font-semibold text-[#d04f51]">
-            {issues.filter((i) => !i.resolved).length} unresolved
+            {t.breastfeeding.issues.unresolvedCount(
+              issues.filter((i) => !i.resolved).length
+            )}
           </span>
         </div>
 
@@ -114,24 +175,23 @@ const IssueTrackerCard: React.FC<IssueTrackerCardProps> = ({
           className="flex items-center gap-2 rounded-xl bg-[#d04f51] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b94345] shadow-[0_10px_25px_rgba(208,79,81,0.28)]"
         >
           <Plus className="h-4 w-4" />
-          Report Issue
+          {t.breastfeeding.issues.reportIssue}
         </Button>
       </div>
 
-      {/* Error */}
       {error && (
         <div className="mb-4 flex items-center justify-between rounded-2xl border border-[#f3c7c8] bg-[#fff5f5] px-4 py-3 text-sm text-[#7a2d2f]">
           <span>{error}</span>
           <button
             onClick={() => setError(null)}
             className="text-xl text-[#d04f51] hover:opacity-70"
+            aria-label="Close"
           >
             ×
           </button>
         </div>
       )}
 
-      {/* Filter Tabs */}
       <div className="mb-5 inline-flex w-full rounded-2xl border border-[#f3d6d7] bg-[#fffafa] p-1">
         {(['ALL', 'UNRESOLVED', 'RESOLVED'] as const).map((f) => (
           <button
@@ -146,28 +206,26 @@ const IssueTrackerCard: React.FC<IssueTrackerCardProps> = ({
             ].join(' ')}
           >
             {f === 'ALL'
-              ? 'All'
+              ? t.breastfeeding.issues.all
               : f === 'UNRESOLVED'
-              ? 'Unresolved'
-              : 'Resolved'}
+              ? t.breastfeeding.issues.unresolved
+              : t.breastfeeding.issues.resolved}
           </button>
         ))}
       </div>
 
-      {/* Empty State */}
       {filteredIssues.length === 0 ? (
         <div className="flex min-h-[200px] flex-col items-center justify-center rounded-2xl border border-dashed border-[#f3c7c8] bg-[#fff5f5] p-8 text-center">
           <AlertCircle className="mb-3 h-12 w-12 text-[#d04f51] opacity-40" />
           <p className="text-sm font-semibold text-[#5f3a3b]">
             {filter === 'ALL'
-              ? 'No issues reported yet'
+              ? t.breastfeeding.issues.noIssuesTitle
               : filter === 'UNRESOLVED'
-              ? 'No unresolved issues 🎉'
-              : 'No resolved issues yet'}
+              ? t.breastfeeding.issues.noUnresolvedTitle
+              : t.breastfeeding.issues.noResolvedTitle}
           </p>
           <p className="mt-1 text-xs text-[#8a4b4c]">
-            {filter === 'ALL' &&
-              'Tap "Report Issue" to log a breastfeeding concern'}
+            {filter === 'ALL' && t.breastfeeding.issues.noIssuesDescription}
           </p>
         </div>
       ) : (
@@ -189,11 +247,10 @@ const IssueTrackerCard: React.FC<IssueTrackerCardProps> = ({
                     : 'border-[#f1d2d3] bg-white hover:border-[#d04f51]',
                 ].join(' ')}
               >
-                {/* Top Row */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex flex-col gap-1.5">
                     <span className="text-sm font-semibold text-[#5f3a3b]">
-                      {ISSUE_LABELS[issue.issueType] || issue.issueType}
+                      {t.breastfeeding.labels.issueTypes[issue.issueType] || issue.issueType}
                     </span>
 
                     <span
@@ -204,22 +261,21 @@ const IssueTrackerCard: React.FC<IssueTrackerCardProps> = ({
                         color: severityStyle.text,
                       }}
                     >
-                      {issue.severity}
+                      {t.breastfeeding.labels.severity[issue.severity] || issue.severity}
                     </span>
                   </div>
 
-                  {/* Actions */}
                   <div className="flex shrink-0 items-center gap-2">
                     {issue.resolved ? (
                       <span className="flex items-center gap-1 rounded-full border border-[#bbf7d0] bg-[#f0fdf4] px-2.5 py-1 text-xs font-semibold text-green-700">
                         <CheckCircle2 className="h-3 w-3" />
-                        Resolved
+                        {t.breastfeeding.issues.resolved}
                       </span>
                     ) : (
                       <button
                         onClick={() => handleMarkResolved(issue)}
                         className="rounded-lg p-1.5 text-[#8a4b4c] transition-colors hover:bg-[#f0fdf4] hover:text-green-700"
-                        title="Mark as resolved"
+                        title={t.breastfeeding.issues.markResolvedTitle}
                       >
                         <CheckCircle2 className="h-4 w-4" />
                       </button>
@@ -228,6 +284,7 @@ const IssueTrackerCard: React.FC<IssueTrackerCardProps> = ({
                     <button
                       onClick={() => handleEdit(issue)}
                       className="rounded-lg p-1.5 text-[#8a4b4c] transition-colors hover:bg-[#fff5f5] hover:text-[#d04f51]"
+                      aria-label="Edit"
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
@@ -236,33 +293,31 @@ const IssueTrackerCard: React.FC<IssueTrackerCardProps> = ({
                       onClick={() => handleDelete(issue.id)}
                       disabled={deletingId === issue.id}
                       className="rounded-lg p-1.5 text-[#8a4b4c] transition-colors hover:bg-[#fff5f5] hover:text-red-600"
+                      aria-label="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
 
-                {/* Description */}
                 <p className="mt-3 text-sm leading-relaxed text-[#5f3a3b]">
-                  {issue.description}
+                  {getTranslatedText(`${issue.id}:description`, issue.description)}
                 </p>
 
-                {/* Midwife Notes */}
                 {issue.midwifeNotes && (
                   <div className="mt-3 rounded-xl border border-[#f3d6d7] bg-[#fffafa] p-3">
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[#7a4a4b]">
-                      Midwife Notes
+                    <p className="mb-1 text-xs font-semibold text-[#d04f51]">
+                      {t.breastfeeding.issues.midwifeNotes}
                     </p>
                     <p className="text-sm leading-relaxed text-[#5f3a3b]">
-                      {issue.midwifeNotes}
+                      {getTranslatedText(`${issue.id}:midwifeNotes`, issue.midwifeNotes)}
                     </p>
                   </div>
                 )}
 
-                {/* Date */}
                 <p className="mt-3 text-xs text-[#8a4b4c]">
-                  Reported:{' '}
-                  {reportedDate.toLocaleDateString('en-US', {
+                  {t.breastfeeding.issues.reported}:{' '}
+                  {reportedDate.toLocaleDateString(locale, {
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric',
@@ -274,7 +329,6 @@ const IssueTrackerCard: React.FC<IssueTrackerCardProps> = ({
         </div>
       )}
 
-      {/* Modal */}
       {showModal && (
         <IssueFormModal
           token={token}

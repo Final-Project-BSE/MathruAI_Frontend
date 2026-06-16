@@ -3,10 +3,8 @@ import { getSession } from "@/lib/authentication";
 import { getcuruser } from "../../../api/user/api";
 import type { Role } from "../../../api/user-assign/types";
 
-import Navbar from "../components/Navbar";
 import TopBar from "./components/TopBar";
 import WelcomeHeaderCard from "./components/WelcomeHeaderCard";
-import DashboardFeatures from "./components/DashboardFeatures";
 import ManagementCards from "./components/ManagementCard";
 
 const VALID_ROLES: Role[] = [
@@ -53,7 +51,6 @@ export default async function MidwifeDashboardPage() {
 
       <TopBar />
       <ManagementCards token={token} midwifeId={Number(currentUser.id)} />
-      <DashboardFeatures />
     </div>
   );
 }

@@ -19,15 +19,17 @@ type Props = {
   onViewAll?: () => void;
 };
 
-function formatRecentTime(dateOfBirth?: string) {
+function formatRecentTime(dateOfBirth?: string | null) {
   if (!dateOfBirth) return "No date";
   return dateOfBirth;
 }
 
 function getPatientStatus(user: UserResponseDto) {
   if (user.roles.includes("PREGNANT_MOTHER")) return "Pregnancy Active";
-  if (user.roles.includes("POST_PREGNANT_MOTHER")) return "Post Pregnancy Follow-up";
-  if (user.roles.includes("HOPE_TO_PREGNANT_MOTHER")) return "Pre-Pregnancy Care";
+  if (user.roles.includes("POST_PREGNANT_MOTHER"))
+    return "Post Pregnancy Follow-up";
+  if (user.roles.includes("HOPE_TO_PREGNANT_MOTHER"))
+    return "Pre-Pregnancy Care";
   return "Under Care";
 }
 
@@ -57,7 +59,10 @@ export default function PatientsConsoleCard({
         setLoading(true);
         setError("");
 
-        const data = await assignmentApi.getAssignedUsersForMidwife(userId, token);
+        const data = await assignmentApi.getAssignedUsersForMidwife(
+          userId,
+          token
+        );
 
         if (!active) return;
         setPatients(data);
@@ -80,11 +85,15 @@ export default function PatientsConsoleCard({
   const totalPatients = patients.length;
 
   const liveCount = useMemo(() => {
-    return patients.filter((user) => user.roles.includes("PREGNANT_MOTHER")).length;
+    return patients.filter((user) =>
+      user.roles.includes("PREGNANT_MOTHER")
+    ).length;
   }, [patients]);
 
   const postPregnancyCount = useMemo(() => {
-    return patients.filter((user) => user.roles.includes("POST_PREGNANT_MOTHER")).length;
+    return patients.filter((user) =>
+      user.roles.includes("POST_PREGNANT_MOTHER")
+    ).length;
   }, [patients]);
 
   const hopeCount = useMemo(() => {
@@ -98,7 +107,9 @@ export default function PatientsConsoleCard({
   }, [patients]);
 
   const liveWidth = totalPatients ? (liveCount / totalPatients) * 100 : 0;
-  const postWidth = totalPatients ? (postPregnancyCount / totalPatients) * 100 : 0;
+  const postWidth = totalPatients
+    ? (postPregnancyCount / totalPatients) * 100
+    : 0;
   const hopeWidth = totalPatients ? (hopeCount / totalPatients) * 100 : 0;
 
   return (
@@ -141,7 +152,8 @@ export default function PatientsConsoleCard({
               </div>
 
               <p className="mt-2 max-w-xl text-[11px] leading-6 text-white/50 sm:text-[12px]">
-                Monitor assigned mothers, care progress, and recent updates from one focused view.
+                Monitor assigned mothers, care progress, and recent updates from
+                one focused view.
               </p>
 
               <div className="mt-4 flex items-end gap-3">
@@ -245,10 +257,16 @@ export default function PatientsConsoleCard({
                         <ProtectedImage
                           src={patient.profileImageUrl}
                           token={token}
-                          alt={`${patient.firstName ?? ""} ${patient.lastName ?? ""}`.trim() || "Mother"}
+                          alt={
+                            `${patient.firstName ?? ""} ${
+                              patient.lastName ?? ""
+                            }`.trim() || "Mother"
+                          }
                           fallback={
                             <div className="flex h-full w-full items-center justify-center bg-white/10 text-xs font-semibold text-white/70">
-                              {`${patient.firstName?.[0] ?? ""}${patient.lastName?.[0] ?? ""}`.toUpperCase() || "M"}
+                              {`${patient.firstName?.[0] ?? ""}${
+                                patient.lastName?.[0] ?? ""
+                              }`.toUpperCase() || "M"}
                             </div>
                           }
                           loadingFallback={
@@ -263,13 +281,16 @@ export default function PatientsConsoleCard({
                           <p className="truncate text-[12px] font-medium text-white/80">
                             {patient.firstName} {patient.lastName}
                           </p>
+
                           <p className="shrink-0 text-[10px] text-white/40">
                             {formatRecentTime(patient.dateOfBirth)}
                           </p>
                         </div>
 
                         <div className="mt-1 flex items-center gap-2 text-[11px] text-white/50">
-                          <span className="truncate">{getPatientStatus(patient)}</span>
+                          <span className="truncate">
+                            {getPatientStatus(patient)}
+                          </span>
                           <span className="h-1 w-1 rounded-full bg-white/25" />
                           <span>{getAreaLabel(patient)}</span>
                         </div>

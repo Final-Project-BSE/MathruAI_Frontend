@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  CheckCircle2,
   ChevronRight,
   Loader2,
   NotebookPen,
@@ -12,13 +11,12 @@ import {
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  RECOVERY_DATA,
-  TaskCategory,
-} from "@/components/recovery-tracking/recovery-data";
+import { RECOVERY_DATA } from "@/components/recovery-tracking/recovery-data";
 import recoveryTrackingApi from "@/app/api/recovery-tracking/api";
 import { getcuruser } from "@/app/api/user/api";
 import { getSession } from "@/lib/authentication";
+import { useLanguage } from "@/components/common/useLanguage";
+import { translateText } from "@/components/common/translateText";
 
 export default function RecoveryTrackingDashboardCard() {
   const [completedTaskIds, setCompletedTaskIds] = useState<Set<string>>(
@@ -27,6 +25,9 @@ export default function RecoveryTrackingDashboardCard() {
   const [latestDay, setLatestDay] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [translatedError, setTranslatedError] = useState("");
+
+  const { language, t } = useLanguage();
 
   const currentData = useMemo(() => {
     return RECOVERY_DATA.find((d) => d.day === latestDay) || RECOVERY_DATA[0];
@@ -45,35 +46,6 @@ export default function RecoveryTrackingDashboardCard() {
       ? Math.round((completedRegular / regularTasks.length) * 100)
       : 0;
 
-  const topCategories = useMemo(() => {
-    const categories: TaskCategory[] = [
-      "physical",
-      "nutrition",
-      "baby",
-      "mental",
-      "medical",
-    ];
-
-    return categories
-      .map((category) => {
-        const tasks = currentData.tasks.filter(
-          (task) => task.category === category
-        );
-
-        const completed = tasks.filter((task) =>
-          completedTaskIds.has(task.id)
-        ).length;
-
-        return {
-          category,
-          completed,
-          total: tasks.length,
-        };
-      })
-      .filter((item) => item.total > 0)
-      .slice(0, 3);
-  }, [currentData, completedTaskIds]);
-
   useEffect(() => {
     async function loadRecoveryProgress() {
       try {
@@ -84,7 +56,7 @@ export default function RecoveryTrackingDashboardCard() {
         const token = session?.user?.token;
 
         if (!token) {
-          setError("Please log in to view recovery tracking.");
+          setError(t.postpartum.recovery.loginRequired);
           return;
         }
 
@@ -92,7 +64,7 @@ export default function RecoveryTrackingDashboardCard() {
         const userId = me?.id;
 
         if (!userId) {
-          setError("Unable to identify patient account.");
+          setError(t.postpartum.recovery.identifyFailed);
           return;
         }
 
@@ -118,16 +90,44 @@ export default function RecoveryTrackingDashboardCard() {
         }
 
         setCompletedTaskIds(initialTasks);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("Failed to load recovery summary:", err);
-        setError("Failed to load recovery tracking.");
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : t.postpartum.recovery.failed
+        );
       } finally {
         setLoading(false);
       }
     }
 
-    loadRecoveryProgress();
-  }, []);
+    void loadRecoveryProgress();
+  }, [t]);
+
+  useEffect(() => {
+    let active = true;
+
+    const translateError = async () => {
+      if (!error || language === "en") {
+        setTranslatedError(error ?? "");
+        return;
+      }
+
+      const translated = await translateText(error, language);
+
+      if (active) {
+        setTranslatedError(translated);
+      }
+    };
+
+    void translateError();
+
+    return () => {
+      active = false;
+    };
+  }, [error, language]);
 
   return (
     <Card className="overflow-hidden rounded-2xl border-0 bg-white/95 shadow-md backdrop-blur">
@@ -135,7 +135,7 @@ export default function RecoveryTrackingDashboardCard() {
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-base text-black md:text-lg">
             <RotateCcw className="h-5 w-5 text-[#d04f51]" />
-            Recovery Tracking
+            {t.postpartum.recovery.title}
           </CardTitle>
 
           <Link href="/recovery-tracking">
@@ -143,7 +143,7 @@ export default function RecoveryTrackingDashboardCard() {
               size="sm"
               className="bg-[#d04f51] text-xs text-white hover:bg-[#d63c3e]"
             >
-              View Details
+              {t.dashboard.viewDetails}
               <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
           </Link>
@@ -154,26 +154,27 @@ export default function RecoveryTrackingDashboardCard() {
         {loading && (
           <div className="flex items-center justify-center py-10 text-[#d04f51]">
             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            Loading recovery progress...
+            {t.postpartum.recovery.loading}
           </div>
         )}
 
         {!loading && error && (
           <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-xs text-red-700">
-            {error}
+            {translatedError || error}
           </div>
         )}
 
         {!loading && !error && (
           <div className="space-y-4">
-            <div className="rounded-xl bg-pink-50 pl-4 pr-4 pt-1 pb-1">
+            <div className="rounded-xl bg-pink-50 pb-1 pl-4 pr-4 pt-1">
               <div className="mb-3 flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-gray-500">
-                    Current Recovery Day
+                    {t.postpartum.recovery.currentRecoveryDay}
                   </p>
+
                   <p className="text-xl font-bold text-[#d04f51]">
-                    Day {latestDay}
+                    {t.postpartum.recovery.day} {latestDay}
                   </p>
                 </div>
 
@@ -182,6 +183,7 @@ export default function RecoveryTrackingDashboardCard() {
                     className="absolute bottom-0 left-0 right-0 bg-[#d04f51] transition-all duration-500"
                     style={{ height: `${progressPercent}%` }}
                   />
+
                   <span className="relative z-10 text-sm font-bold text-[#d04f51]">
                     {progressPercent}%
                   </span>
@@ -196,8 +198,9 @@ export default function RecoveryTrackingDashboardCard() {
               </div>
 
               <p className="mt-3 text-xs font-medium text-gray-600">
-                Daily completion: {completedRegular} of {regularTasks.length}{" "}
-                tasks
+                {t.postpartum.recovery.dailyCompletion}: {completedRegular}{" "}
+                {t.postpartum.recovery.of} {regularTasks.length}{" "}
+                {t.postpartum.recovery.tasks}
               </p>
             </div>
 
@@ -209,11 +212,11 @@ export default function RecoveryTrackingDashboardCard() {
 
                 <div>
                   <p className="text-xs font-semibold text-gray-900">
-                    Keep your daily recovery notes updated
+                    {t.postpartum.recovery.notesTitle}
                   </p>
+
                   <p className="mt-1 text-xs text-gray-600">
-                    Track symptoms, physical recovery, nutrition, baby care,
-                    and mental wellbeing.
+                    {t.postpartum.recovery.notesDescription}
                   </p>
                 </div>
               </div>

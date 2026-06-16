@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
 const UpgradePregnancyStage = () => {
-  const [currentStage, setCurrentStage] = useState({
+  const [currentStage] = useState({
     week: 24,
     trimester: 'Second',
     babyLength: '12 inches',

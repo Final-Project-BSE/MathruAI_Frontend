@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { assignmentApi } from "../../../api/user-assign/api";
 import type {
   ConnectionRequestResponseDto,
@@ -8,10 +9,14 @@ import type {
   Role,
   UserResponseDto,
 } from "../../../api/user-assign/types";
-import GlobalUsersMap from "./GlobalUsersMap";
 import MapUserDetailsModal from "./MapUserDetailsModal";
 import TopBarFeatures from "@/components/common/TopBarFeatures";
 import { useAutoDismiss } from "../../../../components/common/useAutoDismiss";
+import { useLanguage } from "@/components/common/useLanguage";
+
+const GlobalUsersMap = dynamic(() => import("./GlobalUsersMap"), {
+  ssr: false,
+});
 
 type Mode = "patient-midwives" | "midwife-patients";
 type Status = "AVAILABLE" | "PENDING" | "ASSIGNED";
@@ -21,6 +26,7 @@ type Props = {
   token: string;
   roles: Role[];
   mode: Mode;
+  showTopBar?: boolean;
 };
 
 const MOTHER_ROLES: Role[] = [
@@ -42,18 +48,28 @@ export default function RegisteredUsersMapPage({
   token,
   roles,
   mode,
+  showTopBar = true,
 }: Props) {
+  const { t } = useLanguage();
+  const labels = t.assignment;
+
   const isMidwife = useMemo(() => hasMidwifeRole(roles), [roles]);
   const isMotherSide = useMemo(() => hasMotherRole(roles), [roles]);
 
   const [users, setUsers] = useState<MapUserResponseDto[]>([]);
-  const [sentRequests, setSentRequests] = useState<ConnectionRequestResponseDto[]>([]);
-  const [receivedRequests, setReceivedRequests] = useState<ConnectionRequestResponseDto[]>([]);
-  const [assignedMidwife, setAssignedMidwife] = useState<UserResponseDto | null>(null);
+  const [sentRequests, setSentRequests] = useState<
+    ConnectionRequestResponseDto[]
+  >([]);
+  const [receivedRequests, setReceivedRequests] = useState<
+    ConnectionRequestResponseDto[]
+  >([]);
+  const [assignedMidwife, setAssignedMidwife] =
+    useState<UserResponseDto | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [sendingUserId, setSendingUserId] = useState<number | null>(null);
-  const [selectedUser, setSelectedUser] = useState<MapUserResponseDto | null>(null);
+  const [selectedUser, setSelectedUser] =
+    useState<MapUserResponseDto | null>(null);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -61,7 +77,7 @@ export default function RegisteredUsersMapPage({
   const visibleError = useAutoDismiss(error, 5000);
   const visibleSuccess = useAutoDismiss(success, 5000);
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -78,10 +94,9 @@ export default function RegisteredUsersMapPage({
 
       if (isMotherSide) {
         try {
-          const myAssignedMidwife = await assignmentApi.getAssignedMidwifeForMother(
-            userId,
-            token
-          );
+          const myAssignedMidwife =
+            await assignmentApi.getAssignedMidwifeForMother(userId, token);
+
           setAssignedMidwife(myAssignedMidwife);
         } catch {
           setAssignedMidwife(null);
@@ -90,15 +105,19 @@ export default function RegisteredUsersMapPage({
         setAssignedMidwife(null);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load map data");
+      setError(
+        err instanceof Error
+          ? err.message
+          : labels.messages.failedLoadMapData
+      );
     } finally {
       setLoading(false);
     }
-  }
+  }, [userId, token, isMotherSide, labels.messages.failedLoadMapData]);
 
   useEffect(() => {
     void loadData();
-  }, [userId, token, isMotherSide]);
+  }, [loadData]);
 
   function getStatus(user: MapUserResponseDto): Status {
     const hasPending =
@@ -127,12 +146,14 @@ export default function RegisteredUsersMapPage({
   async function handleSendRequest(user: MapUserResponseDto) {
     try {
       if (getStatus(user) !== "AVAILABLE") {
-        throw new Error("Request cannot be sent for this user.");
+        throw new Error(labels.messages.requestCannotBeSent);
       }
 
       setSendingUserId(user.id);
       setError("");
       setSuccess("");
+
+      const name = `${user.firstName} ${user.lastName}`;
 
       const created = await assignmentApi.sendRequest(
         userId,
@@ -141,16 +162,20 @@ export default function RegisteredUsersMapPage({
           targetEmail: user.email,
           message:
             mode === "patient-midwives"
-              ? `Connection request sent to midwife ${user.firstName} ${user.lastName}`
-              : `Connection request sent to patient ${user.firstName} ${user.lastName}`,
+              ? labels.messages.connectionRequestToMidwife(name)
+              : labels.messages.connectionRequestToPatient(name),
         },
         token
       );
 
-      setSuccess(`Created ${created.length} request(s) successfully.`);
+      setSuccess(labels.messages.createdRequests(created.length));
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send request");
+      setError(
+        err instanceof Error
+          ? err.message
+          : labels.messages.failedSendRequest
+      );
     } finally {
       setSendingUserId(null);
     }
@@ -160,31 +185,41 @@ export default function RegisteredUsersMapPage({
 
   const title =
     mode === "patient-midwives"
-      ? "All Registered Midwives on Map"
-      : "";
+      ? labels.map.allRegisteredMidwivesTitle
+      : labels.map.allRegisteredPatientsTitle;
 
   const subtitle =
     mode === "patient-midwives"
-      ? "Patients can view every registered midwife with map location details and send requests."
-      : "";
+      ? labels.map.allRegisteredMidwivesSubtitle
+      : labels.map.allRegisteredPatientsSubtitle;
 
   return (
-    <div className={isMidwife ? "min-h-screen bg-black text-white" : "min-h-screen bg-[#fed2cc] text-black"}>
+    <div
+      className={
+        isMidwife
+          ? "min-h-screen bg-black text-white"
+          : "min-h-screen bg-[#fed2cc] text-black"
+      }
+    >
       <div className="mx-auto max-w-7xl p-4 md:p-6">
         {!isMidwife && (
           <>
+            {showTopBar ? <TopBarFeatures /> : null}
+
             <div className="mb-6">
               <h1
-                className={`text-2xl font-bold ${isMidwife ? "text-white" : "text-gray-900"
-                  }`}
+                className={`text-2xl font-bold ${
+                  isMidwife ? "text-white" : "text-gray-900"
+                }`}
               >
                 {title}
               </h1>
 
               {shouldShow && (
                 <p
-                  className={`mt-2 text-sm ${isMidwife ? "text-gray-400" : "text-gray-700"
-                    }`}
+                  className={`mt-2 text-sm ${
+                    isMidwife ? "text-gray-400" : "text-gray-700"
+                  }`}
                 >
                   {subtitle}
                 </p>
@@ -205,29 +240,56 @@ export default function RegisteredUsersMapPage({
           </>
         )}
 
-        <section className={`rounded-xl border p-5 shadow-xl ${isMidwife ? "border-white/10 bg-zinc-950" : "border-gray-200 bg-white"}`}>
+        <section
+          className={`rounded-xl border p-5 shadow-xl ${
+            isMidwife
+              ? "border-white/10 bg-zinc-950"
+              : "border-gray-200 bg-white"
+          }`}
+        >
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className={`text-lg font-semibold ${isMidwife ? "text-white text-sm" : "text-gray-900"}`}>
-                Map View
+              <h2
+                className={`text-lg font-semibold ${
+                  isMidwife ? "text-white text-sm" : "text-gray-900"
+                }`}
+              >
+                {labels.map.mapView}
               </h2>
-              <p className={`text-sm ${isMidwife ? "text-gray-400 text-xs" : "text-gray-600"}`}>
-                Click a marker to view address, district, MOH area and send a request.
+
+              <p
+                className={`text-sm ${
+                  isMidwife ? "text-gray-400 text-xs" : "text-gray-600"
+                }`}
+              >
+                {labels.map.mapHelp}
               </p>
             </div>
 
-            <div className={`text-sm ${isMidwife ? "text-gray-300 text-xs" : "text-gray-700"}`}>
-              Total users on map: {users.length}
+            <div
+              className={`text-sm ${
+                isMidwife ? "text-gray-300 text-xs" : "text-gray-700"
+              }`}
+            >
+              {labels.map.totalUsersOnMap}: {users.length}
             </div>
           </div>
 
           {loading ? (
-            <p className={isMidwife ? "text-sm text-gray-400" : "text-sm text-gray-600"}>
-              Loading map...
+            <p
+              className={
+                isMidwife ? "text-sm text-gray-400" : "text-sm text-gray-600"
+              }
+            >
+              {labels.map.loadingMap}
             </p>
           ) : users.length === 0 ? (
-            <p className={isMidwife ? "text-sm text-gray-400" : "text-sm text-gray-600"}>
-              No users with saved coordinates were found.
+            <p
+              className={
+                isMidwife ? "text-sm text-gray-400" : "text-sm text-gray-600"
+              }
+            >
+              {labels.map.noUsersWithCoordinates}
             </p>
           ) : (
             <GlobalUsersMap
@@ -237,6 +299,7 @@ export default function RegisteredUsersMapPage({
               onSendRequest={handleSendRequest}
               onViewDetails={setSelectedUser}
               mode={mode}
+              labels={labels}
             />
           )}
         </section>
@@ -249,6 +312,7 @@ export default function RegisteredUsersMapPage({
           mode={mode}
           onSendRequest={handleSendRequest}
           sendingUserId={sendingUserId}
+          labels={labels}
         />
       </div>
     </div>

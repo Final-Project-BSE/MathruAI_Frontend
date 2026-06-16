@@ -1,82 +1,122 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import ProfileHeader from './ProfileHeader';
-import PersonalInfoCard from './PersonalInfoCard';
-import ChangePasswordCard from './ChangePasswordCard';
-import ChangeEmailCard from './ChangeEmailCard';
-import ChangeRoleCard from './ChangeRoleCard';
-import DeleteAccountCard from './DeleteAccountCard';
-import ProfileImageCard from './ProfileImageCard';
-import profileApi from '@/app/api/profile/api';
-import type { ProfileResponse } from '@/app/api/profile/types';
-import { getcuruser } from '@/app/api/user/api';
+import React, { useCallback, useEffect, useState } from "react";
+import ProfileHeader from "./ProfileHeader";
+import PersonalInfoCard from "./PersonalInfoCard";
+import ChangePasswordCard from "./ChangePasswordCard";
+import ChangeEmailCard from "./ChangeEmailCard";
+import ChangeRoleCard from "./ChangeRoleCard";
+import DeleteAccountCard from "./DeleteAccountCard";
+import ProfileImageCard from "./ProfileImageCard";
+import profileApi from "@/app/api/profile/api";
+import type { ProfileResponse } from "@/app/api/profile/types";
+import { getcuruser } from "@/app/api/user/api";
+import { useLanguage } from "@/components/common/useLanguage";
+import { translateText } from "@/components/common/translateText";
+
+const getErrorMessage = (error: unknown, fallbackMessage: string): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message: unknown }).message === "string"
+  ) {
+    return (error as { message: string }).message;
+  }
+
+  return fallbackMessage;
+};
 
 const ProfileDashboard = () => {
+  const { language, t } = useLanguage();
+
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
-  const [token, setToken] = useState('');
+  const [token, setToken] = useState("");
   const [userId, setUserId] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchProfile = async (authToken: string, authUserId: number) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await profileApi.getProfile(authToken, authUserId);
-      setProfile(data);
-    } catch (err: any) {
-      setError(err.message);
-      setProfile(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const translatedError = useTranslatedText(error || "", language);
+
+  const fetchProfile = useCallback(
+    async (authToken: string, authUserId: number) => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const data = await profileApi.getProfile(authToken, authUserId);
+        setProfile(data);
+      } catch (error: unknown) {
+        setError(
+          getErrorMessage(error, t.profile.dashboard.failedToLoadProfile)
+        );
+        setProfile(null);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [t.profile.dashboard.failedToLoadProfile]
+  );
 
   useEffect(() => {
     const init = async () => {
       try {
         let authToken =
-          typeof window !== 'undefined' ? localStorage.getItem('token') || '' : '';
+          typeof window !== "undefined"
+            ? localStorage.getItem("token") || ""
+            : "";
 
         if (!authToken) {
           try {
-            const { getSession } = await import('@/lib/authentication');
+            const { getSession } = await import("@/lib/authentication");
             const session = await getSession();
-            authToken = session?.user?.token || '';
+            authToken = session?.user?.token || "";
           } catch {
-            // ignore
+            // Continue without session token.
           }
         }
 
         if (!authToken) {
-          setError('You are not authenticated. Please sign in again.');
+          setError(t.profile.dashboard.unauthenticated);
           setLoading(false);
           return;
         }
 
         let authUserId =
-          typeof window !== 'undefined' ? Number(localStorage.getItem('userId')) : 0;
+          typeof window !== "undefined"
+            ? Number(localStorage.getItem("userId"))
+            : 0;
 
         if (!authUserId) {
           const me = await getcuruser(authToken);
           authUserId = me.id;
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('userId', String(me.id));
+
+          if (typeof window !== "undefined") {
+            localStorage.setItem("userId", String(me.id));
           }
         }
 
         setToken(authToken);
         setUserId(authUserId);
         await fetchProfile(authToken, authUserId);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load profile data.');
+      } catch (error: unknown) {
+        setError(
+          getErrorMessage(error, t.profile.dashboard.failedToLoadProfile)
+        );
         setLoading(false);
       }
     };
 
-    init();
-  }, []);
+    void init();
+  }, [
+    fetchProfile,
+    t.profile.dashboard.failedToLoadProfile,
+    t.profile.dashboard.unauthenticated,
+  ]);
 
   if (loading) {
     return (
@@ -90,13 +130,12 @@ const ProfileDashboard = () => {
     <div className="mx-auto max-w-5xl space-y-6 pb-12">
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
-          {error}
+          {translatedError || error}
         </div>
       )}
 
       <ProfileHeader profile={profile} token={token} />
 
-      {/* Top section */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1">
           <ProfileImageCard
@@ -117,7 +156,6 @@ const ProfileDashboard = () => {
         </div>
       </div>
 
-      {/* Account settings */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <ChangeEmailCard
           token={token}
@@ -137,12 +175,45 @@ const ProfileDashboard = () => {
         </div>
       </div>
 
-      {/* Danger zone */}
       <div>
         <DeleteAccountCard token={token} userId={userId} />
       </div>
     </div>
   );
 };
+
+function useTranslatedText(text: string, language: "en" | "si" | "ta") {
+  const [translated, setTranslated] = useState(text);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      if (!text) {
+        setTranslated("");
+        return;
+      }
+
+      if (language === "en") {
+        setTranslated(text);
+        return;
+      }
+
+      const result = await translateText(text, language);
+
+      if (!cancelled) {
+        setTranslated(result);
+      }
+    };
+
+    void run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [text, language]);
+
+  return translated;
+}
 
 export default ProfileDashboard;

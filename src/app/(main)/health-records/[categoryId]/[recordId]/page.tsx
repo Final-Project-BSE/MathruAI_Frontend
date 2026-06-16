@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Container from "@/components/shared/container";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   ChevronLeft,
   Pencil,
-  Trash2,
   FileText,
   CalendarDays,
   AlignLeft,
@@ -22,41 +22,34 @@ import RecordFormModal, {
   RecordFormData,
   UploadedFile,
 } from "@/components/health-records/RecordFormModal";
-import DeleteConfirmModal from "@/components/health-records/DeleteConfirmModal";
 import healthRecordsApi, {
   downloadSecureFile,
   updateRecord,
 } from "@/app/api/health-records/api";
 import { useSecureFile } from "@/hooks/useSecureFile";
 import { LoadingState } from "@/components/common/LoadingState";
-
-const PRIMARY = "#d04f51";
-
-const CATEGORY_META: Record<string, { name: string }> = {
-  "medical-checkups": { name: "Medical Checkups" },
-  "lab-test-results": { name: "Lab Test Results" },
-  "ultrasound-scans": { name: "Ultrasound & Scans" },
-  "medications-supplements": { name: "Medications & Supplements" },
-  vaccinations: { name: "Vaccinations" },
-  "personal-health-notes": { name: "Personal Health Notes" },
-  others: { name: "Others" },
-};
+import { useLanguage } from "@/components/common/useLanguage";
+import { translateText } from "@/components/common/translateText";
 
 function SecureImage({
   fileUrl,
   alt,
   className,
+  failedText,
+  sizes = "100vw",
 }: {
   fileUrl: string;
   alt: string;
   className?: string;
+  failedText: string;
+  sizes?: string;
 }) {
   const { objectUrl, loading } = useSecureFile(fileUrl);
 
   if (loading) {
     return (
       <div
-        className={`flex items-center justify-center bg-gray-100 animate-pulse ${className}`}
+        className={`absolute inset-0 flex items-center justify-center bg-gray-100 animate-pulse ${className ?? ""}`}
       />
     );
   }
@@ -64,21 +57,30 @@ function SecureImage({
   if (!objectUrl) {
     return (
       <div
-        className={`flex items-center justify-center bg-gray-100 text-gray-400 text-xs ${className}`}
+        className={`absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400 text-xs ${className ?? ""}`}
       >
-        Failed to load
+        {failedText}
       </div>
     );
   }
 
-  return <img src={objectUrl} alt={alt} className={className} />;
+  return (
+    <Image
+      src={objectUrl}
+      alt={alt}
+      fill
+      sizes={sizes}
+      className={className}
+      unoptimized
+    />
+  );
 }
 
-function formatDate(dateStr: string) {
+function formatDate(dateStr: string, locale: string) {
   if (!dateStr) return "N/A";
 
   try {
-    return new Date(dateStr).toLocaleDateString("en-US", {
+    return new Date(dateStr).toLocaleDateString(locale, {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -113,7 +115,15 @@ export default function SingleRecordPage() {
   const categoryId = params?.categoryId as string;
   const recordId = params?.recordId as string;
 
-  const catMeta = CATEGORY_META[categoryId] ?? { name: "Records" };
+  const { language, t } = useLanguage();
+  const hr = t.healthRecords;
+
+  const locale =
+    language === "si" ? "si-LK" : language === "ta" ? "ta-LK" : "en-US";
+
+  const catMeta = {
+    name: hr.categories[categoryId] ?? hr.records,
+  };
 
   const [record, setRecord] = useState<{
     id: string;
@@ -124,10 +134,13 @@ export default function SingleRecordPage() {
     files?: UploadedFile[];
   } | null>(null);
 
+  const [translatedRecordName, setTranslatedRecordName] = useState("");
+  const [translatedDescription, setTranslatedDescription] = useState("");
+  const [translatedCategoryName, setTranslatedCategoryName] = useState("");
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
   const [lightboxFile, setLightboxFile] = useState<UploadedFile | null>(null);
 
   useEffect(() => {
@@ -141,7 +154,7 @@ export default function SingleRecordPage() {
         const token = session?.user?.token;
 
         if (!token) {
-          setError("Unauthorized. Please login.");
+          setError(hr.unauthorized);
           return;
         }
 
@@ -164,14 +177,42 @@ export default function SingleRecordPage() {
         });
       } catch (err) {
         console.error("Failed to fetch record details:", err);
-        setError("Failed to load record details.");
+        setError(hr.loadRecordDetailsError);
       } finally {
         setLoading(false);
       }
     };
 
     fetchRecordDetails();
-  }, [recordId, categoryId]);
+  }, [recordId, categoryId, hr.unauthorized, hr.loadRecordDetailsError]);
+
+  useEffect(() => {
+    let active = true;
+
+    const translateRecordDetails = async () => {
+      if (!record) return;
+
+      const [name, description, categoryName] = await Promise.all([
+        translateText(record.name, language),
+        record.description
+          ? translateText(record.description, language)
+          : Promise.resolve(""),
+        translateText(catMeta.name, language),
+      ]);
+
+      if (!active) return;
+
+      setTranslatedRecordName(name);
+      setTranslatedDescription(description);
+      setTranslatedCategoryName(categoryName);
+    };
+
+    translateRecordDetails();
+
+    return () => {
+      active = false;
+    };
+  }, [record, record?.name, record?.description, language, catMeta.name]);
 
   if (loading) {
     return <LoadingState />;
@@ -179,10 +220,10 @@ export default function SingleRecordPage() {
 
   if (error || !record) {
     return (
-      <Container title="Error">
+      <Container title={hr.error}>
         <div className="bg-[#fed2cc] min-h-screen p-4 md:p-6 flex flex-col items-center justify-center gap-4">
           <p className="text-red-600 font-medium bg-red-50 p-4 rounded-xl shadow-sm border border-red-100">
-            {error || "Record not found"}
+            {error || hr.recordNotFound}
           </p>
 
           <Button
@@ -191,7 +232,7 @@ export default function SingleRecordPage() {
             className="rounded-xl border-[#d04f51] text-[#d04f51] hover:bg-[#d04f51]/10"
           >
             <ChevronLeft className="h-4 w-4 mr-2" />
-            Back to Category
+            {hr.backToCategory} {translatedCategoryName || catMeta.name}
           </Button>
         </div>
       </Container>
@@ -199,10 +240,11 @@ export default function SingleRecordPage() {
   }
 
   const imageFiles = (record.files ?? []).filter((file) =>
-    file.type.startsWith("image/"),
+    file.type.startsWith("image/")
   );
+
   const docFiles = (record.files ?? []).filter(
-    (file) => !file.type.startsWith("image/"),
+    (file) => !file.type.startsWith("image/")
   );
 
   const handleEdit = async (data: RecordFormData) => {
@@ -246,14 +288,12 @@ export default function SingleRecordPage() {
       setEditOpen(false);
     } catch (err) {
       console.error("Failed to update record:", err);
-      alert("Failed to update record. Please try again.");
+      alert(hr.updateRecordError);
     }
   };
 
-  const handleDelete = () => router.push(`/health-records/${categoryId}`);
-
   return (
-    <Container title={record.name}>
+    <Container title={translatedRecordName || record.name}>
       <div className="bg-[#fed2cc] min-h-screen p-4 md:p-6">
         <TopBarFeatures />
 
@@ -263,7 +303,7 @@ export default function SingleRecordPage() {
             className="text-[#d04f51] hover:text-[#b84345] font-medium transition-colors flex items-center gap-1"
           >
             <ChevronLeft className="h-4 w-4" />
-            Health Records
+            {hr.healthRecordsBreadcrumb}
           </button>
 
           <span className="text-gray-400">/</span>
@@ -272,13 +312,13 @@ export default function SingleRecordPage() {
             onClick={() => router.push(`/health-records/${categoryId}`)}
             className="text-[#d04f51] hover:text-[#b84345] font-medium transition-colors"
           >
-            {catMeta.name}
+            {translatedCategoryName || catMeta.name}
           </button>
 
           <span className="text-gray-400">/</span>
 
           <span className="text-gray-700 font-medium truncate max-w-[160px]">
-            {record.name}
+            {translatedRecordName || record.name}
           </span>
         </div>
 
@@ -288,11 +328,11 @@ export default function SingleRecordPage() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h1 className="text-xl md:text-2xl font-bold text-gray-900">
-                    {record.name}
+                    {translatedRecordName || record.name}
                   </h1>
 
                   <Badge className="mt-1.5 bg-[#d04f51]/10 text-[#d04f51] hover:bg-[#d04f51]/10 rounded-full text-xs font-medium">
-                    {catMeta.name}
+                    {translatedCategoryName || catMeta.name}
                   </Badge>
                 </div>
 
@@ -304,17 +344,7 @@ export default function SingleRecordPage() {
                     className="rounded-xl hover:bg-[#d04f51]/10 hover:text-[#d04f51] text-gray-600 gap-1.5 text-xs"
                   >
                     <Pencil className="h-3.5 w-3.5" />
-                    Edit
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setDeleteOpen(true)}
-                    className="rounded-xl hover:bg-red-50 hover:text-red-600 text-gray-600 gap-1.5 text-xs"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Delete
+                    {hr.edit}
                   </Button>
                 </div>
               </div>
@@ -325,9 +355,9 @@ export default function SingleRecordPage() {
                 </div>
 
                 <div>
-                  <p className="text-xs text-gray-500 font-medium">Date</p>
+                  <p className="text-xs text-gray-500 font-medium">{hr.date}</p>
                   <p className="text-sm font-semibold text-gray-800">
-                    {formatDate(record.date)}
+                    {formatDate(record.date, locale)}
                   </p>
                 </div>
               </div>
@@ -340,10 +370,10 @@ export default function SingleRecordPage() {
 
                   <div>
                     <p className="text-xs text-gray-500 font-medium mb-1">
-                      Description
+                      {hr.description}
                     </p>
                     <p className="text-sm text-gray-700 leading-relaxed">
-                      {record.description}
+                      {translatedDescription || record.description}
                     </p>
                   </div>
                 </div>
@@ -359,7 +389,7 @@ export default function SingleRecordPage() {
                     <ImageIcon className="h-4 w-4 text-[#d04f51]" />
                   </div>
                   <h2 className="text-sm font-semibold text-gray-800">
-                    Images ({imageFiles.length})
+                    {hr.images} ({imageFiles.length})
                   </h2>
                 </div>
 
@@ -373,7 +403,9 @@ export default function SingleRecordPage() {
                       <SecureImage
                         fileUrl={file.data}
                         alt={file.name}
-                        className="absolute inset-0 w-full h-full object-cover"
+                        className="object-cover"
+                        failedText={hr.failedToLoad}
+                        sizes="(max-width: 640px) 50vw, 33vw"
                       />
 
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
@@ -403,7 +435,7 @@ export default function SingleRecordPage() {
                   </div>
 
                   <h2 className="text-sm font-semibold text-gray-800">
-                    Documents ({docFiles.length})
+                    {hr.documents} ({docFiles.length})
                   </h2>
                 </div>
 
@@ -432,7 +464,7 @@ export default function SingleRecordPage() {
                         className="rounded-xl bg-[#d04f51] hover:bg-[#b84345] text-white gap-1.5 text-xs shrink-0"
                       >
                         <Download className="h-3.5 w-3.5" />
-                        Download
+                        {hr.download}
                       </Button>
                     </div>
                   ))}
@@ -446,7 +478,7 @@ export default function SingleRecordPage() {
               <CardContent className="p-6 flex flex-col items-center justify-center gap-2 text-center">
                 <Paperclip className="h-8 w-8 text-[#d04f51]/35" />
                 <p className="text-sm text-gray-500 font-medium">
-                  No files attached
+                  {hr.noFilesAttached}
                 </p>
               </CardContent>
             </Card>
@@ -458,7 +490,7 @@ export default function SingleRecordPage() {
             className="w-full rounded-xl gap-2 border-[#d04f51] text-[#d04f51] hover:bg-[#d04f51]/10"
           >
             <ChevronLeft className="h-4 w-4" />
-            Back to {catMeta.name}
+            {hr.backToCategory} {translatedCategoryName || catMeta.name}
           </Button>
         </div>
       </div>
@@ -469,13 +501,15 @@ export default function SingleRecordPage() {
           onClick={() => setLightboxFile(null)}
         >
           <div
-            className="relative max-w-4xl w-full max-h-[90vh]"
+            className="relative max-w-4xl w-full h-[85vh]"
             onClick={(event) => event.stopPropagation()}
           >
             <SecureImage
               fileUrl={lightboxFile.data}
-              alt="Preview"
-              className="w-full h-auto max-h-[85vh] object-contain rounded-2xl"
+              alt={hr.preview}
+              className="object-contain rounded-2xl"
+              failedText={hr.failedToLoad}
+              sizes="100vw"
             />
 
             <button
@@ -483,7 +517,7 @@ export default function SingleRecordPage() {
               className="absolute bottom-3 right-3 bg-[#d04f51] hover:bg-[#b84345] text-white rounded-xl px-4 py-2 text-sm flex items-center gap-2 shadow"
             >
               <Download className="h-4 w-4" />
-              Download
+              {hr.download}
             </button>
           </div>
         </div>
@@ -494,14 +528,6 @@ export default function SingleRecordPage() {
         onClose={() => setEditOpen(false)}
         onSubmit={handleEdit}
         initialData={record}
-      />
-
-      <DeleteConfirmModal
-        isOpen={deleteOpen}
-        onClose={() => setDeleteOpen(false)}
-        onConfirm={handleDelete}
-        itemName={record.name}
-        itemType="Record"
       />
     </Container>
   );

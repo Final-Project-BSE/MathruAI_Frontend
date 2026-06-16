@@ -1,18 +1,14 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Pencil,
-  Trash2,
-  FileText,
-  Files,
-  Eye
-} from "lucide-react";
+import { Pencil, Trash2, FileText, Files, Eye } from "lucide-react";
 import Link from "next/link";
 import { UploadedFile } from "@/components/health-records/RecordFormModal";
-import { getFileUrl } from "@/app/api/health-records/api";
+import { useLanguage } from "@/components/common/useLanguage";
+import { translateText } from "@/components/common/translateText";
 
 export interface HealthRecord {
   id: string;
@@ -29,14 +25,14 @@ interface RecordCardProps {
   onDelete: (record: HealthRecord) => void;
 }
 
-function formatDate(dateStr: string) {
+function formatDate(dateStr: string, locale: string) {
   try {
-    return new Date(dateStr).toLocaleDateString("en-US", {
+    return new Date(dateStr).toLocaleDateString(locale, {
       year: "numeric",
       month: "short",
       day: "numeric",
     });
-  } catch (e) {
+  } catch {
     return dateStr;
   }
 }
@@ -46,57 +42,92 @@ export default function RecordCard({
   onEdit,
   onDelete,
 }: RecordCardProps) {
-  const firstImage = record.files?.find((f) => f.type.startsWith("image/"));
-  const pdfCount =
-    record.files?.filter((f) => f.type === "application/pdf").length ?? 0;
+  const { language, t } = useLanguage();
+  const hr = t.healthRecords;
+
+  const [translatedName, setTranslatedName] = useState(record.name);
+  const [translatedDescription, setTranslatedDescription] = useState(
+    record.description ?? ""
+  );
+
+  const locale =
+    language === "si" ? "si-LK" : language === "ta" ? "ta-LK" : "en-US";
+
   const totalFiles = record.files?.length ?? 0;
+
+  useEffect(() => {
+    let active = true;
+
+    const translateRecord = async () => {
+      const [name, description] = await Promise.all([
+        translateText(record.name, language),
+        record.description
+          ? translateText(record.description, language)
+          : Promise.resolve(""),
+      ]);
+
+      if (!active) return;
+
+      setTranslatedName(name);
+      setTranslatedDescription(description);
+    };
+
+    translateRecord();
+
+    return () => {
+      active = false;
+    };
+  }, [record.name, record.description, language]);
 
   return (
     <Card className="bg-white/90 backdrop-blur rounded-2xl shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 group overflow-hidden">
       <CardContent className="p-0">
-        {/* Preview area */}
         <div className="w-full h-24 bg-gradient-to-br from-pink-50 to-rose-100 flex flex-col items-center justify-center border-b border-pink-100 gap-1.5">
           {totalFiles > 0 ? (
             <>
               <Files className="h-8 w-8 text-[#d04f51]" />
-              <span className="text-xs text-[#d04f51]font-medium">
-                {totalFiles} file{totalFiles > 1 ? "s" : ""} attached
+              <span className="text-xs text-[#d04f51] font-medium">
+                {totalFiles} {totalFiles === 1 ? hr.file : hr.files}{" "}
+                {hr.filesAttached}
               </span>
             </>
           ) : (
             <>
               <FileText className="h-8 w-8 text-pink-200" />
-              <span className="text-xs text-pink-400 font-medium">No files</span>
+              <span className="text-xs text-pink-400 font-medium">
+                {hr.noFiles}
+              </span>
             </>
           )}
         </div>
 
-        {/* Info */}
         <Link
           href={`/health-records/${record.categoryId}/${record.id}`}
           className="block p-4"
         >
           <h3 className="font-semibold text-gray-900 text-sm truncate group-hover:text-pink-600 transition-colors">
-            {record.name}
+            {translatedName}
           </h3>
+
           {record.description && (
             <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-              {record.description}
+              {translatedDescription}
             </p>
           )}
+
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 rounded-full text-xs font-medium">
-              {formatDate(record.date)}
+              {formatDate(record.date, locale)}
             </Badge>
+
             {totalFiles > 0 && (
               <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 rounded-full text-xs font-medium">
-                {totalFiles} file{totalFiles > 1 ? "s" : ""}
+                {totalFiles} {totalFiles === 1 ? hr.file : hr.files}
               </Badge>
             )}
           </div>
         </Link>
 
-        {/* Action buttons */}
         <div className="px-2 pb-4 flex border-t border-gray-100 pt-3">
           {totalFiles > 0 && (
             <Button
@@ -107,9 +138,17 @@ export default function RecordCard({
                   const { getSession } = await import("@/lib/authentication");
                   const session = await getSession();
                   const token = session?.user?.token;
+
                   if (token && record.files?.[0]) {
-                    const { downloadSecureFile } = await import("@/app/api/health-records/api");
-                    await downloadSecureFile(token, record.files[0].data, record.files[0].name || "record_file");
+                    const { downloadSecureFile } = await import(
+                      "@/app/api/health-records/api"
+                    );
+
+                    await downloadSecureFile(
+                      token,
+                      record.files[0].data,
+                      record.files[0].name || "record_file"
+                    );
                   }
                 } catch (err) {
                   console.error("Failed to download file:", err);
@@ -118,9 +157,10 @@ export default function RecordCard({
               className="flex-1 rounded-xl text-xs gap-1.5 hover:bg-blue-50 hover:text-blue-600 text-gray-600"
             >
               <Eye className="h-3.5 w-3.5" />
-              Download
+              {hr.download}
             </Button>
           )}
+
           <Button
             size="sm"
             variant="ghost"
@@ -128,8 +168,9 @@ export default function RecordCard({
             className="flex-1 rounded-xl text-xs gap-1.5 hover:bg-pink-50 hover:text-pink-600 text-gray-600"
           >
             <Pencil className="h-3.5 w-3.5" />
-            Edit
+            {hr.edit}
           </Button>
+
           <Button
             size="sm"
             variant="ghost"
@@ -137,7 +178,7 @@ export default function RecordCard({
             className="flex-1 rounded-xl text-xs gap-1.5 hover:bg-red-50 hover:text-red-600 text-gray-600"
           >
             <Trash2 className="h-3.5 w-3.5" />
-            Delete
+            {hr.delete}
           </Button>
         </div>
       </CardContent>

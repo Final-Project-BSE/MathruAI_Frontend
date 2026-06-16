@@ -53,7 +53,6 @@ export const useActionLogoutToast = () => {
     title,
     description,
     confirmText = 'Logout',
-    cancelText = 'Close',
   }: LogoutActionToastProps) => {
     const toastId = toast.custom(
       () => (

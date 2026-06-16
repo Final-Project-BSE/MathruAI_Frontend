@@ -62,27 +62,36 @@ const formSchema = z
     path: ["confirmPassword"],
   });
 
+type ResetPasswordFormValues = z.infer<typeof formSchema>;
+
+const defaultValues: ResetPasswordFormValues = {
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+};
+
 const ResetPasswordModal = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(formSchema),
+    defaultValues,
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: ResetPasswordFormValues) => {
     console.log(values);
   };
 
   const action: () => void = form.handleSubmit(onSubmit);
 
   const handleClose = () => {
-    form.reset((prev: any) => {
-      Object.keys(prev).forEach((key) => (prev[key] = undefined));
+    form.reset(defaultValues);
 
-      return { ...prev };
-    });
+    setShowPassword(false);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
   };
 
   return (
@@ -92,10 +101,11 @@ const ResetPasswordModal = () => {
           Change Password
         </p>
       </DialogTrigger>
+
       <DialogContent className="p-[25px] w-[500px] h-fit max-w-full rounded-[15px] max-sm:w-[500px]">
         <Form {...form}>
           <form action={action} className="space-y-[20px] w-full">
-            <div className=" flex flex-col gap-[20px]">
+            <div className="flex flex-col gap-[20px]">
               <FormField
                 control={form.control}
                 name="currentPassword"
@@ -104,6 +114,7 @@ const ResetPasswordModal = () => {
                     <FormLabel className="text-sm font-normal text-[#212121] w-full p-0">
                       Current Password
                     </FormLabel>
+
                     <FormControl>
                       <div className="relative">
                         <Input
@@ -120,21 +131,23 @@ const ResetPasswordModal = () => {
 
                         {showPassword ? (
                           <i
-                            onClick={() => setShowPassword(!showPassword)}
+                            onClick={() => setShowPassword(false)}
                             className="password-show size-6 shrink-0 absolute right-[20px] top-[14px] cursor-pointer text-[#B1B1B1]"
                           />
                         ) : (
                           <i
-                            onClick={() => setShowPassword(!showPassword)}
+                            onClick={() => setShowPassword(true)}
                             className="password-closed size-6 absolute right-[20px] top-[14px] cursor-pointer text-[#B1B1B1]"
                           />
                         )}
                       </div>
                     </FormControl>
+
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="newPassword"
@@ -143,6 +156,7 @@ const ResetPasswordModal = () => {
                     <FormLabel className="text-sm font-normal text-[#212121] w-full p-0">
                       New Password
                     </FormLabel>
+
                     <FormControl>
                       <div className="relative">
                         <Input
@@ -159,21 +173,23 @@ const ResetPasswordModal = () => {
 
                         {showNewPassword ? (
                           <i
-                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            onClick={() => setShowNewPassword(false)}
                             className="password-show size-6 shrink-0 absolute right-[20px] top-[14px] cursor-pointer text-[#B1B1B1]"
                           />
                         ) : (
                           <i
-                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            onClick={() => setShowNewPassword(true)}
                             className="password-closed size-6 absolute right-[20px] top-[14px] cursor-pointer text-[#B1B1B1]"
                           />
                         )}
                       </div>
                     </FormControl>
+
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="confirmPassword"
@@ -182,6 +198,7 @@ const ResetPasswordModal = () => {
                     <FormLabel className="text-sm font-normal text-[#212121] w-full p-0">
                       Confirm Password
                     </FormLabel>
+
                     <FormControl>
                       <div className="relative">
                         <Input
@@ -195,6 +212,8 @@ const ResetPasswordModal = () => {
                               : "border-[#E0E0E0]"
                           )}
                           onChange={(e) => {
+                            field.onChange(e);
+
                             if (
                               e.target.value !== form.getValues("newPassword")
                             ) {
@@ -205,33 +224,29 @@ const ResetPasswordModal = () => {
                             } else {
                               form.clearErrors("confirmPassword");
                             }
-
-                            form.setValue("confirmPassword", e.target.value);
                           }}
                         />
 
                         {showConfirmPassword ? (
                           <i
-                            onClick={() =>
-                              setShowConfirmPassword(!showConfirmPassword)
-                            }
+                            onClick={() => setShowConfirmPassword(false)}
                             className="password-show size-6 shrink-0 absolute right-[20px] top-[14px] cursor-pointer text-[#B1B1B1]"
                           />
                         ) : (
                           <i
-                            onClick={() =>
-                              setShowConfirmPassword(!showConfirmPassword)
-                            }
+                            onClick={() => setShowConfirmPassword(true)}
                             className="password-closed size-6 absolute right-[20px] top-[14px] cursor-pointer text-[#B1B1B1]"
                           />
                         )}
                       </div>
                     </FormControl>
+
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+
             <span className="flex flex-row float-right gap-[15px]">
               <DialogClose>
                 <Button
@@ -241,13 +256,14 @@ const ResetPasswordModal = () => {
                   Cancel
                 </Button>
               </DialogClose>
+
               <Button
                 type="submit"
                 disabled={
                   form.formState.isSubmitting ||
-                  !form.getValues().currentPassword ||
-                  !form.getValues().newPassword ||
-                  !form.getValues().confirmPassword
+                  !form.watch("currentPassword") ||
+                  !form.watch("newPassword") ||
+                  !form.watch("confirmPassword")
                 }
                 className="w-[110px] rounded-[8px] font-semibold text-[16px] h-[45px] bg-[#003A02]"
               >

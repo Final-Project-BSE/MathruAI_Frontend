@@ -1,31 +1,34 @@
 "use client";
 
+import type { AssignmentTranslations } from "./assignmentLang";
 import { cn } from "./utils";
 
 type Props = {
   isMidwife: boolean;
   isMotherSide: boolean;
   theme: "light" | "dark";
+  labels: AssignmentTranslations["header"];
 };
 
 export default function AssignmentPageHeader({
   isMidwife,
   isMotherSide,
   theme,
+  labels,
 }: Props) {
   const isLightTheme = theme === "light";
 
   const title = isMidwife
-    ? "Mother Connectivity & Assignment Management"
+    ? labels.midwifeTitle
     : isMotherSide
-    ? "Midwife Connectivity & Assignment"
-    : "Connectivity & Assignment";
+    ? labels.motherTitle
+    : labels.defaultTitle;
 
   const description = isMidwife
-    ? "Search mothers by district/MOH, map them, manage requests, review assignments and update assigned mother details."
+    ? labels.midwifeDescription
     : isMotherSide
-    ? "Search midwives by district/MOH, view available midwives on the map, manage connection requests and review your assigned midwife."
-    : "Manage connection requests and assignments.";
+    ? labels.motherDescription
+    : labels.defaultDescription;
 
   return (
     <div className="mb-6">

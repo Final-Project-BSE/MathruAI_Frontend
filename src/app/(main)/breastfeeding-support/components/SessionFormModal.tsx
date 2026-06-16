@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Clock, Loader2 } from 'lucide-react';
+import { useLanguage } from '@/components/common/useLanguage';
 import type {
   BreastfeedingSessionResponseDto,
   BreastfeedingSessionRequestDto,
@@ -29,6 +30,8 @@ const SessionFormModal: React.FC<SessionFormModalProps> = ({
   onClose,
   onSaved,
 }) => {
+  const { t } = useLanguage();
+
   const [feedingTime, setFeedingTime] = useState('');
   const [side, setSide] = useState<FeedingSide>('LEFT');
   const [durationMinutes, setDurationMinutes] = useState('');
@@ -67,13 +70,13 @@ const SessionFormModal: React.FC<SessionFormModalProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (!feedingTime) {
-      newErrors.feedingTime = 'Feeding time is required.';
+      newErrors.feedingTime = t.breastfeeding.sessionForm.validationFeedingTime;
     }
     if (!durationMinutes || Number(durationMinutes) <= 0) {
-      newErrors.durationMinutes = 'Please enter a valid duration.';
+      newErrors.durationMinutes = t.breastfeeding.sessionForm.validationDuration;
     }
     if (milkAmountMl && Number(milkAmountMl) < 0) {
-      newErrors.milkAmountMl = 'Milk amount cannot be negative.';
+      newErrors.milkAmountMl = t.breastfeeding.sessionForm.validationMilk;
     }
 
     setErrors(newErrors);
@@ -88,7 +91,7 @@ const SessionFormModal: React.FC<SessionFormModalProps> = ({
 
     try {
       const payload: BreastfeedingSessionRequestDto = {
-        feedingTime: new Date(feedingTime).toISOString().slice(0, 19), // strips .000Z
+        feedingTime: new Date(feedingTime).toISOString().slice(0, 19),
         side,
         durationMinutes: Number(durationMinutes),
         milkAmountMl: milkAmountMl ? Number(milkAmountMl) : 0,
@@ -104,7 +107,7 @@ const SessionFormModal: React.FC<SessionFormModalProps> = ({
       onSaved();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : 'Failed to save session. Please try again.'
+        err instanceof Error ? err.message : t.breastfeeding.sessionForm.saveFailed
       );
     } finally {
       setLoading(false);
@@ -119,12 +122,15 @@ const SessionFormModal: React.FC<SessionFormModalProps> = ({
             <div className="flex items-center gap-2 text-[#d04f51]">
               <Clock className="h-5 w-5" />
               <span className="text-lg font-semibold">
-                {editingSession ? 'Edit Session' : 'Log Feeding Session'}
+                {editingSession
+                  ? t.breastfeeding.sessionForm.editTitle
+                  : t.breastfeeding.sessionForm.createTitle}
               </span>
             </div>
             <button
               onClick={onClose}
               className="text-2xl text-[#8a4b4c] transition-colors hover:text-[#d04f51]"
+              aria-label="Close"
             >
               ×
             </button>
@@ -132,18 +138,16 @@ const SessionFormModal: React.FC<SessionFormModalProps> = ({
         </CardHeader>
 
         <CardContent className="space-y-5 pt-5">
-
-          {/* Error */}
           {error && (
             <div className="rounded-2xl border border-[#f3c7c8] bg-[#fff5f5] px-4 py-3 text-sm text-[#7a2d2f]">
               {error}
             </div>
           )}
 
-          {/* Feeding Time */}
           <div>
             <Label className="text-sm font-medium text-[#5f3a3b]">
-              Feeding Time <span className="text-[#d04f51]">*</span>
+              {t.breastfeeding.sessionForm.feedingTime}{' '}
+              <span className="text-[#d04f51]">*</span>
             </Label>
             <Input
               type="datetime-local"
@@ -158,10 +162,10 @@ const SessionFormModal: React.FC<SessionFormModalProps> = ({
             )}
           </div>
 
-          {/* Side Selection */}
           <div>
             <Label className="text-sm font-medium text-[#5f3a3b]">
-              Feeding Side <span className="text-[#d04f51]">*</span>
+              {t.breastfeeding.sessionForm.feedingSide}{' '}
+              <span className="text-[#d04f51]">*</span>
             </Label>
             <div className="mt-2 flex gap-3">
               {SIDES.map((s) => (
@@ -176,22 +180,22 @@ const SessionFormModal: React.FC<SessionFormModalProps> = ({
                       : 'border-[#f3d6d7] bg-white text-[#5f3a3b] hover:bg-[#fff5f5]',
                   ].join(' ')}
                 >
-                  {s === 'LEFT' ? '⬅️ Left' : s === 'RIGHT' ? '➡️ Right' : '↔️ Both'}
+                  {t.breastfeeding.labels.sides[s]}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Duration */}
           <div>
             <Label className="text-sm font-medium text-[#5f3a3b]">
-              Duration (minutes) <span className="text-[#d04f51]">*</span>
+              {t.breastfeeding.sessionForm.duration}{' '}
+              <span className="text-[#d04f51]">*</span>
             </Label>
             <Input
               type="number"
               min="1"
               max="120"
-              placeholder="e.g. 15"
+              placeholder={t.breastfeeding.sessionForm.durationPlaceholder}
               value={durationMinutes}
               onChange={(e) => setDurationMinutes(e.target.value)}
               className={`mt-1 rounded-xl border-[#f3d6d7] focus:border-[#d04f51] focus:ring-[#d04f51] ${
@@ -205,18 +209,17 @@ const SessionFormModal: React.FC<SessionFormModalProps> = ({
             )}
           </div>
 
-          {/* Milk Amount */}
           <div>
             <Label className="text-sm font-medium text-[#5f3a3b]">
-              Milk Amount (ml){' '}
+              {t.breastfeeding.sessionForm.milkAmount}{' '}
               <span className="text-xs font-normal text-[#8a4b4c]">
-                — optional, for pumping
+                {t.breastfeeding.sessionForm.pumpingOptional}
               </span>
             </Label>
             <Input
               type="number"
               min="0"
-              placeholder="e.g. 120"
+              placeholder={t.breastfeeding.sessionForm.milkPlaceholder}
               value={milkAmountMl}
               onChange={(e) => setMilkAmountMl(e.target.value)}
               className={`mt-1 rounded-xl border-[#f3d6d7] focus:border-[#d04f51] focus:ring-[#d04f51] ${
@@ -228,31 +231,29 @@ const SessionFormModal: React.FC<SessionFormModalProps> = ({
             )}
           </div>
 
-          {/* Notes */}
           <div>
             <Label className="text-sm font-medium text-[#5f3a3b]">
-              Notes{' '}
+              {t.breastfeeding.sessionForm.notes}{' '}
               <span className="text-xs font-normal text-[#8a4b4c]">
-                — optional
+                {t.breastfeeding.sessionForm.optional}
               </span>
             </Label>
             <Textarea
               rows={3}
-              placeholder="e.g. Baby fed well, no discomfort..."
+              placeholder={t.breastfeeding.sessionForm.notesPlaceholder}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="mt-1 resize-none rounded-xl border-[#f3d6d7] focus:border-[#d04f51] focus:ring-[#d04f51]"
             />
           </div>
 
-          {/* Buttons */}
           <div className="flex gap-3 pt-2">
             <Button
               onClick={onClose}
               variant="outline"
-              className="flex-1 rounded-xl border-[#f3d6d7] text-[#5f3a3b] hover:bg-[#fff5f5]"
+              className="flex-1 rounded-xl border-[#f3d6d7] text-[#7a2d2f] hover:bg-[#fff5f5]"
             >
-              Cancel
+              {t.breastfeeding.sessionForm.cancel}
             </Button>
             <Button
               onClick={handleSubmit}
@@ -262,16 +263,15 @@ const SessionFormModal: React.FC<SessionFormModalProps> = ({
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  {t.breastfeeding.sessionForm.saving}
                 </>
               ) : editingSession ? (
-                'Update Session'
+                t.breastfeeding.sessionForm.updateSession
               ) : (
-                'Log Session'
+                t.breastfeeding.sessionForm.logSession
               )}
             </Button>
           </div>
-
         </CardContent>
       </Card>
     </div>

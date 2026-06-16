@@ -45,7 +45,15 @@ export default function PatientAppointmentsCard({
   const [bookedSlotsLoading, setBookedSlotsLoading] = useState(false);
   const [appointments, setAppointments] = useState<AppointmentResponseDto[]>([]);
 
-  const canUseApi = Boolean(token && midwifeId && patientId);
+  const canUseApi = Boolean(token && midwifeId !== null && patientId);
+
+  function getRequiredMidwifeId(): number {
+    if (midwifeId === null) {
+      throw new Error("Missing midwife context.");
+    }
+
+    return midwifeId;
+  }
 
   function notifyAppointmentsChanged() {
     window.dispatchEvent(new Event("appointments:changed"));
@@ -56,7 +64,6 @@ export default function PatientAppointmentsCard({
   }
 
   async function refreshAfterMutation(dateOverride?: string | null) {
-    // Clear stale slot data immediately so UI never keeps old booked slots after mutations.
     setBookedSlots([]);
     await Promise.all([refreshAppointments(), refreshBookedSlots(dateOverride)]);
   }
@@ -65,19 +72,23 @@ export default function PatientAppointmentsCard({
     async (dateOverride?: string | null) => {
       const targetDate = dateOverride ?? selectedDateIso;
 
-      if (!token || !midwifeId || !patientId || !targetDate) {
+      if (!token || midwifeId === null || !patientId || !targetDate) {
         setBookedSlots([]);
         return;
       }
 
+      const currentMidwifeId: number = midwifeId;
+
       setBookedSlotsLoading(true);
+
       try {
         const data = await appointmentApi.getBookedSlots(
           token,
-          midwifeId,
+          currentMidwifeId,
           patientId,
           targetDate
         );
+
         setBookedSlots(data.bookedSlots || []);
       } finally {
         setBookedSlotsLoading(false);
@@ -87,16 +98,19 @@ export default function PatientAppointmentsCard({
   );
 
   const refreshRequestedCount = useCallback(async () => {
-    if (!token || !midwifeId) {
+    if (!token || midwifeId === null) {
       setRequestedCount(0);
       return;
     }
 
+    const currentMidwifeId: number = midwifeId;
+
     try {
       const rows = await appointmentApi.getMidwifeAppointmentRequests(
         token,
-        midwifeId
+        currentMidwifeId
       );
+
       setRequestedCount(
         rows.filter(
           (item) =>
@@ -110,11 +124,13 @@ export default function PatientAppointmentsCard({
   }, [token, midwifeId, patientId]);
 
   const refreshAppointments = useCallback(async () => {
-    if (!token || !midwifeId || !patientId) return;
+    if (!token || midwifeId === null || !patientId) return;
+
+    const currentMidwifeId: number = midwifeId;
 
     const [rows, unavailable] = await Promise.all([
-      appointmentApi.getPatientAppointments(token, midwifeId, patientId),
-      appointmentApi.getUnavailableDates(token, midwifeId, patientId),
+      appointmentApi.getPatientAppointments(token, currentMidwifeId, patientId),
+      appointmentApi.getUnavailableDates(token, currentMidwifeId, patientId),
     ]);
 
     pushAppointments(rows);
@@ -123,7 +139,9 @@ export default function PatientAppointmentsCard({
   }, [token, midwifeId, patientId]);
 
   useEffect(() => {
-    if (!token || !midwifeId || !patientId) return;
+    if (!token || midwifeId === null || !patientId) return;
+
+    const currentMidwifeId: number = midwifeId;
 
     let active = true;
 
@@ -134,8 +152,16 @@ export default function PatientAppointmentsCard({
         setSuccess("");
 
         const [rows, unavailable] = await Promise.all([
-          appointmentApi.getPatientAppointments(token, midwifeId, patientId),
-          appointmentApi.getUnavailableDates(token, midwifeId, patientId),
+          appointmentApi.getPatientAppointments(
+            token,
+            currentMidwifeId,
+            patientId
+          ),
+          appointmentApi.getUnavailableDates(
+            token,
+            currentMidwifeId,
+            patientId
+          ),
         ]);
 
         if (!active) return;
@@ -145,7 +171,10 @@ export default function PatientAppointmentsCard({
         setReasonByDate(unavailable.reasonByDate || {});
       } catch (err) {
         if (!active) return;
-        setError(err instanceof Error ? err.message : "Failed to load appointments.");
+
+        setError(
+          err instanceof Error ? err.message : "Failed to load appointments."
+        );
       } finally {
         if (active) {
           setLoading(false);
@@ -175,7 +204,10 @@ export default function PatientAppointmentsCard({
     window.addEventListener("appointments:changed", handleRequestChanged);
 
     return () => {
-      window.removeEventListener("appointment-requests:changed", handleRequestChanged);
+      window.removeEventListener(
+        "appointment-requests:changed",
+        handleRequestChanged
+      );
       window.removeEventListener("appointments:changed", handleRequestChanged);
     };
   }, [refreshRequestedCount]);
@@ -202,7 +234,9 @@ export default function PatientAppointmentsCard({
         throw new Error("Missing patient or authentication context.");
       }
 
-      await appointmentApi.createAppointment(token, midwifeId, patientId, {
+      const currentMidwifeId = getRequiredMidwifeId();
+
+      await appointmentApi.createAppointment(token, currentMidwifeId, patientId, {
         ...payload,
         endTime: payload.endTime ?? null,
       });
@@ -220,7 +254,9 @@ export default function PatientAppointmentsCard({
         notifyAppointmentsChanged();
       }
 
-      setError(err instanceof Error ? err.message : "Failed to create appointment.");
+      setError(
+        err instanceof Error ? err.message : "Failed to create appointment."
+      );
     } finally {
       setSaving(false);
     }
@@ -236,12 +272,22 @@ export default function PatientAppointmentsCard({
         throw new Error("Missing patient or authentication context.");
       }
 
-      await appointmentApi.cancelAppointment(token, midwifeId, patientId, row.id);
+      const currentMidwifeId = getRequiredMidwifeId();
+
+      await appointmentApi.cancelAppointment(
+        token,
+        currentMidwifeId,
+        patientId,
+        row.id
+      );
+
       await refreshAfterMutation(row.appointmentDate);
       notifyAppointmentsChanged();
       setSuccess("Appointment canceled and removed.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to cancel appointment.");
+      setError(
+        err instanceof Error ? err.message : "Failed to cancel appointment."
+      );
     } finally {
       setActionLoadingId(null);
     }
@@ -257,12 +303,22 @@ export default function PatientAppointmentsCard({
         throw new Error("Missing patient or authentication context.");
       }
 
-      await appointmentApi.completeAppointment(token, midwifeId, patientId, row.id);
+      const currentMidwifeId = getRequiredMidwifeId();
+
+      await appointmentApi.completeAppointment(
+        token,
+        currentMidwifeId,
+        patientId,
+        row.id
+      );
+
       await refreshAfterMutation(row.appointmentDate);
       notifyAppointmentsChanged();
       setSuccess("Appointment marked as completed.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to complete appointment.");
+      setError(
+        err instanceof Error ? err.message : "Failed to complete appointment."
+      );
     } finally {
       setActionLoadingId(null);
     }
@@ -278,7 +334,15 @@ export default function PatientAppointmentsCard({
         throw new Error("Missing patient or authentication context.");
       }
 
-      await appointmentApi.deleteAppointment(token, midwifeId, patientId, row.id);
+      const currentMidwifeId = getRequiredMidwifeId();
+
+      await appointmentApi.deleteAppointment(
+        token,
+        currentMidwifeId,
+        patientId,
+        row.id
+      );
+
       await refreshAfterMutation(row.appointmentDate);
       notifyAppointmentsChanged();
       setSuccess("Completed appointment deleted.");
@@ -301,6 +365,7 @@ export default function PatientAppointmentsCard({
             <CalendarClock className="h-5 w-5 text-zinc-300" />
             Appointment
           </h2>
+
           <p className="text-sm text-zinc-400">
             {patientName
               ? `Manage appointments for ${patientName}.`
@@ -413,7 +478,7 @@ export default function PatientAppointmentsCard({
         )}
       </div>
 
-      {token && midwifeId ? (
+      {token && midwifeId !== null ? (
         <MidwifeRequestedAppointmentsDialog
           open={requestDialogOpen}
           onOpenChange={setRequestDialogOpen}

@@ -1,6 +1,9 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { RefreshCw, Trash2 } from 'lucide-react';
+"use client";
+
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { RefreshCw, Trash2 } from "lucide-react";
+import { useLanguage } from "@/components/common/useLanguage";
 
 interface DashboardHeaderProps {
   onRefresh: () => void;
@@ -15,15 +18,16 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onDelete,
   currentPredictionId,
   loading,
-  loadingData
+  loadingData,
 }) => {
+  const { t } = useLanguage();
+
   return (
     <div className="mb-8 flex justify-between items-center">
       <div>
-        <p className="text-gray-600">
-          Track your vital signs and get AI powered risk assessment
-        </p>
+        <p className="text-gray-600">{t.healthMonitor.headerSubtitle}</p>
       </div>
+
       <div className="flex gap-2">
         <Button
           onClick={onRefresh}
@@ -32,8 +36,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           disabled={loading || loadingData}
         >
           <RefreshCw className="h-4 w-4" />
-          <span>Refresh</span>
+          <span>{t.healthMonitor.refresh}</span>
         </Button>
+
         {currentPredictionId && (
           <Button
             onClick={onDelete}
@@ -42,7 +47,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             disabled={loading}
           >
             <Trash2 className="h-4 w-4" />
-            <span>Delete</span>
+            <span>{t.healthMonitor.delete}</span>
           </Button>
         )}
       </div>

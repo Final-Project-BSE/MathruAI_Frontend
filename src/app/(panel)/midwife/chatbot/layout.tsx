@@ -1,30 +1,13 @@
 "use client";
 
-import { createContext, useContext, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import {
   ChatSidebarMidwife,
   ChatSidebarRef,
 } from "@/components/chat-sidebar-midwife";
 import { PanelLeft } from "lucide-react";
-
-interface ChatContextType {
-  activeSessionId: number | null;
-  setActiveSessionId: (id: number | null) => void;
-  refreshChatHistory: () => Promise<void>;
-}
-
-const ChatContext = createContext<ChatContextType | undefined>(undefined);
-
-export function useChatContext() {
-  const context = useContext(ChatContext);
-
-  if (!context) {
-    throw new Error("useChatContext must be used within ChatbotLayout");
-  }
-
-  return context;
-}
+import { ChatContext } from "./components/ChatContext";
 
 export default function ChatbotLayout({
   children,
@@ -49,11 +32,11 @@ export default function ChatbotLayout({
       <SidebarProvider>
         <div className="flex min-h-[calc(100dvh-4rem)] w-full bg-black text-white">
           <ChatSidebarMidwife
-  ref={sidebarRef}
-  activeSessionId={activeSessionId}
-  onSessionSelect={setActiveSessionId}
-  className="top-16 h-[calc(100dvh-4rem)] border-r border-white/10 bg-[#050505] text-white"
-/>
+            ref={sidebarRef}
+            activeSessionId={activeSessionId}
+            onSessionSelect={setActiveSessionId}
+            className="top-16 h-[calc(100dvh-4rem)] border-r border-white/10 bg-[#050505] text-white"
+          />
 
           <div className="flex min-w-0 flex-1 flex-col">
             <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-white/10 bg-[#080808]/95 px-3 py-3 backdrop-blur lg:hidden">

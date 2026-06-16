@@ -10,6 +10,8 @@ import type {
 import SearchableSelect from "./SearchableSelect";
 import Modal from "./Modal";
 import StatusBadge from "./StatusBadge";
+import type { AssignmentTranslations } from "./assignmentLang";
+import { getStatusLabel } from "./assignmentLang";
 import { cn } from "./utils";
 
 const AreaUserMap = dynamic(() => import("./AreaUserMap"), { ssr: false });
@@ -53,6 +55,7 @@ type Props = {
   onSendRequestToSearchedUser: (user: UserResponseDto) => void;
   onViewUserDetails: (user: UserResponseDto, status: string) => void;
   theme: "light" | "dark";
+  labels: AssignmentTranslations;
 };
 
 export default function SearchConnectSection({
@@ -89,6 +92,7 @@ export default function SearchConnectSection({
   onSendRequestToSearchedUser,
   onViewUserDetails,
   theme,
+  labels,
 }: Props) {
   const isLightTheme = theme === "light";
 
@@ -117,16 +121,27 @@ export default function SearchConnectSection({
     isLightTheme ? "border-gray-200 bg-gray-50" : "border-white/10 bg-white/5"
   );
 
+  const districtPlaceholder = districtLoading
+    ? labels.common.loadingDistricts
+    : labels.common.selectOrTypeDistrict;
+
+  const mohPlaceholder = (hasDistrict: boolean, loadingMoh: boolean) =>
+    !hasDistrict
+      ? labels.common.selectDistrictFirst
+      : loadingMoh
+      ? labels.common.loadingMohAreas
+      : labels.common.selectOrTypeMohArea;
+
   return (
     <>
       <div className="space-y-6">
         <section className={sectionClass}>
           <h2 className={headingClass}>
             {isMidwife
-              ? "Search Mothers by District & MOH Area"
+              ? labels.searchConnect.searchMothersTitle
               : isMotherSide
-              ? "Search Midwives by District & MOH Area"
-              : "Search Users"}
+              ? labels.searchConnect.searchMidwivesTitle
+              : labels.searchConnect.searchUsersTitle}
           </h2>
 
           <form
@@ -134,12 +149,11 @@ export default function SearchConnectSection({
             className="grid items-end gap-4 md:grid-cols-[1fr_1fr_auto]"
           >
             <SearchableSelect
-              label="District"
+              label={labels.common.district}
               value={searchForm.district}
               options={districtOptions}
-              placeholder={
-                districtLoading ? "Loading districts..." : "Select or type district"
-              }
+              placeholder={districtPlaceholder}
+              noResultsLabel={labels.common.noMatchingResults}
               onChange={(value) =>
                 setSearchForm((prev) => ({
                   ...prev,
@@ -151,17 +165,12 @@ export default function SearchConnectSection({
             />
 
             <SearchableSelect
-              label="MOH Area"
+              label={labels.common.mohArea}
               value={searchForm.mohArea}
               options={searchMohAreaOptions}
               disabled={!searchForm.district.trim()}
-              placeholder={
-                !searchForm.district.trim()
-                  ? "Select district first"
-                  : searchMohLoading
-                  ? "Loading MOH areas..."
-                  : "Select or type MOH area"
-              }
+              placeholder={mohPlaceholder(Boolean(searchForm.district.trim()), searchMohLoading)}
+              noResultsLabel={labels.common.noMatchingResults}
               onChange={(value) =>
                 setSearchForm((prev) => ({
                   ...prev,
@@ -176,22 +185,22 @@ export default function SearchConnectSection({
               disabled={searching}
               className="rounded-md bg-[#d04f51] px-4 py-1 text-sm text-white transition hover:bg-[#e86466] disabled:opacity-50"
             >
-              {searching ? "Searching..." : "Search"}
+              {searching ? labels.common.searching : labels.common.search}
             </button>
           </form>
 
           <p className={cn("mt-4", mutedClass)}>
-            Search results will open in a popup box.
+            {labels.searchConnect.searchResultsOpenPopup}
           </p>
         </section>
 
         <section className={sectionClass}>
           <h2 className={headingClass}>
             {isMidwife
-              ? "Map of Mothers in Selected Area"
+              ? labels.searchConnect.mothersMapTitle
               : isMotherSide
-              ? "Map of Midwives in Selected Area"
-              : "Map Search"}
+              ? labels.searchConnect.midwivesMapTitle
+              : labels.searchConnect.mapSearchTitle}
           </h2>
 
           <form
@@ -199,12 +208,11 @@ export default function SearchConnectSection({
             className="grid items-end gap-4 md:grid-cols-[1fr_1fr_auto]"
           >
             <SearchableSelect
-              label="District"
+              label={labels.common.district}
               value={mapSearchForm.district}
               options={districtOptions}
-              placeholder={
-                districtLoading ? "Loading districts..." : "Select or type district"
-              }
+              placeholder={districtPlaceholder}
+              noResultsLabel={labels.common.noMatchingResults}
               onChange={(value) =>
                 setMapSearchForm((prev) => ({
                   ...prev,
@@ -216,17 +224,12 @@ export default function SearchConnectSection({
             />
 
             <SearchableSelect
-              label="MOH Area"
+              label={labels.common.mohArea}
               value={mapSearchForm.mohArea}
               options={mapMohAreaOptions}
               disabled={!mapSearchForm.district.trim()}
-              placeholder={
-                !mapSearchForm.district.trim()
-                  ? "Select district first"
-                  : mapMohLoading
-                  ? "Loading MOH areas..."
-                  : "Select or type MOH area"
-              }
+              placeholder={mohPlaceholder(Boolean(mapSearchForm.district.trim()), mapMohLoading)}
+              noResultsLabel={labels.common.noMatchingResults}
               onChange={(value) =>
                 setMapSearchForm((prev) => ({
                   ...prev,
@@ -241,30 +244,31 @@ export default function SearchConnectSection({
               disabled={mapSearching}
               className="rounded-md bg-[#d04f51] px-4 py-1 text-sm text-white transition hover:bg-[#e86466] disabled:opacity-50"
             >
-              {mapSearching ? "Loading Map..." : "Load Map"}
+              {mapSearching ? labels.searchConnect.loadingMap : labels.searchConnect.loadMap}
             </button>
           </form>
 
           <div className="mt-5">
             {filteredMapUsers.length === 0 ? (
-              <p className={mutedClass}>No available mappable users found.</p>
+              <p className={mutedClass}>{labels.searchConnect.noMappableUsers}</p>
             ) : (
               <AreaUserMap
                 users={filteredMapUsers}
                 sendingUserId={sendingSearchUserId}
                 onSendRequest={onSendRequestToSearchedUser}
                 onViewDetails={(user) => onViewUserDetails(user, "AVAILABLE")}
+                labels={labels}
               />
             )}
           </div>
         </section>
 
         <section className={sectionClass}>
-          <h2 className={headingClass}>Manual Connection Request</h2>
+          <h2 className={headingClass}>{labels.searchConnect.manualConnectionRequest}</h2>
 
           <form onSubmit={onSendRequest} className="space-y-4">
             <div>
-              <label className={labelClass}>Method</label>
+              <label className={labelClass}>{labels.common.method}</label>
               <select
                 value={method}
                 onChange={(e) => setMethod(e.target.value as ConnectionRequestMethod)}
@@ -277,34 +281,34 @@ export default function SearchConnectSection({
 
             {method === "EMAIL" ? (
               <div>
-                <label className={labelClass}>Target Email</label>
+                <label className={labelClass}>{labels.common.targetEmail}</label>
                 <input
                   type="email"
                   value={targetEmail}
                   onChange={(e) => setTargetEmail(e.target.value)}
-                  placeholder="example@email.com"
+                  placeholder={labels.common.exampleEmail}
                   className={inputClass}
                 />
               </div>
             ) : (
               <div>
-                <label className={labelClass}>Target Area</label>
+                <label className={labelClass}>{labels.common.targetArea}</label>
                 <input
                   type="text"
                   value={targetArea}
                   onChange={(e) => setTargetArea(e.target.value)}
-                  placeholder="Colombo"
+                  placeholder={labels.common.area}
                   className={inputClass}
                 />
               </div>
             )}
 
             <div>
-              <label className={labelClass}>Message</label>
+              <label className={labelClass}>{labels.common.message}</label>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Optional message"
+                placeholder={labels.common.optionalMessage}
                 rows={4}
                 className={inputClass}
               />
@@ -314,7 +318,7 @@ export default function SearchConnectSection({
               type="submit"
               className="rounded-md bg-[#d04f51] px-5 py-1 text-sm text-white transition hover:bg-[#e86466]"
             >
-              Send Request
+              {labels.common.sendRequest}
             </button>
           </form>
         </section>
@@ -322,48 +326,56 @@ export default function SearchConnectSection({
 
       <Modal
         open={searchPopupOpen}
-        title="Search Results"
+        title={labels.searchConnect.searchResults}
         onClose={() => setSearchPopupOpen(false)}
         theme={theme}
+        closeLabel={labels.common.close}
       >
         {filteredSearchResults.length === 0 ? (
-          <p className={mutedClass}>No available users to display.</p>
+          <p className={mutedClass}>{labels.searchConnect.noAvailableUsers}</p>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {filteredSearchResults.map((user) => (
               <div key={user.id} className={cardClass}>
-                <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p
                       className={cn(
-                        "font-semibold text-xs",
+                        "text-xs font-semibold",
                         isLightTheme ? "text-gray-900" : "text-white"
                       )}
                     >
                       {user.firstName} {user.lastName}
                     </p>
                     <p className={mutedClass}>{user.email}</p>
+                    <p className={mutedClass}>
+                      {labels.common.district}: {user.district || labels.common.unavailable}
+                    </p>
+                    <p className={mutedClass}>
+                      {labels.common.mohArea}: {user.mohArea || labels.common.unavailable}
+                    </p>
                   </div>
 
-                  <StatusBadge status="AVAILABLE" />
+                  <StatusBadge status="AVAILABLE" label={getStatusLabel("AVAILABLE", labels)} />
                 </div>
 
-                <div className="mt-4 flex gap-2">
+                <div className="mt-4 flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => onSendRequestToSearchedUser(user)}
                     disabled={sendingSearchUserId === user.id}
-                    className="rounded-md bg-[#d04f51] px-4 py-1 text-sm text-white hover:bg-[#e86466] disabled:opacity-50"
+                    className="rounded-md bg-[#d04f51] px-3 py-2 text-xs text-white transition hover:bg-[#e86466] disabled:opacity-50"
                   >
-                    {sendingSearchUserId === user.id ? "Sending..." : "Send Request"}
+                    {sendingSearchUserId === user.id
+                      ? labels.common.sending
+                      : labels.common.sendRequest}
                   </button>
-
                   <button
                     type="button"
                     onClick={() => onViewUserDetails(user, "AVAILABLE")}
                     className={secondaryButtonClass}
                   >
-                    →
+                    {labels.common.view}
                   </button>
                 </div>
               </div>

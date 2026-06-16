@@ -1,4 +1,5 @@
 import type { Role } from "../../api/user-assign/types";
+import type { AssignmentTranslations } from "./assignmentLang";
 import { motherRoles } from "./constants";
 
 export function hasMidwifeRole(roles: Role[]) {
@@ -16,11 +17,20 @@ export function formatDateTime(value?: string | null) {
   return d.toLocaleString();
 }
 
-export function getReadableRoleLabel(roles: Role[]) {
-  if (roles.includes("MIDWIFE")) return "Midwife";
-  if (roles.includes("PREGNANT_MOTHER")) return "Pregnant Mother";
-  if (roles.includes("POST_PREGNANT_MOTHER")) return "Post Pregnant Mother";
-  if (roles.includes("HOPE_TO_PREGNANT_MOTHER")) return "Hope To Pregnant Mother";
+export function getReadableRoleLabel(
+  roles: Role[],
+  t?: AssignmentTranslations
+) {
+  if (roles.includes("MIDWIFE")) return t?.roleLabels.MIDWIFE ?? "Midwife";
+  if (roles.includes("PREGNANT_MOTHER")) {
+    return t?.roleLabels.PREGNANT_MOTHER ?? "Pregnant Mother";
+  }
+  if (roles.includes("POST_PREGNANT_MOTHER")) {
+    return t?.roleLabels.POST_PREGNANT_MOTHER ?? "Post Pregnant Mother";
+  }
+  if (roles.includes("HOPE_TO_PREGNANT_MOTHER")) {
+    return t?.roleLabels.HOPE_TO_PREGNANT_MOTHER ?? "Hope To Pregnant Mother";
+  }
   return roles.join(", ");
 }
 

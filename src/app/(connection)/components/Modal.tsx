@@ -9,6 +9,7 @@ type Props = {
   onClose: () => void;
   children: ReactNode;
   theme?: "light" | "dark";
+  closeLabel?: string;
 };
 
 export default function Modal({
@@ -17,6 +18,7 @@ export default function Modal({
   onClose,
   children,
   theme = "dark",
+  closeLabel = "Close",
 }: Props) {
   if (!open) return null;
 
@@ -56,7 +58,7 @@ export default function Modal({
                 : "border-white/10 text-gray-300 hover:bg-white/10"
             )}
           >
-            Close
+            {closeLabel}
           </button>
         </div>
         <div className="max-h-[75vh] overflow-y-auto p-5">{children}</div>

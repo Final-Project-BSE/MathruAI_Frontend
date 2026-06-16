@@ -30,11 +30,11 @@ export interface PredictionResult {
   vitals: VitalsState;
   risk_assessment: RiskAssessment;
   health_guidance: HealthGuidance;
-  patient_profile: Record<string, any>;
+  patient_profile: Record<string, unknown>;
 }
 
 export interface APIResponse<T> {
-  status: 'success' | 'error';
+  status: "success" | "error";
   data?: T;
   error?: string;
   message?: string;
@@ -88,7 +88,7 @@ export interface HealthMonitoringResponseDto {
   adviceConfidence: number;
   riskProbabilities: Record<string, number>;
   alternativeAdvice: HealthMonitoringAdviceOption[];
-  patientProfile: Record<string, any>;
+  patientProfile: Record<string, unknown>;
 
   createdAt?: string;
   updatedAt?: string;

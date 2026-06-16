@@ -23,6 +23,8 @@ import type {
 
 type FormState = VaccinationCardRequestDto;
 
+const MIDWIFE_ROLE = "MIDWIFE";
+
 const emptyForm: FormState = {
   vaccineName: "",
   vaccineType: "",
@@ -38,8 +40,10 @@ const emptyForm: FormState = {
 function statusClass(status: VaccinationStatus) {
   if (status === "COMPLETED")
     return "border-emerald-500/30 bg-emerald-500/10 text-emerald-300";
+
   if (status === "MISSED")
     return "border-red-500/30 bg-red-500/10 text-red-300";
+
   return "border-yellow-500/30 bg-yellow-500/10 text-yellow-300";
 }
 
@@ -85,7 +89,11 @@ export default function VaccinationManagementPage() {
 
         const me = await getcuruser(jwt);
 
-        if (!me.roles?.includes("MIDWIFE" as any)) {
+        const roles = Array.isArray(me.roles)
+          ? me.roles.map((role) => String(role))
+          : [];
+
+        if (!roles.includes(MIDWIFE_ROLE)) {
           throw new Error("Only midwives can manage vaccinations.");
         }
 
@@ -308,7 +316,10 @@ export default function VaccinationManagementPage() {
 
         <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
           <StatCard label="Total cards" value={summary?.totalCards || 0} />
-          <StatCard label="Upcoming" value={summary?.upcomingVaccinations || 0} />
+          <StatCard
+            label="Upcoming"
+            value={summary?.upcomingVaccinations || 0}
+          />
           <StatCard label="Today" value={summary?.todayVaccinations || 0} />
           <StatCard label="Pending" value={summary?.pendingPatients || 0} />
           <StatCard label="Completed" value={summary?.completedPatients || 0} />
@@ -524,6 +535,7 @@ export default function VaccinationManagementPage() {
                         </span>
 
                         <button
+                          type="button"
                           onClick={() => startEdit(card)}
                           className="rounded-lg border border-white/10 p-2 text-zinc-300 hover:bg-white/5"
                         >
@@ -531,6 +543,7 @@ export default function VaccinationManagementPage() {
                         </button>
 
                         <button
+                          type="button"
                           onClick={() => deleteCard(card.id)}
                           className="rounded-lg border border-red-500/30 p-2 text-red-300 hover:bg-red-500/10"
                         >

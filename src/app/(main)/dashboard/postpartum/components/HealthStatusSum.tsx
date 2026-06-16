@@ -1,20 +1,15 @@
-'use client';
+"use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import {
-  Loader2,
-  ChevronRight,
-  Sparkles,
-  HeartPulse,
-  Activity,
-  Clock3,
-} from 'lucide-react';
+import React, { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Loader2, ChevronRight, HeartPulse, Clock3 } from "lucide-react";
 
-import apis from '../../../../api/healthmonitor/api';
-import type { PredictionResult } from '../../../../api/healthmonitor/types';
+import apis from "../../../../api/healthmonitor/api";
+import type { PredictionResult } from "../../../../api/healthmonitor/types";
+import { useLanguage } from "@/components/common/useLanguage";
+import { translateText } from "@/components/common/translateText";
 
 type Props = {
   href?: string;
@@ -24,70 +19,82 @@ function clamp(n: number, min = 0, max = 1) {
   return Math.max(min, Math.min(max, n));
 }
 
-function safeNum(v: any): number | null {
+function safeNum(v: unknown): number | null {
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }
 
-function formatTimeAgo(dateLike?: string | number | Date | null) {
+function formatTimeAgo(
+  dateLike: string | number | Date | null | undefined,
+  text: ReturnType<typeof useLanguage>["t"]
+) {
   if (!dateLike) return null;
+
   const d = new Date(dateLike);
   if (Number.isNaN(d.getTime())) return null;
 
   const diff = Date.now() - d.getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins} min ago`;
+
+  if (mins < 1) return text.postpartum.health.justNow;
+  if (mins < 60) return `${mins} ${text.postpartum.health.minAgo}`;
+
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs} hr ago`;
+  if (hrs < 24) return `${hrs} ${text.postpartum.health.hrAgo}`;
+
   const days = Math.floor(hrs / 24);
-  return `${days} day${days > 1 ? 's' : ''} ago`;
+  return `${days} ${
+    days > 1 ? text.postpartum.health.daysAgo : text.postpartum.health.dayAgo
+  }`;
 }
 
-function getRiskStyles(riskLevel?: string | null) {
+function getRiskStyles(
+  riskLevel: string | null | undefined,
+  text: ReturnType<typeof useLanguage>["t"]
+) {
   if (!riskLevel) {
     return {
-      label: 'No assessment yet',
-      badge: 'bg-gray-100 text-gray-700 border-gray-200',
-      dot: 'bg-gray-400',
-      progressColor: '#9CA3AF', // gray
+      label: text.postpartum.health.noAssessment,
+      badge: "bg-gray-100 text-gray-700 border-gray-200",
+      dot: "bg-gray-400",
+      progressColor: "#9CA3AF",
     };
   }
 
   const r = riskLevel.toLowerCase();
 
-  if (r.includes('low')) {
+  if (r.includes("low")) {
     return {
-      label: 'Good Health Status',
-      badge: 'bg-green-700 text-white border-green-200',
-      dot: 'bg-white',
-      progressColor: '#16A34A', // green
+      label: text.postpartum.health.goodHealth,
+      badge: "bg-green-700 text-white border-green-200",
+      dot: "bg-white",
+      progressColor: "#16A34A",
     };
   }
 
-  if (r.includes('mid') || r.includes('medium') || r.includes('moderate')) {
+  if (r.includes("mid") || r.includes("medium") || r.includes("moderate")) {
     return {
-      label: 'Needs Attention',
-      badge: 'bg-yellow-50 text-yellow-800 border-yellow-200',
-      dot: 'bg-yellow-500',
-      progressColor: '#F59E0B', // amber
+      label: text.postpartum.health.needsAttention,
+      badge: "bg-yellow-50 text-yellow-800 border-yellow-200",
+      dot: "bg-yellow-500",
+      progressColor: "#F59E0B",
     };
   }
 
-  if (r.includes('high')) {
+  if (r.includes("high")) {
     return {
-      label: 'High Risk',
-      badge: 'bg-red-500 text-white border-red-200',
-      dot: 'bg-white',
-      progressColor: '#EF4444', // red
+      label: text.postpartum.health.highRisk,
+      badge: "bg-red-500 text-white border-red-200",
+      dot: "bg-white",
+      progressColor: "#EF4444",
     };
   }
 
   return {
     label: riskLevel,
-    badge: 'bg-gray-100 text-gray-700 border-gray-200',
-    dot: 'bg-gray-400',
-    progressColor: '#9CA3AF',
+    badge: "bg-gray-100 text-gray-700 border-gray-200",
+    dot: "bg-gray-400",
+    progressColor: "#9CA3AF",
   };
 }
 
@@ -103,7 +110,6 @@ function CircularProgress({
   color: string;
 }) {
   const pct = clamp(value) * 100;
-
   const ring = `conic-gradient(from 180deg, ${color} ${pct}%, rgba(255,255,255,0.35) 0)`;
 
   return (
@@ -113,7 +119,9 @@ function CircularProgress({
         style={{ background: ring }}
       >
         <div className="flex h-full w-full items-center justify-center rounded-full bg-white">
-          <div className="text-sm font-bold text-gray-900">{pct.toFixed(0)}%</div>
+          <div className="text-sm font-bold text-gray-900">
+            {pct.toFixed(0)}%
+          </div>
         </div>
       </div>
 
@@ -127,13 +135,7 @@ function CircularProgress({
   );
 }
 
-function MetricCard({
-  title,
-  value,
-}: {
-  title: string;
-  value: string;
-}) {
+function MetricCard({ title, value }: { title: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/60 bg-white/70 p-4 shadow-sm backdrop-blur">
       <div className="flex items-center gap-3">
@@ -147,13 +149,16 @@ function MetricCard({
 }
 
 export default function HealthStatusSum({
-  href = '/health-monitoring',
+  href = "/health-monitoring",
 }: Props) {
   const router = useRouter();
+  const { language, t } = useLanguage();
 
   const [loading, setLoading] = useState(true);
   const [latest, setLatest] = useState<PredictionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [translatedRiskLevel, setTranslatedRiskLevel] = useState("");
+  const [translatedError, setTranslatedError] = useState("");
 
   useEffect(() => {
     const run = async () => {
@@ -161,28 +166,28 @@ export default function HealthStatusSum({
         setLoading(true);
         setError(null);
 
-        const { getSession } = await import('@/lib/authentication');
+        const { getSession } = await import("@/lib/authentication");
         const session = await getSession();
         const token = session?.user?.token;
 
         if (!token) {
           setLatest(null);
-          setError('Please log in to see your health summary.');
+          setError(t.postpartum.health.loginRequired);
           return;
         }
 
         const res = await apis.getLatest(token);
         setLatest(res ?? null);
-      } catch (e: any) {
-        setError(e?.message || 'Failed to load summary.');
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : t.postpartum.health.failed);
         setLatest(null);
       } finally {
         setLoading(false);
       }
     };
 
-    run();
-  }, []);
+    void run();
+  }, [t]);
 
   const vitals = latest?.vitals;
 
@@ -192,15 +197,67 @@ export default function HealthStatusSum({
   const hr = safeNum(vitals?.HeartRate);
 
   const riskLevel = latest?.risk_assessment?.risk_level ?? null;
+
   const confidence =
-    typeof latest?.risk_assessment?.confidence === 'number'
+    typeof latest?.risk_assessment?.confidence === "number"
       ? latest.risk_assessment.confidence
       : null;
 
-  const status = useMemo(() => getRiskStyles(riskLevel), [riskLevel]);
+  const status = useMemo(() => getRiskStyles(riskLevel, t), [riskLevel, t]);
+
+  useEffect(() => {
+    let active = true;
+
+    const translateRiskLevel = async () => {
+      if (!riskLevel || language === "en") {
+        setTranslatedRiskLevel(riskLevel ?? "");
+        return;
+      }
+
+      const translated = await translateText(riskLevel, language);
+
+      if (active) {
+        setTranslatedRiskLevel(translated);
+      }
+    };
+
+    void translateRiskLevel();
+
+    return () => {
+      active = false;
+    };
+  }, [riskLevel, language]);
+
+  useEffect(() => {
+    let active = true;
+
+    const translateError = async () => {
+      if (!error || language === "en") {
+        setTranslatedError(error ?? "");
+        return;
+      }
+
+      const translated = await translateText(error, language);
+
+      if (active) {
+        setTranslatedError(translated);
+      }
+    };
+
+    void translateError();
+
+    return () => {
+      active = false;
+    };
+  }, [error, language]);
 
   const updatedAgo = formatTimeAgo(
-    (latest as any)?.updated_at || (latest as any)?.created_at || null
+    (latest as { updated_at?: string; created_at?: string } | null)
+      ?.updated_at ||
+      (latest as { updated_at?: string; created_at?: string } | null)
+        ?.created_at ||
+      null,
+    t
   );
 
   return (
@@ -210,7 +267,6 @@ export default function HealthStatusSum({
       onClick={() => router.push(href)}
       className="group relative cursor-pointer overflow-hidden rounded-3xl shadow-lg transition-all hover:shadow-xl"
     >
-      {/* Background Image */}
       <div
         className="absolute inset-0 bg-cover bg-center opacity-50"
         style={{
@@ -218,7 +274,6 @@ export default function HealthStatusSum({
         }}
       />
 
-      {/* Content */}
       <div className="relative z-10">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
@@ -228,10 +283,12 @@ export default function HealthStatusSum({
               </div>
 
               <div>
-                <div className="font-bold">Health Status Summary</div>
+                <div className="font-bold">{t.postpartum.health.title}</div>
 
                 <div className="mt-1 flex items-center gap-2 text-xs text-gray-600">
-                  <span className={`rounded-full border px-2 py-1 ${status.badge}`}>
+                  <span
+                    className={`rounded-full border px-2 py-1 ${status.badge}`}
+                  >
                     <span
                       className={`mr-1 inline-block h-2 w-2 rounded-full ${status.dot}`}
                     />
@@ -256,7 +313,7 @@ export default function HealthStatusSum({
                 router.push(href);
               }}
             >
-              Monitor <ChevronRight className="ml-1 h-4 w-4" />
+              {t.dashboard.monitor} <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
         </CardHeader>
@@ -265,38 +322,45 @@ export default function HealthStatusSum({
           {loading ? (
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Loading health status...
+              {t.postpartum.health.loading}
             </div>
           ) : error ? (
-            <div className="text-sm text-red-600">{error}</div>
+            <div className="text-sm text-red-600">
+              {translatedError || error}
+            </div>
           ) : !latest || !vitals ? (
             <div className="text-sm text-gray-600">
-              No saved assessment yet. Click to add vitals and get your first
-              assessment.
+              {t.postpartum.health.noSaved}
             </div>
           ) : (
             <>
               <CircularProgress
                 value={confidence ?? 0}
-                label="Risk Confidence"
-                sublabel={riskLevel ? `Assessment: ${riskLevel}` : undefined}
+                label={t.postpartum.health.riskConfidence}
+                sublabel={
+                  riskLevel
+                    ? `${t.postpartum.health.assessment}: ${
+                        translatedRiskLevel || riskLevel
+                      }`
+                    : undefined
+                }
                 color={status.progressColor}
               />
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <MetricCard
-                  title="BMI"
-                  value={bmi ? bmi.toFixed(1) : '-'}
+                  title={t.postpartum.health.bmi}
+                  value={bmi ? bmi.toFixed(1) : "-"}
                 />
 
                 <MetricCard
-                  title="Blood Pressure"
-                  value={sys && dia ? `${sys}/${dia}` : '-'}
+                  title={t.postpartum.health.bloodPressure}
+                  value={sys && dia ? `${sys}/${dia}` : "-"}
                 />
 
                 <MetricCard
-                  title="Heart Rate"
-                  value={hr ? `${hr.toFixed(0)} bpm` : '-'}
+                  title={t.postpartum.health.heartRate}
+                  value={hr ? `${hr.toFixed(0)} bpm` : "-"}
                 />
               </div>
             </>
